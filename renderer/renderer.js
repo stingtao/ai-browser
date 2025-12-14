@@ -7,6 +7,633 @@ const DEFAULT_FAVICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   </svg>`
 )}`;
 
+const SUPPORTED_UI_LANGUAGES = ["en", "es", "zh-TW"];
+
+function resolveUiLanguage(input) {
+  const raw = String(input || "").trim();
+  if (!raw) return "en";
+  const lower = raw.toLowerCase().replaceAll("_", "-");
+  if (lower === "en" || lower.startsWith("en-")) return "en";
+  if (lower === "es" || lower.startsWith("es-")) return "es";
+  if (lower === "zh-tw" || lower.startsWith("zh-tw-")) return "zh-TW";
+  if (lower.startsWith("zh-") || lower === "zh") return "zh-TW";
+  return "en";
+}
+
+const UI_I18N = {
+  en: {
+    "tabs.scrollLeft": "Scroll tabs left",
+    "tabs.scrollRight": "Scroll tabs right",
+    "tabs.label": "Tabs",
+    "tabs.new": "New tab",
+    "tabs.newTitle": "New Tab",
+    "tabs.untitled": "Untitled",
+    "tabs.close": "Close tab",
+
+    "nav.back": "Back",
+    "nav.forward": "Forward",
+    "nav.reload": "Reload",
+    "nav.stop": "Stop",
+    "nav.home": "Home",
+
+    "address.placeholder": "Search or enter address",
+    "address.clear": "Clear",
+    "address.suggestions": "Suggestions",
+
+    "ai.label": "AI Assistant",
+    "ai.settings": "AI Assistant settings",
+    "ai.resize": "Resize AI Assistant",
+    "ai.close": "Close AI Assistant",
+    "ai.newConversation": "New conversation",
+    "ai.history": "Conversation history",
+    "ai.history.title": "Conversation history",
+    "ai.history.close": "Close history",
+    "ai.history.list": "Conversation list",
+    "ai.history.empty": "No conversations yet.",
+    "ai.history.count": "{{count}} messages",
+    "ai.history.newConversationTitle": "New conversation",
+    "ai.chat.aria": "AI conversation",
+    "ai.prompts.shortcuts": "Prompt shortcuts",
+    "ai.chat.placeholder": "Type a message…",
+    "ai.chat.send": "Send",
+    "ai.chat.sending": "Generating…",
+    "ai.meta.user": "You",
+    "ai.meta.assistant": "AI",
+    "ai.meta.error": "Error",
+    "ai.meta.provider.local": "Local",
+    "ai.meta.provider.gemini": "Gemini",
+    "ai.context.currentPage": "Current page content",
+    "ai.context.selection": "Selection",
+    "ai.context.pageTitle": "Page title",
+    "ai.context.url": "URL",
+    "ai.context.attachedNote": "({{label}} is included in the context)",
+    "ai.error.selectionMissing":
+      "No selection found: select some text on the page, or switch to \"Full page\" mode.",
+    "ai.systemPrompt":
+      "You are the user's browser AI assistant. Answer using the provided page context. Respond in English.",
+
+    "status.loading": "Loading…",
+
+    "aiSettings.title": "AI Assistant Settings",
+    "aiSettings.close": "Close",
+    "aiSettings.section.modelSource": "Model Source",
+    "aiSettings.provider.label": "Provider",
+    "aiSettings.provider.local": "Local (Ollama)",
+    "aiSettings.provider.gemini": "Gemini API",
+    "aiSettings.local.label": "Local",
+    "aiSettings.refresh": "Refresh",
+    "aiSettings.pull.label": "Pull",
+    "aiSettings.pull.button": "Download model",
+    "aiSettings.pull.downloading": "Downloading…",
+    "aiSettings.gemini.model": "Model",
+    "aiSettings.gemini.defaultModelOption": "gemini-2.5-flash (default)",
+    "aiSettings.gemini.apiKey": "API Key",
+    "aiSettings.gemini.toggleKey": "Show/Hide",
+    "aiSettings.gemini.toggleKeyAria": "Toggle API key visibility",
+    "aiSettings.gemini.keyStatus.notSet": "Not set",
+    "aiSettings.gemini.keyStatus.env": "Set (environment variable GEMINI_API_KEY)",
+    "aiSettings.gemini.keyStatus.savedEncrypted": "Saved (encrypted)",
+    "aiSettings.gemini.keyStatus.savedPlain": "Saved (plain text)",
+    "aiSettings.gemini.keyStatus.saved": "Saved",
+    "aiSettings.gemini.keyStatus.notSetEncryptedAvailable": "Not set (can be saved encrypted here)",
+    "aiSettings.gemini.keyStatus.notSetNoEncryption":
+      "Not set (this device can't encrypt; it will be stored in plain text)",
+    "aiSettings.gemini.keyStatus.saving": "Saving…",
+    "aiSettings.gemini.keySave": "Save/Update",
+    "aiSettings.gemini.keySave.saving": "Saving…",
+    "aiSettings.gemini.keyClear": "Clear",
+    "aiSettings.gemini.keyClearConfirm": "Clear the saved Gemini API key?",
+    "aiSettings.gemini.keyError.invalid":
+      "Invalid API key format. Please paste the full key (often starts with AIza...).",
+
+    "aiSettings.section.context": "Context",
+    "aiSettings.context.label": "Content",
+    "aiSettings.context.auto": "Auto (use selection when available)",
+    "aiSettings.context.selection": "Selection only",
+    "aiSettings.context.page": "Full page text",
+
+    "aiSettings.section.appearance": "Appearance",
+    "aiSettings.fontSize.label": "Font size",
+    "aiSettings.fontSize.1": "Smallest",
+    "aiSettings.fontSize.2": "Small",
+    "aiSettings.fontSize.3": "Standard",
+    "aiSettings.fontSize.4": "Large",
+    "aiSettings.fontSize.5": "Largest",
+
+    "aiSettings.section.prompts": "Prompts",
+    "aiSettings.prompt.label": "Prompt",
+    "aiSettings.prompt.name": "Name",
+    "aiSettings.prompt.namePlaceholder": "Prompt name",
+    "aiSettings.prompt.id": "ID",
+    "aiSettings.prompt.add": "Add",
+    "aiSettings.prompt.save": "Save",
+    "aiSettings.prompt.delete": "Delete",
+    "aiSettings.prompt.reset": "Reset defaults",
+    "aiSettings.prompt.templatePlaceholder": "Edit the prompt template here…",
+
+    "prompts.add.title": "New prompt name",
+    "prompts.add.defaultName": "New prompt",
+    "prompts.add.defaultTemplate": "Write your prompt template here:\n\n{{content}}",
+    "prompts.delete.confirm": "Delete prompt \"{{name}}\"?",
+    "prompts.reset.confirm": "Reset prompts back to defaults?",
+
+    "appSettings.title": "Browser Settings",
+    "appSettings.close": "Close",
+    "appSettings.section.appearance": "Appearance",
+    "appSettings.theme.label": "Theme",
+    "appSettings.theme.light": "Light",
+    "appSettings.theme.dark": "Dark",
+    "appSettings.language.label": "Language",
+    "appSettings.section.startup": "On startup",
+    "appSettings.startup.aria": "Startup mode",
+    "appSettings.startup.home": "Open the home page",
+    "appSettings.startup.continue": "Continue where you left off (experimental)",
+    "appSettings.startup.urls": "Open specific pages",
+    "appSettings.startup.urlsPlaceholder": "One URL per line (http/https only)",
+    "appSettings.startup.hint":
+      "Tip: When \"Open specific pages\" is selected, these URLs will open at every startup.",
+    "appSettings.section.home": "Home page",
+    "appSettings.home.url": "URL",
+    "appSettings.home.apply": "Apply",
+    "appSettings.section.search": "Search engine",
+    "appSettings.search.default": "Default",
+    "appSettings.search.custom": "Custom",
+    "appSettings.search.template": "Template",
+    "appSettings.search.templateHint.prefix": "Custom templates must include ",
+    "appSettings.search.templateHint.suffix": ", which will be replaced with the search query.",
+    "appSettings.section.privacy": "Privacy",
+    "appSettings.privacy.clearHistory": "Clear browsing data",
+    "appSettings.privacy.clearHistoryConfirm": "Clear all browsing history?",
+    "appSettings.section.import": "Import",
+    "appSettings.import.chrome": "Import from Chrome",
+    "appSettings.import.confirm": "Import settings from Chrome?",
+    "appSettings.import.status.importing": "Importing…",
+    "appSettings.import.status.imported": "Imported",
+    "appSettings.import.status.importedPath": "Imported: {{path}}",
+
+    "history.title": "History",
+    "history.close": "Close",
+    "history.search.label": "Search",
+    "history.search.placeholder": "Search title or URL…",
+    "history.clear": "Clear",
+    "history.empty": "No browsing history yet.",
+    "history.empty.filtered": "No matching history entries.",
+
+    "chromeImport.title": "Import settings from Chrome?",
+    "chromeImport.close": "Close",
+    "chromeImport.firstLaunch": "First launch",
+    "chromeImport.intro":
+      "You can import common settings from Chrome to make the experience feel familiar.",
+    "chromeImport.item.home": "Home page URL",
+    "chromeImport.item.search": "Default search engine",
+    "chromeImport.item.startup": "Startup behavior (specific pages / continue session)",
+    "chromeImport.skip": "Skip",
+    "chromeImport.import": "Import",
+
+    "error.aiChatStoreSave": "Failed to save AI conversation history",
+    "error.promptsSave": "Failed to save prompts",
+    "error.printFailed": "Print failed",
+    "error.aiGeneric": "AI error",
+    "error.emptyPrompt": "Empty prompt",
+    "error.noActiveTab": "No active tab",
+
+    "findInPage.prompt": "Find in page",
+    "aiSettings.localModel.missing": "{{model}} (not downloaded or Ollama not installed)"
+  },
+  es: {
+    "tabs.scrollLeft": "Desplazar pestañas a la izquierda",
+    "tabs.scrollRight": "Desplazar pestañas a la derecha",
+    "tabs.label": "Pestañas",
+    "tabs.new": "Nueva pestaña",
+    "tabs.newTitle": "Nueva pestaña",
+    "tabs.untitled": "Sin título",
+    "tabs.close": "Cerrar pestaña",
+
+    "nav.back": "Atrás",
+    "nav.forward": "Adelante",
+    "nav.reload": "Recargar",
+    "nav.stop": "Detener",
+    "nav.home": "Inicio",
+
+    "address.placeholder": "Buscar o introducir dirección",
+    "address.clear": "Borrar",
+    "address.suggestions": "Sugerencias",
+
+    "ai.label": "Asistente de IA",
+    "ai.settings": "Ajustes del asistente de IA",
+    "ai.resize": "Cambiar tamaño del asistente de IA",
+    "ai.close": "Cerrar asistente de IA",
+    "ai.newConversation": "Nueva conversación",
+    "ai.history": "Historial de conversaciones",
+    "ai.history.title": "Historial de conversaciones",
+    "ai.history.close": "Cerrar historial",
+    "ai.history.list": "Lista de conversaciones",
+    "ai.history.empty": "Aún no hay conversaciones.",
+    "ai.history.count": "{{count}} mensajes",
+    "ai.history.newConversationTitle": "Nueva conversación",
+    "ai.chat.aria": "Conversación con IA",
+    "ai.prompts.shortcuts": "Atajos de prompts",
+    "ai.chat.placeholder": "Escribe un mensaje…",
+    "ai.chat.send": "Enviar",
+    "ai.chat.sending": "Generando…",
+    "ai.meta.user": "Tú",
+    "ai.meta.assistant": "IA",
+    "ai.meta.error": "Error",
+    "ai.meta.provider.local": "Local",
+    "ai.meta.provider.gemini": "Gemini",
+    "ai.context.currentPage": "Contenido de la página actual",
+    "ai.context.selection": "Selección",
+    "ai.context.pageTitle": "Título de la página",
+    "ai.context.url": "URL",
+    "ai.context.attachedNote": "({{label}} está incluido en el contexto)",
+    "ai.error.selectionMissing":
+      "No hay texto seleccionado: selecciona texto en la página o cambia al modo \"Página completa\".",
+    "ai.systemPrompt":
+      "Eres el asistente de IA del navegador del usuario. Responde utilizando el contexto de la página proporcionado. Responde en español.",
+
+    "status.loading": "Cargando…",
+
+    "aiSettings.title": "Ajustes del asistente de IA",
+    "aiSettings.close": "Cerrar",
+    "aiSettings.section.modelSource": "Origen del modelo",
+    "aiSettings.provider.label": "Proveedor",
+    "aiSettings.provider.local": "Local (Ollama)",
+    "aiSettings.provider.gemini": "Gemini API",
+    "aiSettings.local.label": "Local",
+    "aiSettings.refresh": "Actualizar",
+    "aiSettings.pull.label": "Descargar",
+    "aiSettings.pull.button": "Descargar modelo",
+    "aiSettings.pull.downloading": "Descargando…",
+    "aiSettings.gemini.model": "Modelo",
+    "aiSettings.gemini.defaultModelOption": "gemini-2.5-flash (predeterminado)",
+    "aiSettings.gemini.apiKey": "Clave API",
+    "aiSettings.gemini.toggleKey": "Mostrar/Ocultar",
+    "aiSettings.gemini.toggleKeyAria": "Mostrar u ocultar la clave API",
+    "aiSettings.gemini.keyStatus.notSet": "No configurado",
+    "aiSettings.gemini.keyStatus.env": "Configurado (variable de entorno GEMINI_API_KEY)",
+    "aiSettings.gemini.keyStatus.savedEncrypted": "Guardado (cifrado)",
+    "aiSettings.gemini.keyStatus.savedPlain": "Guardado (texto plano)",
+    "aiSettings.gemini.keyStatus.saved": "Guardado",
+    "aiSettings.gemini.keyStatus.notSetEncryptedAvailable": "No configurado (puedes guardarlo cifrado aquí)",
+    "aiSettings.gemini.keyStatus.notSetNoEncryption":
+      "No configurado (este dispositivo no puede cifrar; se guardará en texto plano)",
+    "aiSettings.gemini.keyStatus.saving": "Guardando…",
+    "aiSettings.gemini.keySave": "Guardar/Actualizar",
+    "aiSettings.gemini.keySave.saving": "Guardando…",
+    "aiSettings.gemini.keyClear": "Borrar",
+    "aiSettings.gemini.keyClearConfirm": "¿Borrar la clave API de Gemini guardada?",
+    "aiSettings.gemini.keyError.invalid":
+      "Formato de clave API no válido. Pega la clave completa (a menudo empieza por AIza...).",
+
+    "aiSettings.section.context": "Contexto",
+    "aiSettings.context.label": "Contenido",
+    "aiSettings.context.auto": "Automático (usar selección cuando exista)",
+    "aiSettings.context.selection": "Solo selección",
+    "aiSettings.context.page": "Texto de la página completa",
+
+    "aiSettings.section.appearance": "Apariencia",
+    "aiSettings.fontSize.label": "Tamaño de fuente",
+    "aiSettings.fontSize.1": "Más pequeño",
+    "aiSettings.fontSize.2": "Pequeño",
+    "aiSettings.fontSize.3": "Estándar",
+    "aiSettings.fontSize.4": "Grande",
+    "aiSettings.fontSize.5": "Más grande",
+
+    "aiSettings.section.prompts": "Prompts",
+    "aiSettings.prompt.label": "Prompt",
+    "aiSettings.prompt.name": "Nombre",
+    "aiSettings.prompt.namePlaceholder": "Nombre del prompt",
+    "aiSettings.prompt.id": "ID",
+    "aiSettings.prompt.add": "Añadir",
+    "aiSettings.prompt.save": "Guardar",
+    "aiSettings.prompt.delete": "Eliminar",
+    "aiSettings.prompt.reset": "Restablecer predeterminados",
+    "aiSettings.prompt.templatePlaceholder": "Edita aquí la plantilla del prompt…",
+
+    "prompts.add.title": "Nombre del nuevo prompt",
+    "prompts.add.defaultName": "Nuevo prompt",
+    "prompts.add.defaultTemplate": "Escribe aquí la plantilla del prompt:\n\n{{content}}",
+    "prompts.delete.confirm": "¿Eliminar el prompt \"{{name}}\"?",
+    "prompts.reset.confirm": "¿Restablecer los prompts a los predeterminados?",
+
+    "appSettings.title": "Ajustes del navegador",
+    "appSettings.close": "Cerrar",
+    "appSettings.section.appearance": "Apariencia",
+    "appSettings.theme.label": "Tema",
+    "appSettings.theme.light": "Claro",
+    "appSettings.theme.dark": "Oscuro",
+    "appSettings.language.label": "Idioma",
+    "appSettings.section.startup": "Al iniciar",
+    "appSettings.startup.aria": "Modo de inicio",
+    "appSettings.startup.home": "Abrir la página de inicio",
+    "appSettings.startup.continue": "Continuar donde lo dejaste (experimental)",
+    "appSettings.startup.urls": "Abrir páginas específicas",
+    "appSettings.startup.urlsPlaceholder": "Una URL por línea (solo http/https)",
+    "appSettings.startup.hint":
+      "Consejo: Cuando se selecciona \"Abrir páginas específicas\", estas URLs se abrirán en cada inicio.",
+    "appSettings.section.home": "Página de inicio",
+    "appSettings.home.url": "URL",
+    "appSettings.home.apply": "Aplicar",
+    "appSettings.section.search": "Motor de búsqueda",
+    "appSettings.search.default": "Predeterminado",
+    "appSettings.search.custom": "Personalizado",
+    "appSettings.search.template": "Plantilla",
+    "appSettings.search.templateHint.prefix": "Las plantillas personalizadas deben incluir ",
+    "appSettings.search.templateHint.suffix": ", que se reemplazará por la consulta.",
+    "appSettings.section.privacy": "Privacidad",
+    "appSettings.privacy.clearHistory": "Borrar historial de navegación",
+    "appSettings.privacy.clearHistoryConfirm": "¿Borrar todo el historial de navegación?",
+    "appSettings.section.import": "Importar",
+    "appSettings.import.chrome": "Importar desde Chrome",
+    "appSettings.import.confirm": "¿Importar ajustes desde Chrome?",
+    "appSettings.import.status.importing": "Importando…",
+    "appSettings.import.status.imported": "Importado",
+    "appSettings.import.status.importedPath": "Importado: {{path}}",
+
+    "history.title": "Historial",
+    "history.close": "Cerrar",
+    "history.search.label": "Buscar",
+    "history.search.placeholder": "Buscar título o URL…",
+    "history.clear": "Borrar",
+    "history.empty": "Aún no hay historial.",
+    "history.empty.filtered": "No hay entradas que coincidan.",
+
+    "chromeImport.title": "¿Importar ajustes desde Chrome?",
+    "chromeImport.close": "Cerrar",
+    "chromeImport.firstLaunch": "Primer inicio",
+    "chromeImport.intro":
+      "Puedes importar ajustes comunes de Chrome para que la experiencia sea familiar.",
+    "chromeImport.item.home": "URL de la página de inicio",
+    "chromeImport.item.search": "Motor de búsqueda predeterminado",
+    "chromeImport.item.startup": "Comportamiento al iniciar (páginas específicas / continuar sesión)",
+    "chromeImport.skip": "Omitir",
+    "chromeImport.import": "Importar",
+
+    "error.aiChatStoreSave": "No se pudo guardar el historial de conversaciones de IA",
+    "error.promptsSave": "No se pudieron guardar los prompts",
+    "error.printFailed": "Error al imprimir",
+    "error.aiGeneric": "Error de IA",
+    "error.emptyPrompt": "Prompt vacío",
+    "error.noActiveTab": "No hay pestaña activa",
+
+    "findInPage.prompt": "Buscar en la página",
+    "aiSettings.localModel.missing": "{{model}} (no descargado o Ollama no instalado)"
+  },
+  "zh-TW": {
+    "tabs.scrollLeft": "向左捲動分頁",
+    "tabs.scrollRight": "向右捲動分頁",
+    "tabs.label": "分頁",
+    "tabs.new": "新增分頁",
+    "tabs.newTitle": "新增分頁",
+    "tabs.untitled": "未命名",
+    "tabs.close": "關閉分頁",
+
+    "nav.back": "上一頁",
+    "nav.forward": "下一頁",
+    "nav.reload": "重新載入",
+    "nav.stop": "停止",
+    "nav.home": "首頁",
+
+    "address.placeholder": "搜尋或輸入網址",
+    "address.clear": "清除",
+    "address.suggestions": "建議",
+
+    "ai.label": "AI Assistant",
+    "ai.settings": "AI Assistant 設定",
+    "ai.resize": "調整 AI Assistant 寬度",
+    "ai.close": "關閉 AI Assistant",
+    "ai.newConversation": "新增對話",
+    "ai.history": "對話紀錄",
+    "ai.history.title": "對話紀錄",
+    "ai.history.close": "關閉紀錄",
+    "ai.history.list": "對話列表",
+    "ai.history.empty": "尚無對話紀錄。",
+    "ai.history.count": "{{count}} 則",
+    "ai.history.newConversationTitle": "新對話",
+    "ai.chat.aria": "AI 對話",
+    "ai.prompts.shortcuts": "Prompt 快捷鍵",
+    "ai.chat.placeholder": "輸入訊息…",
+    "ai.chat.send": "送出",
+    "ai.chat.sending": "生成中...",
+    "ai.meta.user": "你",
+    "ai.meta.assistant": "AI",
+    "ai.meta.error": "錯誤",
+    "ai.meta.provider.local": "本地",
+    "ai.meta.provider.gemini": "Gemini",
+    "ai.context.currentPage": "目前網頁內容",
+    "ai.context.selection": "選取文字",
+    "ai.context.pageTitle": "頁面標題",
+    "ai.context.url": "網址",
+    "ai.context.attachedNote": "（{{label}} 已附在上下文）",
+    "ai.error.selectionMissing": "尚未選取文字：請先在頁面上選取一段文字，或改用「整頁文字」模式。",
+    "ai.systemPrompt": "你是使用者的瀏覽器 AI 助手。請根據使用者提供的網頁上下文回答問題。請使用繁體中文回答。",
+
+    "status.loading": "載入中…",
+
+    "aiSettings.title": "AI Assistant 設定",
+    "aiSettings.close": "關閉",
+    "aiSettings.section.modelSource": "模型來源",
+    "aiSettings.provider.label": "Provider",
+    "aiSettings.provider.local": "Local (Ollama)",
+    "aiSettings.provider.gemini": "Gemini API",
+    "aiSettings.local.label": "Local",
+    "aiSettings.refresh": "刷新",
+    "aiSettings.pull.label": "Pull",
+    "aiSettings.pull.button": "下載模型",
+    "aiSettings.pull.downloading": "下載中...",
+    "aiSettings.gemini.model": "Model",
+    "aiSettings.gemini.defaultModelOption": "gemini-2.5-flash (預設)",
+    "aiSettings.gemini.apiKey": "API Key",
+    "aiSettings.gemini.toggleKey": "顯示/隱藏",
+    "aiSettings.gemini.toggleKeyAria": "切換 API Key 顯示",
+    "aiSettings.gemini.keyStatus.notSet": "尚未設定",
+    "aiSettings.gemini.keyStatus.env": "已設定（環境變數 GEMINI_API_KEY）",
+    "aiSettings.gemini.keyStatus.savedEncrypted": "已儲存（加密）",
+    "aiSettings.gemini.keyStatus.savedPlain": "已儲存（明文）",
+    "aiSettings.gemini.keyStatus.saved": "已儲存",
+    "aiSettings.gemini.keyStatus.notSetEncryptedAvailable": "尚未設定（可於此處加密儲存）",
+    "aiSettings.gemini.keyStatus.notSetNoEncryption": "尚未設定（此裝置無法加密，將以明文儲存）",
+    "aiSettings.gemini.keyStatus.saving": "儲存中...",
+    "aiSettings.gemini.keySave": "儲存/更新",
+    "aiSettings.gemini.keySave.saving": "儲存中...",
+    "aiSettings.gemini.keyClear": "清除",
+    "aiSettings.gemini.keyClearConfirm": "確定清除已儲存的 Gemini API Key？",
+    "aiSettings.gemini.keyError.invalid": "API Key 格式不正確，請貼上完整 key（通常以 AIza... 開頭）。",
+
+    "aiSettings.section.context": "上下文",
+    "aiSettings.context.label": "內容",
+    "aiSettings.context.auto": "自動（有選取先用選取）",
+    "aiSettings.context.selection": "只用選取文字",
+    "aiSettings.context.page": "整頁文字",
+
+    "aiSettings.section.appearance": "外觀",
+    "aiSettings.fontSize.label": "字體",
+    "aiSettings.fontSize.1": "最小",
+    "aiSettings.fontSize.2": "小",
+    "aiSettings.fontSize.3": "標準",
+    "aiSettings.fontSize.4": "大",
+    "aiSettings.fontSize.5": "最大",
+
+    "aiSettings.section.prompts": "Prompts",
+    "aiSettings.prompt.label": "Prompt",
+    "aiSettings.prompt.name": "名稱",
+    "aiSettings.prompt.namePlaceholder": "Prompt 名稱",
+    "aiSettings.prompt.id": "ID",
+    "aiSettings.prompt.add": "新增",
+    "aiSettings.prompt.save": "儲存",
+    "aiSettings.prompt.delete": "刪除",
+    "aiSettings.prompt.reset": "重置預設",
+    "aiSettings.prompt.templatePlaceholder": "可在這裡改寫 prompt...",
+
+    "prompts.add.title": "新 Prompt 名稱",
+    "prompts.add.defaultName": "新 Prompt",
+    "prompts.add.defaultTemplate": "請輸入你的 prompt 模板：\n\n{{content}}",
+    "prompts.delete.confirm": "確定刪除 Prompt「{{name}}」？",
+    "prompts.reset.confirm": "重置後將回到預設 prompts，確定？",
+
+    "appSettings.title": "瀏覽器設定",
+    "appSettings.close": "關閉",
+    "appSettings.section.appearance": "外觀",
+    "appSettings.theme.label": "主題",
+    "appSettings.theme.light": "淺色",
+    "appSettings.theme.dark": "深色",
+    "appSettings.language.label": "語系",
+    "appSettings.section.startup": "啟動時",
+    "appSettings.startup.aria": "啟動模式",
+    "appSettings.startup.home": "開啟首頁",
+    "appSettings.startup.continue": "繼續上次瀏覽（實驗性）",
+    "appSettings.startup.urls": "開啟特定頁面",
+    "appSettings.startup.urlsPlaceholder": "每行一個網址（僅支援 https/http）",
+    "appSettings.startup.hint": "提示：選擇「開啟特定頁面」時，會在每次啟動開啟這些網址。",
+    "appSettings.section.home": "首頁",
+    "appSettings.home.url": "網址",
+    "appSettings.home.apply": "套用",
+    "appSettings.section.search": "搜尋引擎",
+    "appSettings.search.default": "預設",
+    "appSettings.search.custom": "自訂",
+    "appSettings.search.template": "模板",
+    "appSettings.search.templateHint.prefix": "自訂模板需包含 ",
+    "appSettings.search.templateHint.suffix": "，會自動用關鍵字取代。",
+    "appSettings.section.privacy": "隱私",
+    "appSettings.privacy.clearHistory": "清除瀏覽紀錄",
+    "appSettings.privacy.clearHistoryConfirm": "確定清除所有瀏覽紀錄？",
+    "appSettings.section.import": "匯入",
+    "appSettings.import.chrome": "從 Chrome 匯入",
+    "appSettings.import.confirm": "確定從 Chrome 匯入設定？",
+    "appSettings.import.status.importing": "匯入中...",
+    "appSettings.import.status.imported": "已匯入",
+    "appSettings.import.status.importedPath": "已匯入：{{path}}",
+
+    "history.title": "歷史紀錄",
+    "history.close": "關閉",
+    "history.search.label": "搜尋",
+    "history.search.placeholder": "搜尋標題或網址...",
+    "history.clear": "清除",
+    "history.empty": "尚無瀏覽歷史紀錄。",
+    "history.empty.filtered": "找不到符合的歷史紀錄。",
+
+    "chromeImport.title": "從 Chrome 匯入設定？",
+    "chromeImport.close": "關閉",
+    "chromeImport.firstLaunch": "第一次啟動",
+    "chromeImport.intro": "你可以從 Chrome 匯入常用設定，讓使用體驗更接近原本的瀏覽器。",
+    "chromeImport.item.home": "首頁網址",
+    "chromeImport.item.search": "預設搜尋引擎",
+    "chromeImport.item.startup": "啟動時行為（開啟特定頁面/繼續上次瀏覽）",
+    "chromeImport.skip": "略過",
+    "chromeImport.import": "匯入",
+
+    "error.aiChatStoreSave": "無法儲存 AI 對話紀錄",
+    "error.promptsSave": "無法儲存 prompts",
+    "error.printFailed": "列印失敗",
+    "error.aiGeneric": "AI 發生錯誤",
+    "error.emptyPrompt": "Prompt 為空",
+    "error.noActiveTab": "沒有作用中的分頁",
+
+    "findInPage.prompt": "在頁面中搜尋",
+    "aiSettings.localModel.missing": "{{model}}（未下載/或未安裝 Ollama）"
+  }
+};
+
+function interpolateI18n(text, params) {
+  const input = String(text ?? "");
+  if (!params || typeof params !== "object") return input;
+  return input.replace(/\{\{(\w+)\}\}/g, (_match, key) => {
+    const value = params[key];
+    return value == null ? "" : String(value);
+  });
+}
+
+function t(key, params) {
+  const lang = SUPPORTED_UI_LANGUAGES.includes(uiLanguage) ? uiLanguage : "en";
+  const dict = UI_I18N[lang] || UI_I18N.en;
+  const fallback = UI_I18N.en || {};
+  const value = dict[key] ?? fallback[key] ?? String(key);
+  if (typeof value === "function") return value(params);
+  return interpolateI18n(value, params);
+}
+
+function applyI18nToDom() {
+  document.documentElement.lang = uiLanguage;
+  for (const el of document.querySelectorAll("[data-i18n]")) {
+    const key = el.dataset.i18n;
+    if (!key) continue;
+    el.textContent = t(key);
+  }
+  for (const el of document.querySelectorAll("[data-i18n-attrs]")) {
+    const raw = el.dataset.i18nAttrs;
+    if (!raw) continue;
+    const pairs = raw
+      .split(",")
+      .map((x) => x.trim())
+      .filter(Boolean);
+    for (const pair of pairs) {
+      const [attr, k] = pair.split(":").map((x) => x.trim());
+      if (!attr || !k) continue;
+      el.setAttribute(attr, t(k));
+    }
+  }
+}
+
+function setUiLanguage(nextLanguage) {
+  const next = resolveUiLanguage(nextLanguage);
+  const prev = uiLanguage;
+  if (next === uiLanguage) {
+    applyI18nToDom();
+    return;
+  }
+  uiLanguage = next;
+  if (languageSelect && Array.from(languageSelect.options).some((o) => o.value === uiLanguage)) {
+    languageSelect.value = uiLanguage;
+  }
+  applyI18nToDom();
+
+  for (const btn of Array.from(tabStrip.querySelectorAll(".tabClose"))) {
+    btn.title = t("tabs.close");
+    btn.setAttribute("aria-label", t("tabs.close"));
+  }
+
+  if (hasLoadedPrompts) {
+    const selectedId = promptSelect?.value || null;
+    const fromLang = promptsStorageLanguage || prev;
+    prompts = syncDefaultPromptsForLanguageChange(prompts, fromLang, uiLanguage);
+    promptsStorageLanguage = uiLanguage;
+    persistPromptsToStorage(prompts);
+    renderPromptSelect(selectedId);
+  }
+
+  syncAiContext();
+  updateLoadingUI();
+  updateStatusMeta();
+  renderHistoryList();
+  if (isAiHistoryOpen) renderAiConversationHistoryList();
+  setChatSending(isSendingChat);
+
+  syncGeminiKeySaveState();
+  if (!aiSettingsModal.classList.contains("hidden")) {
+    loadAiSettings();
+  }
+}
+
 const tabStrip = document.getElementById("tabStrip");
 const newTabBtn = document.getElementById("newTabBtn");
 const tabsScrollLeftBtn = document.getElementById("tabsScrollLeftBtn");
@@ -41,6 +668,7 @@ const aiSettingsCloseBtn = document.getElementById("aiSettingsCloseBtn");
 const appSettingsModal = document.getElementById("appSettingsModal");
 const appSettingsCloseBtn = document.getElementById("appSettingsCloseBtn");
 const themeSelect = document.getElementById("themeSelect");
+const languageSelect = document.getElementById("languageSelect");
 const startupModeGroup = document.getElementById("startupModeGroup");
 const startupUrlsInput = document.getElementById("startupUrlsInput");
 const homePageInput = document.getElementById("homePageInput");
@@ -138,25 +766,57 @@ let searchEngineTemplate = DEFAULT_SEARCH_TEMPLATE;
 let startupMode = "home";
 let startupUrls = [];
 let themeMode = "light";
+let uiLanguage = resolveUiLanguage(navigator.language);
 let hasShownChromeImportModal = false;
 let pageZoomFactor = loadPageZoomFactor();
+
+applyI18nToDom();
 
 let tabs = [];
 let activeTabId = null;
 
-const DEFAULT_PROMPTS = [
-  {
-    id: "summary",
-    name: "摘要本頁文件",
-    template: "請用繁體中文摘要以下網頁內容，抓出重點、關鍵數據與結論：\n\n{{content}}"
-  },
-  {
-    id: "painpoints_ideas",
-    name: "抓出痛點/需求與商業 idea",
-    template:
-      "請分析以下網頁內容，列出使用者痛點與需求，並提出 3-5 個可發展成商業 idea 的建議（含目標客群/價值主張/可行性）：\n\n{{content}}"
-  }
-];
+const DEFAULT_PROMPTS_BY_LANGUAGE = {
+  en: [
+    {
+      id: "summary",
+      name: "Summarize this page",
+      template: "Please summarize the following web page content (key points, key data, conclusions):\n\n{{content}}"
+    },
+    {
+      id: "painpoints_ideas",
+      name: "Pain points & business ideas",
+      template:
+        "Analyze the following web page content. List user pain points and needs, then propose 3–5 business ideas (target audience / value proposition / feasibility):\n\n{{content}}"
+    }
+  ],
+  es: [
+    {
+      id: "summary",
+      name: "Resume esta página",
+      template:
+        "Resume el siguiente contenido de la página web (puntos clave, datos relevantes y conclusiones):\n\n{{content}}"
+    },
+    {
+      id: "painpoints_ideas",
+      name: "Dolores y ideas de negocio",
+      template:
+        "Analiza el siguiente contenido de la página web. Enumera los dolores y necesidades del usuario y propone 3–5 ideas de negocio (cliente objetivo / propuesta de valor / viabilidad):\n\n{{content}}"
+    }
+  ],
+  "zh-TW": [
+    {
+      id: "summary",
+      name: "摘要本頁文件",
+      template: "請用繁體中文摘要以下網頁內容，抓出重點、關鍵數據與結論：\n\n{{content}}"
+    },
+    {
+      id: "painpoints_ideas",
+      name: "抓出痛點/需求與商業 idea",
+      template:
+        "請分析以下網頁內容，列出使用者痛點與需求，並提出 3-5 個可發展成商業 idea 的建議（含目標客群/價值主張/可行性）：\n\n{{content}}"
+    }
+  ]
+};
 
 const HISTORY_KEY = "sting.history.v1";
 const HISTORY_LIMIT = 500;
@@ -166,6 +826,8 @@ let currentSuggestions = [];
 let activeSuggestionIndex = -1;
 
 let prompts = [];
+let hasLoadedPrompts = false;
+let promptsStorageLanguage = null;
 
 function safeCall(fn, fallback) {
   try {
@@ -260,7 +922,7 @@ function persistAiChatStore() {
   try {
     localStorage.setItem(AI_CHAT_STORE_KEY, JSON.stringify(snapshot));
   } catch (err) {
-    window.aiBridge.showError(err?.message || "Failed to save AI conversation history");
+    window.aiBridge.showError(err?.message || t("error.aiChatStoreSave"));
   }
 }
 
@@ -304,11 +966,11 @@ function renderAiConversationMessages(messages) {
   for (const msg of Array.isArray(messages) ? messages : []) {
     if (!msg || typeof msg !== "object") continue;
     if (msg.role === "assistant") {
-      createAiChatMessage({ role: "assistant", meta: msg.meta || "AI", markdown: msg.content });
+      createAiChatMessage({ role: "assistant", meta: msg.meta || t("ai.meta.assistant"), markdown: msg.content });
       continue;
     }
     if (msg.role === "user") {
-      createAiChatMessage({ role: "user", meta: msg.meta || "你", text: msg.content });
+      createAiChatMessage({ role: "user", meta: msg.meta || t("ai.meta.user"), text: msg.content });
     }
   }
   scrollAiChatToBottom({ behavior: "auto" });
@@ -360,7 +1022,7 @@ function buildConversationTitle(conv) {
   const msgs = Array.isArray(conv?.messages) ? conv.messages : [];
   const firstUser = msgs.find((m) => m && m.role === "user" && typeof m.content === "string" && m.content.trim());
   if (firstUser) return truncateAiHistoryPreview(firstUser.content, 72);
-  return "New conversation";
+  return t("ai.history.newConversationTitle");
 }
 
 function buildConversationSnippet(conv) {
@@ -378,7 +1040,7 @@ function renderAiConversationHistoryList() {
   if (!visible.length) {
     const empty = document.createElement("div");
     empty.className = "aiHistoryEmpty";
-    empty.textContent = "尚無對話紀錄。";
+    empty.textContent = t("ai.history.empty");
     aiHistoryList.appendChild(empty);
     return;
   }
@@ -396,7 +1058,7 @@ function renderAiConversationHistoryList() {
     timeEl.textContent = formatAiHistoryTime(conv.updatedAt || conv.createdAt);
 
     const countEl = document.createElement("div");
-    countEl.textContent = `${conv.messages.length} 則`;
+    countEl.textContent = t("ai.history.count", { count: conv.messages.length });
 
     meta.appendChild(timeEl);
     meta.appendChild(countEl);
@@ -495,6 +1157,9 @@ function inferSearchChoiceFromTemplate(template) {
 
 function syncBrowserSettingsUI() {
   themeSelect.value = themeMode;
+  if (languageSelect && Array.from(languageSelect.options).some((o) => o.value === uiLanguage)) {
+    languageSelect.value = uiLanguage;
+  }
 
   const radio = startupModeGroup.querySelector(`input[name="startupMode"][value="${startupMode}"]`);
   if (radio) radio.checked = true;
@@ -525,6 +1190,7 @@ function applyBrowserSettings(browser) {
   startupUrls = Array.isArray(b.startupUrls) ? b.startupUrls.filter(Boolean) : [];
   themeMode = b.theme === "dark" || b.theme === "light" ? b.theme : "light";
   applyTheme(themeMode);
+  setUiLanguage(resolveUiLanguage(b.language));
 }
 
 async function loadAppSettings() {
@@ -1096,7 +1762,7 @@ function renderHistoryList() {
   if (!items.length) {
     const empty = document.createElement("div");
     empty.className = "formHint";
-    empty.textContent = q ? "找不到符合的歷史紀錄。" : "尚無瀏覽歷史紀錄。";
+    empty.textContent = q ? t("history.empty.filtered") : t("history.empty");
     historyList.appendChild(empty);
     return;
   }
@@ -1144,7 +1810,7 @@ function updateStatusMeta() {
   const idx = tabs.findIndex((t) => t.id === activeTabId);
   const parts = [];
   if (idx >= 0) parts.push(`${idx + 1}/${tabs.length}`);
-  if (active.isLoading) parts.push("Loading…");
+  if (active.isLoading) parts.push(t("status.loading"));
   const zoomPct = Math.round(pageZoomFactor * 100);
   if (zoomPct !== 100) parts.push(`${zoomPct}%`);
   statusMetaEl.textContent = parts.join(" • ");
@@ -1158,12 +1824,12 @@ function updateLoadingUI() {
 
   if (isLoading) {
     reloadBtn.textContent = "✕";
-    reloadBtn.title = "Stop";
-    reloadBtn.setAttribute("aria-label", "Stop");
+    reloadBtn.title = t("nav.stop");
+    reloadBtn.setAttribute("aria-label", t("nav.stop"));
   } else {
     reloadBtn.textContent = "⟳";
-    reloadBtn.title = "Reload";
-    reloadBtn.setAttribute("aria-label", "Reload");
+    reloadBtn.title = t("nav.reload");
+    reloadBtn.setAttribute("aria-label", t("nav.reload"));
   }
   updateStatusMeta();
 }
@@ -1325,7 +1991,7 @@ function syncAiContext() {
     aiContextUrl.textContent = "";
     return;
   }
-  aiContextTitle.textContent = active.title || "Untitled";
+  aiContextTitle.textContent = active.title || t("tabs.untitled");
   aiContextUrl.textContent = active.url || "";
 }
 
@@ -1358,13 +2024,13 @@ function createTabElement(tab) {
 
   const titleEl = document.createElement("span");
   titleEl.className = "tabTitle";
-  titleEl.textContent = tab.title || "New Tab";
+  titleEl.textContent = tab.title || t("tabs.newTitle");
 
   const closeBtn = document.createElement("button");
   closeBtn.type = "button";
   closeBtn.className = "tabClose";
-  closeBtn.title = "Close tab";
-  closeBtn.setAttribute("aria-label", "Close tab");
+  closeBtn.title = t("tabs.close");
+  closeBtn.setAttribute("aria-label", t("tabs.close"));
   closeBtn.textContent = "×";
 
   closeBtn.addEventListener("click", (e) => {
@@ -1405,7 +2071,7 @@ function updateTabElement(tabId) {
   tab.tabEl.setAttribute("aria-selected", isActive ? "true" : "false");
   tab.tabEl.tabIndex = isActive ? 0 : -1;
 
-  tab.titleEl.textContent = tab.title || "New Tab";
+  tab.titleEl.textContent = tab.title || t("tabs.newTitle");
   tab.faviconEl.src = tab.favicon || DEFAULT_FAVICON;
 }
 
@@ -1492,7 +2158,7 @@ function createTab(initialUrl = homeUrl || DEFAULT_HOME_URL, { makeActive = true
   const tab = {
     id,
     url: initialUrl,
-    title: "New Tab",
+    title: t("tabs.newTitle"),
     favicon: null,
     isLoading: false,
     hoverUrl: "",
@@ -1639,8 +2305,51 @@ function renderPromptSelect(selectedId) {
   renderPromptShortcuts();
 }
 
-function getDefaultPrompts() {
-  return DEFAULT_PROMPTS.map((p) => ({ ...p }));
+function getDefaultPrompts(language = uiLanguage) {
+  const lang = resolveUiLanguage(language);
+  const seeded = DEFAULT_PROMPTS_BY_LANGUAGE[lang] || DEFAULT_PROMPTS_BY_LANGUAGE.en || [];
+  return seeded.map((p) => ({ ...p }));
+}
+
+function looksLikeDefaultPrompts(list, language) {
+  const clean = sanitizePromptsList(list);
+  const defaults = getDefaultPrompts(language);
+  if (!defaults.length) return false;
+  for (const def of defaults) {
+    const found = clean.find((p) => p.id === def.id);
+    if (!found) return false;
+    if (found.name !== def.name) return false;
+    if ((found.template || "") !== (def.template || "")) return false;
+  }
+  return true;
+}
+
+function syncDefaultPromptsForLanguageChange(list, fromLanguage, toLanguage) {
+  const clean = sanitizePromptsList(list);
+  const fromLang = resolveUiLanguage(fromLanguage);
+  const toLang = resolveUiLanguage(toLanguage);
+  const fromDefaults = getDefaultPrompts(fromLang);
+  const toDefaults = getDefaultPrompts(toLang);
+
+  const fromById = new Map(fromDefaults.map((p) => [p.id, p]));
+  const toById = new Map(toDefaults.map((p) => [p.id, p]));
+
+  const next = clean.map((p) => {
+    const target = toById.get(p.id);
+    if (!target) return p;
+    const prevDefault = fromById.get(p.id);
+    if (prevDefault && p.name === prevDefault.name && (p.template || "") === (prevDefault.template || "")) {
+      return { ...p, name: target.name, template: target.template };
+    }
+    return p;
+  });
+
+  const existingIds = new Set(next.map((p) => p.id));
+  for (const def of toDefaults) {
+    if (!existingIds.has(def.id)) next.push({ ...def });
+  }
+
+  return sanitizePromptsList(next);
 }
 
 function sanitizePromptItem(prompt) {
@@ -1671,19 +2380,25 @@ function loadPromptsFromStorage() {
     const raw = localStorage.getItem(PROMPTS_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    const list = Array.isArray(parsed) ? parsed : parsed && typeof parsed === "object" ? parsed.prompts : null;
+    if (Array.isArray(parsed)) {
+      return { language: null, prompts: sanitizePromptsList(parsed) };
+    }
+    if (!parsed || typeof parsed !== "object") return null;
+    const list = Array.isArray(parsed.prompts) ? parsed.prompts : null;
     if (!Array.isArray(list)) return null;
-    return sanitizePromptsList(list);
+    const languageRaw = typeof parsed.language === "string" ? parsed.language.trim() : "";
+    const language = languageRaw ? resolveUiLanguage(languageRaw) : null;
+    return { language, prompts: sanitizePromptsList(list) };
   }, null);
 }
 
 function persistPromptsToStorage(list) {
   const clean = sanitizePromptsList(list);
   try {
-    localStorage.setItem(PROMPTS_STORAGE_KEY, JSON.stringify({ version: 1, prompts: clean }));
+    localStorage.setItem(PROMPTS_STORAGE_KEY, JSON.stringify({ version: 1, language: uiLanguage, prompts: clean }));
     return true;
   } catch (err) {
-    window.aiBridge.showError(err?.message || "Failed to save prompts");
+    window.aiBridge.showError(err?.message || t("error.promptsSave"));
     return false;
   }
 }
@@ -1695,7 +2410,18 @@ async function persistPrompts() {
 async function loadPrompts(preferredId) {
   const stored = loadPromptsFromStorage();
   if (stored) {
-    prompts = stored;
+    prompts = stored.prompts;
+    promptsStorageLanguage = stored.language;
+    let fromLang = promptsStorageLanguage;
+    if (!fromLang) {
+      if (looksLikeDefaultPrompts(prompts, "zh-TW")) fromLang = "zh-TW";
+      else if (looksLikeDefaultPrompts(prompts, "es")) fromLang = "es";
+      else if (looksLikeDefaultPrompts(prompts, "en")) fromLang = "en";
+      else fromLang = uiLanguage;
+    }
+    prompts = syncDefaultPromptsForLanguageChange(prompts, fromLang, uiLanguage);
+    promptsStorageLanguage = uiLanguage;
+    persistPromptsToStorage(prompts);
   } else {
     let seeded = null;
     try {
@@ -1703,9 +2429,20 @@ async function loadPrompts(preferredId) {
       if (res?.ok && Array.isArray(res.prompts)) seeded = res.prompts;
     } catch {
     }
-    prompts = sanitizePromptsList(seeded && seeded.length ? seeded : getDefaultPrompts());
+    const seededClean = sanitizePromptsList(seeded && seeded.length ? seeded : []);
+    if (seededClean.length) {
+      prompts = uiLanguage !== "zh-TW" && looksLikeDefaultPrompts(seededClean, "zh-TW")
+        ? getDefaultPrompts(uiLanguage)
+        : seededClean;
+    } else {
+      prompts = getDefaultPrompts(uiLanguage);
+    }
+    prompts = syncDefaultPromptsForLanguageChange(prompts, uiLanguage, uiLanguage);
+    promptsStorageLanguage = uiLanguage;
     persistPromptsToStorage(prompts);
   }
+
+  hasLoadedPrompts = true;
 
   const desired = typeof preferredId === "string" ? preferredId : "";
   const preferred =
@@ -1724,11 +2461,10 @@ promptSelect.addEventListener("change", () => {
 });
 
 addPromptBtn.addEventListener("click", async () => {
-  const name = window.prompt("新 Prompt 名稱", "新 Prompt");
+  const name = window.prompt(t("prompts.add.title"), t("prompts.add.defaultName"));
   if (!name) return;
   const id = `custom_${Date.now()}`;
-  const templateSeed =
-    customPromptInput.value.trim() || "請輸入你的 prompt 模板：\n\n{{content}}";
+  const templateSeed = customPromptInput.value.trim() || t("prompts.add.defaultTemplate");
   prompts.push({ id, name: name.trim(), template: templateSeed });
   await persistPrompts();
   renderPromptSelect(id);
@@ -1752,7 +2488,7 @@ savePromptBtn.addEventListener("click", async () => {
 deletePromptBtn.addEventListener("click", async () => {
   const p = getSelectedPrompt();
   if (!p) return;
-  if (!confirm(`確定刪除 Prompt「${p.name}」？`)) return;
+  if (!confirm(t("prompts.delete.confirm", { name: p.name }))) return;
   prompts = prompts.filter((x) => x.id !== p.id);
   await persistPrompts();
   renderPromptSelect(prompts[0]?.id);
@@ -1760,7 +2496,7 @@ deletePromptBtn.addEventListener("click", async () => {
 });
 
 resetPromptsBtn.addEventListener("click", async () => {
-  if (!confirm("重置後將回到預設 prompts，確定？")) return;
+  if (!confirm(t("prompts.reset.confirm"))) return;
   prompts = getDefaultPrompts();
   await persistPrompts();
   renderPromptSelect(prompts.find((p) => p.id === "summary") ? "summary" : prompts[0]?.id);
@@ -1983,6 +2719,10 @@ themeSelect.addEventListener("change", async () => {
   await saveBrowserSettings({ theme: themeSelect.value });
 });
 
+languageSelect.addEventListener("change", async () => {
+  await saveBrowserSettings({ language: languageSelect.value });
+});
+
 startupModeGroup.addEventListener("change", async (e) => {
   const target = e.target;
   if (!target || target.name !== "startupMode") return;
@@ -2041,21 +2781,21 @@ searchEngineTemplateInput.addEventListener("keydown", (e) => {
 });
 
 clearHistoryBtn.addEventListener("click", () => {
-  if (!confirm("確定清除所有瀏覽紀錄？")) return;
+  if (!confirm(t("appSettings.privacy.clearHistoryConfirm"))) return;
   clearHistory();
 });
 
 historySearchInput.addEventListener("input", () => renderHistoryList());
 
 historyClearBtn.addEventListener("click", () => {
-  if (!confirm("確定清除所有瀏覽紀錄？")) return;
+  if (!confirm(t("appSettings.privacy.clearHistoryConfirm"))) return;
   clearHistory();
   renderHistoryList();
 });
 
 async function runChromeImport({ showHintEl = null } = {}) {
   const hintEl = showHintEl || importChromeStatus;
-  hintEl.textContent = "匯入中...";
+  hintEl.textContent = t("appSettings.import.status.importing");
   try {
     const res = await window.aiBridge.importChromePreferences();
     if (!res.ok) {
@@ -2065,7 +2805,9 @@ async function runChromeImport({ showHintEl = null } = {}) {
     }
     hasShownChromeImportModal = true;
     await loadAppSettings();
-    hintEl.textContent = res.sourcePath ? `已匯入：${res.sourcePath}` : "已匯入";
+    hintEl.textContent = res.sourcePath
+      ? t("appSettings.import.status.importedPath", { path: res.sourcePath })
+      : t("appSettings.import.status.imported");
     return true;
   } finally {
     // keep status text
@@ -2073,7 +2815,7 @@ async function runChromeImport({ showHintEl = null } = {}) {
 }
 
 importChromeBtn.addEventListener("click", async () => {
-  if (!confirm("確定從 Chrome 匯入設定？")) return;
+  if (!confirm(t("appSettings.import.confirm"))) return;
   await runChromeImport();
 });
 
@@ -2157,7 +2899,7 @@ function syncGeminiKeySaveState() {
   }
   const ok = isValidGeminiApiKey(key);
   saveGeminiKeyBtn.disabled = !ok;
-  setGeminiKeyError(ok ? "" : "API Key 格式不正確，請貼上完整 key（通常以 AIza... 開頭）。");
+  setGeminiKeyError(ok ? "" : t("aiSettings.gemini.keyError.invalid"));
 }
 
 async function loadAiSettings() {
@@ -2179,16 +2921,20 @@ async function loadAiSettings() {
 
   if (source === "stored") {
     const storageText =
-      format === "safeStorage" ? "已儲存（加密）" : format === "plain" ? "已儲存（明文）" : "已儲存";
+      format === "safeStorage"
+        ? t("aiSettings.gemini.keyStatus.savedEncrypted")
+        : format === "plain"
+          ? t("aiSettings.gemini.keyStatus.savedPlain")
+          : t("aiSettings.gemini.keyStatus.saved");
     geminiKeyStatus.textContent = storageText;
     clearGeminiKeyBtn.disabled = false;
   } else if (source === "env") {
-    geminiKeyStatus.textContent = "已設定（環境變數 GEMINI_API_KEY）";
+    geminiKeyStatus.textContent = t("aiSettings.gemini.keyStatus.env");
     clearGeminiKeyBtn.disabled = true;
   } else {
     geminiKeyStatus.textContent = encryptionAvailable
-      ? "尚未設定（可於此處加密儲存）"
-      : "尚未設定（此裝置無法加密，將以明文儲存）";
+      ? t("aiSettings.gemini.keyStatus.notSetEncryptedAvailable")
+      : t("aiSettings.gemini.keyStatus.notSetNoEncryption");
     clearGeminiKeyBtn.disabled = true;
   }
 
@@ -2221,7 +2967,7 @@ saveGeminiKeyBtn.addEventListener("click", async () => {
   }
   saveGeminiKeyBtn.disabled = true;
   const prevText = saveGeminiKeyBtn.textContent;
-  saveGeminiKeyBtn.textContent = "儲存中...";
+  saveGeminiKeyBtn.textContent = t("aiSettings.gemini.keySave.saving");
   try {
     const res = await window.aiBridge.setGeminiApiKey(key);
     if (!res.ok) {
@@ -2239,7 +2985,7 @@ saveGeminiKeyBtn.addEventListener("click", async () => {
 });
 
 clearGeminiKeyBtn.addEventListener("click", async () => {
-  if (!confirm("確定清除已儲存的 Gemini API Key？")) return;
+  if (!confirm(t("aiSettings.gemini.keyClearConfirm"))) return;
   clearGeminiKeyBtn.disabled = true;
   const res = await window.aiBridge.clearGeminiApiKey();
   if (!res.ok) {
@@ -2255,7 +3001,7 @@ async function refreshLocalModels() {
   if (!res.ok) {
     const opt = document.createElement("option");
     opt.value = DEFAULT_LOCAL_MODEL;
-    opt.textContent = `${DEFAULT_LOCAL_MODEL} (未下載/或未安裝 Ollama)`;
+    opt.textContent = t("aiSettings.localModel.missing", { model: DEFAULT_LOCAL_MODEL });
     localModelSelect.appendChild(opt);
     persistAiAssistantOptions();
     return;
@@ -2278,10 +3024,10 @@ pullModelBtn.addEventListener("click", async () => {
   const name = pullModelInput.value.trim();
   if (!name) return;
   pullModelBtn.disabled = true;
-  pullModelBtn.textContent = "下載中...";
+  pullModelBtn.textContent = t("aiSettings.pull.downloading");
   const res = await window.aiBridge.pullLocalModel(name);
   pullModelBtn.disabled = false;
-  pullModelBtn.textContent = "下載模型";
+  pullModelBtn.textContent = t("aiSettings.pull.button");
   if (!res.ok) {
     window.aiBridge.showError(res.error);
     return;
@@ -2294,18 +3040,18 @@ function setChatSending(sending) {
   chatSendBtn.disabled = isSendingChat;
   chatInput.disabled = isSendingChat;
   syncPromptShortcutsDisabledState();
-  chatSendBtn.textContent = isSendingChat ? "生成中..." : "送出";
+  chatSendBtn.textContent = isSendingChat ? t("ai.chat.sending") : t("ai.chat.send");
 }
 
 async function buildAiPageContext() {
   const webview = getActiveWebview();
-  if (!webview) throw new Error("No active tab");
+  if (!webview) throw new Error(t("error.noActiveTab"));
 
   const pageTitle = await webview.executeJavaScript("document.title");
   const pageUrl = safeCall(() => webview.getURL(), "");
 
   const contextMode = contextModeSelect.value;
-  let contextLabel = "目前網頁內容";
+  let contextLabel = t("ai.context.currentPage");
   let content = "";
 
   if (contextMode === "selection" || contextMode === "auto") {
@@ -2314,15 +3060,15 @@ async function buildAiPageContext() {
     );
     const selectedText = String(selection || "").trim();
     if (selectedText) {
-      contextLabel = "選取文字";
+      contextLabel = t("ai.context.selection");
       content = selectedText;
     } else if (contextMode === "selection") {
-      throw new Error("尚未選取文字：請先在頁面上選取一段文字，或改用「整頁文字」模式。");
+      throw new Error(t("ai.error.selectionMissing"));
     }
   }
 
   if (!content) {
-    contextLabel = "目前網頁內容";
+    contextLabel = t("ai.context.currentPage");
     content = await webview.executeJavaScript("document.body ? document.body.innerText : ''");
   }
 
@@ -2335,18 +3081,18 @@ async function buildAiPageContext() {
 }
 
 function buildAiSystemPrompt({ pageTitle, pageUrl, contextLabel, pageContent }) {
-  return "你是使用者的瀏覽器 AI 助手。請根據使用者提供的網頁上下文回答問題。";
+  return t("ai.systemPrompt");
 }
 
 function buildAiContextBlock({ pageTitle, pageUrl, contextLabel, pageContent }) {
   const title = String(pageTitle || "").trim();
   const url = String(pageUrl || "").trim();
-  const label = String(contextLabel || "").trim() || "目前網頁內容";
+  const label = String(contextLabel || "").trim() || t("ai.context.currentPage");
   const content = String(pageContent || "").trim();
 
   const chunks = [];
-  if (title) chunks.push(`【頁面標題】${title}`);
-  if (url) chunks.push(`【網址】${url}`);
+  if (title) chunks.push(`【${t("ai.context.pageTitle")}】${title}`);
+  if (url) chunks.push(`【${t("ai.context.url")}】${url}`);
   if (content) chunks.push(`【${label}】\n${content}`);
   return chunks.join("\n\n").trim();
 }
@@ -2356,7 +3102,7 @@ function buildPromptInstructionFromTemplate(template, { pageTitle, pageUrl, cont
   if (!text) return "";
   const title = String(pageTitle || "");
   const url = String(pageUrl || "");
-  const note = `（${String(contextLabel || "目前網頁內容")} 已附在上下文）`;
+  const note = t("ai.context.attachedNote", { label: String(contextLabel || t("ai.context.currentPage")) });
   text = text.replaceAll("{{title}}", title).replaceAll("{{url}}", url);
   if (text.includes("{{content}}")) {
     text = text.replaceAll("{{content}}", note);
@@ -2390,8 +3136,12 @@ async function sendAiChatMessage({ displayText, buildUserMessage }) {
   if (!shown) return;
   if (isSendingChat) return;
 
-  const userMsg = createAiChatMessage({ role: "user", meta: "你", text: shown });
-  const assistantMsg = createAiChatMessage({ role: "assistant", meta: "AI", text: "生成中..." });
+  const userMsg = createAiChatMessage({ role: "user", meta: t("ai.meta.user"), text: shown });
+  const assistantMsg = createAiChatMessage({
+    role: "assistant",
+    meta: t("ai.meta.assistant"),
+    text: t("ai.chat.sending")
+  });
   setChatSending(true);
 
   let didAppendUser = false;
@@ -2415,7 +3165,7 @@ async function sendAiChatMessage({ displayText, buildUserMessage }) {
     const aiText = typeof built === "string" ? built : built && typeof built === "object" ? built.ai : "";
     const userMessage = String(historyText || "").trim();
     const aiMessage = String(aiText || "").trim();
-    if (!aiMessage) throw new Error("Empty prompt");
+    if (!aiMessage) throw new Error(t("error.emptyPrompt"));
 
     if (userMessage && userMessage !== shown) {
       userMsg.contentEl.textContent = userMessage;
@@ -2429,7 +3179,13 @@ async function sendAiChatMessage({ displayText, buildUserMessage }) {
 
     const now = Date.now();
     userContentForHistory = userMessage || shown;
-    aiConversation.push({ role: "user", meta: "你", content: userContentForHistory, ts: now, skipContext: false });
+    aiConversation.push({
+      role: "user",
+      meta: t("ai.meta.user"),
+      content: userContentForHistory,
+      ts: now,
+      skipContext: false
+    });
     didAppendUser = true;
 
     const conv = getActiveAiConversationRecord();
@@ -2443,9 +3199,10 @@ async function sendAiChatMessage({ displayText, buildUserMessage }) {
     ];
 
     const res = await window.aiBridge.generate({ provider, model, messages, prompt: aiMessage });
-    if (!res.ok) throw new Error(res.error || "AI error");
+    if (!res.ok) throw new Error(res.error || t("error.aiGeneric"));
 
-    const assistantMeta = `AI · ${provider === "local" ? "Local" : "Gemini"} · ${model}`;
+    const providerLabel = provider === "local" ? t("ai.meta.provider.local") : t("ai.meta.provider.gemini");
+    const assistantMeta = `${t("ai.meta.assistant")} · ${providerLabel} · ${model}`;
     assistantMsg.metaEl.textContent = assistantMeta;
     assistantMsg.contentEl.className = "aiMarkdown";
     assistantMsg.contentEl.innerHTML = renderAiMarkdownToSanitizedHtml(res.text);
@@ -2462,13 +3219,14 @@ async function sendAiChatMessage({ displayText, buildUserMessage }) {
     persistAiChatStore();
   } catch (err) {
     const message = String(err?.message || err);
-    assistantMsg.metaEl.textContent = "AI · Error";
+    const errorMeta = `${t("ai.meta.assistant")} · ${t("ai.meta.error")}`;
+    assistantMsg.metaEl.textContent = errorMeta;
     assistantMsg.contentEl.className = "aiMsgText";
     assistantMsg.contentEl.textContent = message;
     if (didAppendUser) {
       const conv = getActiveAiConversationRecord();
       const ts = Date.now();
-      aiConversation.push({ role: "assistant", meta: "AI · Error", content: message, ts, skipContext: true });
+      aiConversation.push({ role: "assistant", meta: errorMeta, content: message, ts, skipContext: true });
       if (conv) conv.updatedAt = ts;
       persistAiChatStore();
     }
@@ -2655,7 +3413,7 @@ window.aiBridge.onMenuCommand((msg) => {
     return;
   }
   if (command === "clearHistory") {
-    if (!confirm("確定清除所有瀏覽紀錄？")) return;
+    if (!confirm(t("appSettings.privacy.clearHistoryConfirm"))) return;
     clearHistory();
     return;
   }
@@ -2667,7 +3425,7 @@ window.aiBridge.onMenuCommand((msg) => {
     safeCall(
       () =>
         webview.print({ printBackground: true }, (success, failureReason) => {
-          if (!success) window.aiBridge.showError(failureReason || "Print failed");
+          if (!success) window.aiBridge.showError(failureReason || t("error.printFailed"));
         }),
       null
     );
@@ -2691,7 +3449,7 @@ window.aiBridge.onMenuCommand((msg) => {
     return;
   }
   if (command === "findInPage") {
-    const q = prompt("在頁面中搜尋", "");
+    const q = prompt(t("findInPage.prompt"), "");
     const query = String(q || "").trim();
     if (!query) return;
     safeCall(() => webview.stopFindInPage("clearSelection"), null);

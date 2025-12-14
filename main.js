@@ -6,6 +6,28 @@ const { existsSync } = require("fs");
 const { spawn, spawnSync } = require("child_process");
 
 let mainWindow;
+let currentUiLanguage = "en";
+
+const SUPPORTED_UI_LANGUAGES = ["en", "es", "zh-TW"];
+
+function getOsLocale() {
+  try {
+    return app.getLocale();
+  } catch {
+    return "";
+  }
+}
+
+function resolveUiLanguage(input) {
+  const raw = String(input || "").trim();
+  if (!raw) return "en";
+  const lower = raw.toLowerCase().replaceAll("_", "-");
+  if (lower === "en" || lower.startsWith("en-")) return "en";
+  if (lower === "es" || lower.startsWith("es-")) return "es";
+  if (lower === "zh-tw" || lower.startsWith("zh-tw-")) return "zh-TW";
+  if (lower.startsWith("zh-") || lower === "zh") return "zh-TW";
+  return "en";
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -33,6 +55,160 @@ function dispatchMenuCommand(command, payload) {
   win.webContents.send("menu:command", { command, payload });
 }
 
+const MENU_I18N = {
+  en: {
+    file: "File",
+    edit: "Edit",
+    view: "View",
+    history: "History",
+    settings: "Settings",
+    window: "Window",
+    help: "Help",
+    preferencesEllipsis: "Preferences…",
+    settingsEllipsis: "Settings…",
+    newTab: "New Tab",
+    newWindow: "New Window",
+    openLocationEllipsis: "Open Location…",
+    printEllipsis: "Print…",
+    closeTab: "Close Tab",
+    closeWindow: "Close Window",
+    undo: "Undo",
+    redo: "Redo",
+    cut: "Cut",
+    copy: "Copy",
+    paste: "Paste",
+    pasteAndMatchStyle: "Paste and Match Style",
+    delete: "Delete",
+    selectAll: "Select All",
+    findInPageEllipsis: "Find in Page…",
+    back: "Back",
+    forward: "Forward",
+    reload: "Reload",
+    forceReload: "Force Reload",
+    actualSize: "Actual Size",
+    zoomIn: "Zoom In",
+    zoomOut: "Zoom Out",
+    toggleFullscreen: "Toggle Full Screen",
+    toggleDevTools: "Toggle Developer Tools",
+    toggleAiAssistant: "Toggle AI Assistant",
+    showHistory: "Show History",
+    clearBrowsingDataEllipsis: "Clear Browsing Data…",
+    learnMore: "Learn More"
+  },
+  "zh-TW": {
+    file: "檔案",
+    edit: "編輯",
+    view: "檢視",
+    history: "歷史紀錄",
+    settings: "設定",
+    window: "視窗",
+    help: "說明",
+    preferencesEllipsis: "偏好設定…",
+    settingsEllipsis: "設定…",
+    newTab: "新增分頁",
+    newWindow: "新增視窗",
+    openLocationEllipsis: "前往網址…",
+    printEllipsis: "列印…",
+    closeTab: "關閉分頁",
+    closeWindow: "關閉視窗",
+    undo: "復原",
+    redo: "重做",
+    cut: "剪下",
+    copy: "複製",
+    paste: "貼上",
+    pasteAndMatchStyle: "貼上並符合樣式",
+    delete: "刪除",
+    selectAll: "全選",
+    findInPageEllipsis: "在頁面中尋找…",
+    back: "上一頁",
+    forward: "下一頁",
+    reload: "重新載入",
+    forceReload: "強制重新載入",
+    actualSize: "實際大小",
+    zoomIn: "放大",
+    zoomOut: "縮小",
+    toggleFullscreen: "切換全螢幕",
+    toggleDevTools: "切換開發者工具",
+    toggleAiAssistant: "切換 AI Assistant",
+    showHistory: "顯示歷史紀錄",
+    clearBrowsingDataEllipsis: "清除瀏覽資料…",
+    learnMore: "了解更多"
+  },
+  es: {
+    file: "Archivo",
+    edit: "Editar",
+    view: "Ver",
+    history: "Historial",
+    settings: "Configuración",
+    window: "Ventana",
+    help: "Ayuda",
+    preferencesEllipsis: "Preferencias…",
+    settingsEllipsis: "Configuración…",
+    newTab: "Nueva pestaña",
+    newWindow: "Nueva ventana",
+    openLocationEllipsis: "Abrir ubicación…",
+    printEllipsis: "Imprimir…",
+    closeTab: "Cerrar pestaña",
+    closeWindow: "Cerrar ventana",
+    undo: "Deshacer",
+    redo: "Rehacer",
+    cut: "Cortar",
+    copy: "Copiar",
+    paste: "Pegar",
+    pasteAndMatchStyle: "Pegar y adaptar estilo",
+    delete: "Eliminar",
+    selectAll: "Seleccionar todo",
+    findInPageEllipsis: "Buscar en la página…",
+    back: "Atrás",
+    forward: "Adelante",
+    reload: "Recargar",
+    forceReload: "Forzar recarga",
+    actualSize: "Tamaño real",
+    zoomIn: "Acercar",
+    zoomOut: "Alejar",
+    toggleFullscreen: "Pantalla completa",
+    toggleDevTools: "Herramientas de desarrollador",
+    toggleAiAssistant: "Alternar asistente de IA",
+    showHistory: "Mostrar historial",
+    clearBrowsingDataEllipsis: "Borrar datos de navegación…",
+    learnMore: "Más información"
+  }
+};
+
+const APP_I18N = {
+  en: {
+    errorOccurred: "An error occurred",
+    chromePrefsNotFound:
+      "Could not find Chrome Preferences file (please make sure Chrome or Chromium is installed).",
+    chromePrefsReadFailed: ({ reason } = {}) => `Could not read Chrome Preferences: ${String(reason || "")}`
+  },
+  "zh-TW": {
+    errorOccurred: "發生錯誤",
+    chromePrefsNotFound: "找不到 Chrome Preferences 檔案（請確認已安裝 Chrome 或 Chromium）。",
+    chromePrefsReadFailed: ({ reason } = {}) => `無法讀取 Chrome Preferences：${String(reason || "")}`
+  },
+  es: {
+    errorOccurred: "Se produjo un error",
+    chromePrefsNotFound:
+      "No se pudo encontrar el archivo de preferencias de Chrome (asegúrate de que Chrome o Chromium esté instalado).",
+    chromePrefsReadFailed: ({ reason } = {}) => `No se pudieron leer las preferencias de Chrome: ${String(reason || "")}`
+  }
+};
+
+function tMenu(key) {
+  const lang = SUPPORTED_UI_LANGUAGES.includes(currentUiLanguage) ? currentUiLanguage : "en";
+  return MENU_I18N[lang]?.[key] || MENU_I18N.en[key] || String(key);
+}
+
+function tApp(key, params) {
+  const lang = SUPPORTED_UI_LANGUAGES.includes(currentUiLanguage) ? currentUiLanguage : "en";
+  const dict = APP_I18N[lang] || APP_I18N.en;
+  const fallback = APP_I18N.en;
+  const value = dict?.[key] ?? fallback?.[key] ?? String(key);
+  if (typeof value === "function") return value(params || {});
+  return String(value);
+}
+
 function buildAppMenu() {
   const isMac = process.platform === "darwin";
 
@@ -45,7 +221,7 @@ function buildAppMenu() {
               { role: "about" },
               { type: "separator" },
               {
-                label: "Settings…",
+                label: tMenu("preferencesEllipsis"),
                 accelerator: "Command+,",
                 click: () => dispatchMenuCommand("openSettings")
               },
@@ -62,37 +238,37 @@ function buildAppMenu() {
         ]
       : []),
     {
-      label: "File",
+      label: tMenu("file"),
       submenu: [
         {
-          label: "New Tab",
+          label: tMenu("newTab"),
           accelerator: "CmdOrCtrl+T",
           click: () => dispatchMenuCommand("newTab")
         },
         {
-          label: "New Window",
+          label: tMenu("newWindow"),
           accelerator: "CmdOrCtrl+N",
           click: () => createWindow()
         },
         { type: "separator" },
         {
-          label: "Open Location…",
+          label: tMenu("openLocationEllipsis"),
           accelerator: "CmdOrCtrl+L",
           click: () => dispatchMenuCommand("focusAddressBar")
         },
         {
-          label: "Print…",
+          label: tMenu("printEllipsis"),
           accelerator: "CmdOrCtrl+P",
           click: () => dispatchMenuCommand("print")
         },
         { type: "separator" },
         {
-          label: "Close Tab",
+          label: tMenu("closeTab"),
           accelerator: "CmdOrCtrl+W",
           click: () => dispatchMenuCommand("closeTab")
         },
         {
-          label: "Close Window",
+          label: tMenu("closeWindow"),
           accelerator: isMac ? "Shift+Command+W" : "Alt+F4",
           click: () => getActiveWindow()?.close()
         },
@@ -100,86 +276,86 @@ function buildAppMenu() {
       ]
     },
     {
-      label: "Edit",
+      label: tMenu("edit"),
       submenu: [
-        { role: "undo" },
-        { role: "redo" },
+        { label: tMenu("undo"), role: "undo" },
+        { label: tMenu("redo"), role: "redo" },
         { type: "separator" },
-        { role: "cut" },
-        { role: "copy" },
-        { role: "paste" },
-        ...(isMac ? [{ role: "pasteAndMatchStyle" }] : []),
-        { role: "delete" },
-        { role: "selectAll" },
+        { label: tMenu("cut"), role: "cut" },
+        { label: tMenu("copy"), role: "copy" },
+        { label: tMenu("paste"), role: "paste" },
+        ...(isMac ? [{ label: tMenu("pasteAndMatchStyle"), role: "pasteAndMatchStyle" }] : []),
+        { label: tMenu("delete"), role: "delete" },
+        { label: tMenu("selectAll"), role: "selectAll" },
         { type: "separator" },
         {
-          label: "Find in Page…",
+          label: tMenu("findInPageEllipsis"),
           accelerator: "CmdOrCtrl+F",
           click: () => dispatchMenuCommand("findInPage")
         }
       ]
     },
     {
-      label: "View",
+      label: tMenu("view"),
       submenu: [
         {
-          label: "Back",
+          label: tMenu("back"),
           accelerator: isMac ? "Command+[" : "Alt+Left",
           click: () => dispatchMenuCommand("goBack")
         },
         {
-          label: "Forward",
+          label: tMenu("forward"),
           accelerator: isMac ? "Command+]" : "Alt+Right",
           click: () => dispatchMenuCommand("goForward")
         },
         { type: "separator" },
         {
-          label: "Reload",
+          label: tMenu("reload"),
           accelerator: "CmdOrCtrl+R",
           click: () => dispatchMenuCommand("reload")
         },
         {
-          label: "Force Reload",
+          label: tMenu("forceReload"),
           accelerator: "Shift+CmdOrCtrl+R",
           click: () => dispatchMenuCommand("forceReload")
         },
         { type: "separator" },
         {
-          label: "Actual Size",
+          label: tMenu("actualSize"),
           accelerator: "CmdOrCtrl+0",
           click: () => dispatchMenuCommand("zoomReset")
         },
         {
-          label: "Zoom In",
+          label: tMenu("zoomIn"),
           accelerator: "CmdOrCtrl+=",
           click: () => dispatchMenuCommand("zoomIn")
         },
         {
-          label: "Zoom Out",
+          label: tMenu("zoomOut"),
           accelerator: "CmdOrCtrl+-",
           click: () => dispatchMenuCommand("zoomOut")
         },
         { type: "separator" },
-        { role: "togglefullscreen" },
-        { role: "toggleDevTools" },
+        { label: tMenu("toggleFullscreen"), role: "togglefullscreen" },
+        { label: tMenu("toggleDevTools"), role: "toggleDevTools" },
         { type: "separator" },
         {
-          label: "Toggle AI Assistant",
+          label: tMenu("toggleAiAssistant"),
           accelerator: "CmdOrCtrl+Shift+A",
           click: () => dispatchMenuCommand("toggleAiAssistant")
         }
       ]
     },
     {
-      label: "History",
+      label: tMenu("history"),
       submenu: [
         {
-          label: "Show History",
+          label: tMenu("showHistory"),
           accelerator: "CmdOrCtrl+Y",
           click: () => dispatchMenuCommand("openHistory")
         },
         {
-          label: "Clear Browsing Data…",
+          label: tMenu("clearBrowsingDataEllipsis"),
           accelerator: "Shift+CmdOrCtrl+Delete",
           click: () => dispatchMenuCommand("clearHistory")
         }
@@ -189,10 +365,10 @@ function buildAppMenu() {
       ? []
       : [
           {
-            label: "Settings",
+            label: tMenu("settings"),
             submenu: [
               {
-                label: "Preferences…",
+                label: tMenu("preferencesEllipsis"),
                 accelerator: "CmdOrCtrl+,",
                 click: () => dispatchMenuCommand("openSettings")
               }
@@ -200,7 +376,7 @@ function buildAppMenu() {
           }
         ]),
     {
-      label: "Window",
+      label: tMenu("window"),
       submenu: [
         { role: "minimize" },
         { role: "zoom" },
@@ -209,7 +385,7 @@ function buildAppMenu() {
           : [
               { type: "separator" },
               {
-                label: "Close Window",
+                label: tMenu("closeWindow"),
                 accelerator: "Alt+F4",
                 click: () => getActiveWindow()?.close()
               }
@@ -220,7 +396,7 @@ function buildAppMenu() {
       role: "help",
       submenu: [
         {
-          label: "Learn More",
+          label: tMenu("learnMore"),
           click: () => shell.openExternal("https://www.electronjs.org")
         }
       ]
@@ -231,7 +407,9 @@ function buildAppMenu() {
   Menu.setApplicationMenu(menu);
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  const settings = await loadSettings();
+  currentUiLanguage = resolveUiLanguage(settings?.browser?.language || getOsLocale());
   createWindow();
   buildAppMenu();
   app.on("activate", () => {
@@ -275,6 +453,7 @@ async function readJson(filePath) {
 }
 
 function sanitizeSettings(raw) {
+  const defaultLanguage = resolveUiLanguage(getOsLocale());
   const next = {
     version: 1,
     hasShownChromeImportModal: false,
@@ -284,7 +463,8 @@ function sanitizeSettings(raw) {
       searchEngineTemplate: DEFAULT_SEARCH_TEMPLATE,
       startupMode: "home",
       startupUrls: [],
-      theme: "light"
+      theme: "light",
+      language: defaultLanguage
     },
     geminiModel: DEFAULT_GEMINI_MODEL,
     geminiApiKeyData: null,
@@ -315,6 +495,9 @@ function sanitizeSettings(raw) {
       next.browser.theme = browser.theme;
     } else if (browser.theme === "system") {
       next.browser.theme = nativeTheme.shouldUseDarkColors ? "dark" : "light";
+    }
+    if (typeof browser.language === "string" && browser.language.trim()) {
+      next.browser.language = resolveUiLanguage(browser.language);
     }
   }
 
@@ -396,6 +579,7 @@ function mergeBrowserSettings(currentBrowser, patch) {
   if (Array.isArray(input.startupUrls)) next.startupUrls = sanitizeStartupUrls(input.startupUrls);
   if (input.theme === "dark" || input.theme === "light") next.theme = input.theme;
   else if (input.theme === "system") next.theme = nativeTheme.shouldUseDarkColors ? "dark" : "light";
+  if (typeof input.language === "string") next.language = resolveUiLanguage(input.language);
 
   return sanitizeSettings({ browser: next }).browser;
 }
@@ -502,14 +686,14 @@ function inferSearchTemplateFromChromePrefs(prefs) {
 async function importChromePreferences() {
   const prefsPath = await findExistingChromePreferencesPath();
   if (!prefsPath) {
-    return { ok: false, error: "找不到 Chrome Preferences 檔案（請確認已安裝 Chrome 或 Chromium）。" };
+    return { ok: false, error: tApp("chromePrefsNotFound") };
   }
 
   let prefs;
   try {
     prefs = await readJson(prefsPath);
   } catch (err) {
-    return { ok: false, error: `無法讀取 Chrome Preferences：${String(err?.message || err)}` };
+    return { ok: false, error: tApp("chromePrefsReadFailed", { reason: String(err?.message || err) }) };
   }
 
   const homepageIsNewTab = Boolean(prefs?.homepage_is_newtabpage);
@@ -907,8 +1091,14 @@ ipcMain.handle("appSettings:get", async () => {
 ipcMain.handle("appSettings:setBrowser", async (_e, browserPatch) => {
   try {
     const settings = await loadSettings();
+    const prevLang = resolveUiLanguage(settings?.browser?.language || getOsLocale());
     settings.browser = mergeBrowserSettings(settings.browser, browserPatch);
     await saveSettings(settings);
+    const nextLang = resolveUiLanguage(settings?.browser?.language || getOsLocale());
+    if (nextLang !== prevLang) {
+      currentUiLanguage = nextLang;
+      buildAppMenu();
+    }
     return { ok: true, browser: settings.browser };
   } catch (err) {
     log("appSettings:setBrowser error", err?.message || err);
@@ -967,7 +1157,7 @@ ipcMain.handle("app:showError", async (_e, message) => {
     await dialog.showMessageBox(mainWindow, {
       type: "error",
       title: "Sting AI Browser",
-      message: "發生錯誤",
+      message: tApp("errorOccurred"),
       detail: String(message || "")
     });
     return { ok: true };
