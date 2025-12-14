@@ -5,7 +5,7 @@ const fs = require("fs/promises");
 const { existsSync } = require("fs");
 const { spawn, spawnSync } = require("child_process");
 
-const APP_DISPLAY_NAME = "stingtaoAI browser";
+const APP_DISPLAY_NAME = "stingtaoAI";
 
 try {
   app.setName(APP_DISPLAY_NAME);
@@ -52,6 +52,37 @@ function createWindow() {
       webviewTag: true
     }
   });
+
+  try {
+    const ses = mainWindow.webContents.session;
+    if (ses && typeof ses.setPermissionRequestHandler === "function") {
+      ses.setPermissionRequestHandler((webContents, permission, callback, details) => {
+        try {
+          if (permission !== "media") return callback(false);
+          const isMainUi = webContents === mainWindow.webContents;
+          const mediaTypes = Array.isArray(details?.mediaTypes) ? details.mediaTypes : [];
+          const wantsAudio = mediaTypes.includes("audio");
+          callback(Boolean(isMainUi && wantsAudio));
+        } catch {
+          callback(false);
+        }
+      });
+    }
+    if (ses && typeof ses.setPermissionCheckHandler === "function") {
+      ses.setPermissionCheckHandler((webContents, permission, _origin, details) => {
+        try {
+          if (permission !== "media") return false;
+          const isMainUi = webContents === mainWindow.webContents;
+          const mediaTypes = Array.isArray(details?.mediaTypes) ? details.mediaTypes : [];
+          const wantsAudio = mediaTypes.includes("audio");
+          return Boolean(isMainUi && wantsAudio);
+        } catch {
+          return false;
+        }
+      });
+    }
+  } catch {
+  }
 
   mainWindow.loadFile(path.join(__dirname, "renderer", "index.html"));
 }
@@ -437,6 +468,7 @@ const DEFAULT_HOME_PAGE = "https://www.google.com";
 const DEFAULT_SEARCH_TEMPLATE = "https://www.google.com/search?q={query}";
 const DEFAULT_USER_AGENT_NAME = "stingtaoAI";
 const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+const DEFAULT_GEMINI_VOICE_MODEL = "gemini-2.5-flash-lite";
 const GEMINI_MODELS = [
   "gemini-2.5-pro",
   "gemini-2.5-flash",
@@ -446,6 +478,16 @@ const GEMINI_MODELS = [
   "gemini-2.5-flash-native-audio-preview-12-2025",
   "gemini-2.5-flash-preview-tts"
 ];
+const GEMINI_VOICE_MODELS = GEMINI_MODELS.filter((m) => m !== "gemini-2.5-flash-preview-tts");
+
+const GEMINI_AUDIO_MIME_TYPES = new Set([
+  "audio/wav",
+  "audio/wave",
+  "audio/mpeg",
+  "audio/webm",
+  "audio/ogg",
+  "audio/mp4"
+]);
 
 function log(...args) {
   console.log("[sting-ai]", ...args);
@@ -966,6 +1008,46 @@ async function geminiChat({ model, messages }) {
   return parts.map((p) => p.text).join("");
 }
 
+function isAllowedGeminiAudioMimeType(mimeType) {
+  const key = String(mimeType || "").trim().toLowerCase();
+  if (!key) return false;
+  return GEMINI_AUDIO_MIME_TYPES.has(key);
+}
+
+async function geminiTranscribeAudio({ model, mimeType, dataBase64 }) {
+  const apiKey = await getGeminiApiKey();
+  if (!apiKey) {
+    throw new Error("Gemini API Key not set. Please add it in Settings or set GEMINI_API_KEY.");
+  }
+  const url =
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text:
+                "Transcribe this audio to plain text. Return only the transcript (no Markdown, no extra commentary)."
+            },
+            { inline_data: { mime_type: mimeType, data: dataBase64 } }
+          ]
+        }
+      ]
+    })
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Gemini error ${res.status}`);
+  }
+  const json = await res.json();
+  const parts = json?.candidates?.[0]?.content?.parts ?? [];
+  return parts.map((p) => p.text).join("").trim();
+}
+
 ipcMain.handle("local:listModels", async () => {
   return ollamaListModels();
 });
@@ -996,6 +1078,27 @@ ipcMain.handle("ai:generate", async (_e, payload) => {
     return { ok: false, error: "Unknown provider" };
   } catch (err) {
     log("ai:generate error", err?.message || err);
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("ai:transcribeAudio", async (_e, payload) => {
+  const start = Date.now();
+  try {
+    const modelRaw = String(payload?.model || "").trim();
+    const model = GEMINI_VOICE_MODELS.includes(modelRaw) ? modelRaw : DEFAULT_GEMINI_VOICE_MODEL;
+    const audio = payload?.audio && typeof payload.audio === "object" ? payload.audio : {};
+    const mimeType = String(audio.mimeType || audio.mime_type || "").trim().toLowerCase();
+    const dataBase64 = String(audio.data || "").trim();
+    if (!mimeType || !isAllowedGeminiAudioMimeType(mimeType)) throw new Error("Unsupported audio mimeType");
+    if (!dataBase64) throw new Error("Missing audio data");
+    if (dataBase64.length > 8_000_000) throw new Error("Audio payload too large");
+    log("ai:transcribeAudio start", { model, mimeType, bytes: dataBase64.length });
+    const text = await geminiTranscribeAudio({ model, mimeType, dataBase64 });
+    log("ai:transcribeAudio done", Date.now() - start, "ms");
+    return { ok: true, text };
+  } catch (err) {
+    log("ai:transcribeAudio error", err?.message || err);
     return { ok: false, error: String(err?.message || err) };
   }
 });

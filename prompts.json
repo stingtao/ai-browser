@@ -2,12 +2,13 @@
   {
     "id": "summary",
     "name": "摘要本頁文件",
-    "template": "請用繁體中文摘要以下網頁內容，抓出重點、關鍵數據與結論：\n\n{{content}}"
+    "template": "請用繁體中文摘要以下網頁內容，抓出重點、關鍵數據與結論：",
+    "includePageContent": true
   },
   {
     "id": "painpoints_ideas",
     "name": "抓出痛點/需求與商業 idea",
-    "template": "請分析以下網頁內容，列出使用者痛點與需求，並提出 3-5 個可發展成商業 idea 的建議（含目標客群/價值主張/可行性）：\n\n{{content}}"
+    "template": "請分析以下網頁內容，列出使用者痛點與需求，並提出 3-5 個可發展成商業 idea 的建議（含目標客群/價值主張/可行性）：",
+    "includePageContent": true
   }
 ]
-

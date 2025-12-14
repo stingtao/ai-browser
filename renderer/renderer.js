@@ -58,6 +58,12 @@ const UI_I18N = {
     "ai.chat.placeholder": "Type a message…",
     "ai.chat.send": "Send",
     "ai.chat.sending": "Generating…",
+    "ai.voice.button": "Voice input",
+    "ai.voice.listening": "Listening…",
+    "ai.voice.transcribing": "Transcribing…",
+    "ai.voice.error.notSupported": "Voice input is not supported in this environment.",
+    "ai.voice.error.micPermission": "Microphone permission denied.",
+    "ai.voice.error.noGeminiKey": "Gemini API key not set. Open AI settings to add it.",
     "ai.meta.user": "You",
     "ai.meta.assistant": "AI",
     "ai.meta.error": "Error",
@@ -121,11 +127,17 @@ const UI_I18N = {
     "aiSettings.fontSize.4": "Large",
     "aiSettings.fontSize.5": "Largest",
 
+    "aiSettings.section.voice": "Voice input",
+    "aiSettings.voice.model": "Model",
+    "aiSettings.voice.hint": "Requires Gemini API key; used for speech-to-text.",
+
     "aiSettings.section.prompts": "Prompts",
     "aiSettings.prompt.label": "Prompt",
     "aiSettings.prompt.name": "Name",
     "aiSettings.prompt.namePlaceholder": "Prompt name",
     "aiSettings.prompt.id": "ID",
+    "aiSettings.prompt.pageContent": "Page content",
+    "aiSettings.prompt.includeContent": "Attach current page content",
     "aiSettings.prompt.add": "Add",
     "aiSettings.prompt.save": "Save",
     "aiSettings.prompt.delete": "Delete",
@@ -134,7 +146,7 @@ const UI_I18N = {
 
     "prompts.add.title": "New prompt name",
     "prompts.add.defaultName": "New prompt",
-    "prompts.add.defaultTemplate": "Write your prompt template here:\n\n{{content}}",
+    "prompts.add.defaultTemplate": "Write your prompt template here…",
     "prompts.delete.confirm": "Delete prompt \"{{name}}\"?",
     "prompts.reset.confirm": "Reset prompts back to defaults?",
 
@@ -243,6 +255,12 @@ const UI_I18N = {
     "ai.chat.placeholder": "Escribe un mensaje…",
     "ai.chat.send": "Enviar",
     "ai.chat.sending": "Generando…",
+    "ai.voice.button": "Entrada de voz",
+    "ai.voice.listening": "Escuchando…",
+    "ai.voice.transcribing": "Transcribiendo…",
+    "ai.voice.error.notSupported": "La entrada de voz no es compatible con este entorno.",
+    "ai.voice.error.micPermission": "Permiso de micrófono denegado.",
+    "ai.voice.error.noGeminiKey": "La clave de Gemini API no está configurada. Abre ajustes de IA para añadirla.",
     "ai.meta.user": "Tú",
     "ai.meta.assistant": "IA",
     "ai.meta.error": "Error",
@@ -306,11 +324,17 @@ const UI_I18N = {
     "aiSettings.fontSize.4": "Grande",
     "aiSettings.fontSize.5": "Más grande",
 
+    "aiSettings.section.voice": "Entrada de voz",
+    "aiSettings.voice.model": "Modelo",
+    "aiSettings.voice.hint": "Requiere una clave de Gemini API; se usa para voz a texto.",
+
     "aiSettings.section.prompts": "Prompts",
     "aiSettings.prompt.label": "Prompt",
     "aiSettings.prompt.name": "Nombre",
     "aiSettings.prompt.namePlaceholder": "Nombre del prompt",
     "aiSettings.prompt.id": "ID",
+    "aiSettings.prompt.pageContent": "Contenido de la página",
+    "aiSettings.prompt.includeContent": "Incluir contenido de la página actual",
     "aiSettings.prompt.add": "Añadir",
     "aiSettings.prompt.save": "Guardar",
     "aiSettings.prompt.delete": "Eliminar",
@@ -319,7 +343,7 @@ const UI_I18N = {
 
     "prompts.add.title": "Nombre del nuevo prompt",
     "prompts.add.defaultName": "Nuevo prompt",
-    "prompts.add.defaultTemplate": "Escribe aquí la plantilla del prompt:\n\n{{content}}",
+    "prompts.add.defaultTemplate": "Escribe aquí la plantilla del prompt…",
     "prompts.delete.confirm": "¿Eliminar el prompt \"{{name}}\"?",
     "prompts.reset.confirm": "¿Restablecer los prompts a los predeterminados?",
 
@@ -428,6 +452,12 @@ const UI_I18N = {
     "ai.chat.placeholder": "輸入訊息…",
     "ai.chat.send": "送出",
     "ai.chat.sending": "生成中...",
+    "ai.voice.button": "語音輸入",
+    "ai.voice.listening": "錄音中…",
+    "ai.voice.transcribing": "轉文字中…",
+    "ai.voice.error.notSupported": "目前環境不支援語音輸入。",
+    "ai.voice.error.micPermission": "麥克風權限被拒絕。",
+    "ai.voice.error.noGeminiKey": "尚未設定 Gemini API Key，請先到 AI 設定新增。",
     "ai.meta.user": "你",
     "ai.meta.assistant": "AI",
     "ai.meta.error": "錯誤",
@@ -487,11 +517,17 @@ const UI_I18N = {
     "aiSettings.fontSize.4": "大",
     "aiSettings.fontSize.5": "最大",
 
+    "aiSettings.section.voice": "語音輸入",
+    "aiSettings.voice.model": "模型",
+    "aiSettings.voice.hint": "需要 Gemini API Key；用於語音轉文字。",
+
     "aiSettings.section.prompts": "Prompts",
     "aiSettings.prompt.label": "Prompt",
     "aiSettings.prompt.name": "名稱",
     "aiSettings.prompt.namePlaceholder": "Prompt 名稱",
     "aiSettings.prompt.id": "ID",
+    "aiSettings.prompt.pageContent": "網頁內容",
+    "aiSettings.prompt.includeContent": "附帶目前網頁內容",
     "aiSettings.prompt.add": "新增",
     "aiSettings.prompt.save": "儲存",
     "aiSettings.prompt.delete": "刪除",
@@ -500,7 +536,7 @@ const UI_I18N = {
 
     "prompts.add.title": "新 Prompt 名稱",
     "prompts.add.defaultName": "新 Prompt",
-    "prompts.add.defaultTemplate": "請輸入你的 prompt 模板：\n\n{{content}}",
+    "prompts.add.defaultTemplate": "請輸入你的 prompt 模板…",
     "prompts.delete.confirm": "確定刪除 Prompt「{{name}}」？",
     "prompts.reset.confirm": "重置後將回到預設 prompts，確定？",
 
@@ -680,6 +716,7 @@ const aiContextUrl = document.getElementById("aiContextUrl");
 const aiChatMessages = document.getElementById("aiChatMessages");
 const promptShortcuts = document.getElementById("promptShortcuts");
 const chatInput = document.getElementById("chatInput");
+const chatMicBtn = document.getElementById("chatMicBtn");
 const chatSendBtn = document.getElementById("chatSendBtn");
 const aiSettingsModal = document.getElementById("aiSettingsModal");
 const aiSettingsCloseBtn = document.getElementById("aiSettingsCloseBtn");
@@ -739,10 +776,12 @@ const geminiKeyErrorRow = document.getElementById("geminiKeyErrorRow");
 const geminiKeyError = document.getElementById("geminiKeyError");
 
 const aiFontSizeSelect = document.getElementById("aiFontSizeSelect");
+const voiceModelSelect = document.getElementById("voiceModelSelect");
 
 const promptSelect = document.getElementById("promptSelect");
 const promptNameInput = document.getElementById("promptNameInput");
 const promptIdInput = document.getElementById("promptIdInput");
+const promptIncludeContentCheckbox = document.getElementById("promptIncludeContentCheckbox");
 const addPromptBtn = document.getElementById("addPromptBtn");
 const savePromptBtn = document.getElementById("savePromptBtn");
 const deletePromptBtn = document.getElementById("deletePromptBtn");
@@ -750,6 +789,7 @@ const resetPromptsBtn = document.getElementById("resetPromptsBtn");
 const customPromptInput = document.getElementById("customPromptInput");
 
 const DEFAULT_LOCAL_MODEL = "MaziyarPanahi/calme-3.2-instruct-78b";
+const DEFAULT_VOICE_MODEL = "gemini-2.5-flash-lite";
 pullModelInput.value = DEFAULT_LOCAL_MODEL;
 pullModelInput.addEventListener("input", () => persistAiAssistantOptions());
 
@@ -782,6 +822,7 @@ let aiActiveConversationId = null;
 let isAiHistoryOpen = false;
 let isSendingChat = false;
 let isSyncingAiAssistantOptions = false;
+let geminiApiKeySource = "none";
 
 let homeUrl = DEFAULT_HOME_URL;
 let searchEngineTemplate = DEFAULT_SEARCH_TEMPLATE;
@@ -803,13 +844,15 @@ const DEFAULT_PROMPTS_BY_LANGUAGE = {
     {
       id: "summary",
       name: "Summarize this page",
-      template: "Please summarize the following web page content (key points, key data, conclusions):\n\n{{content}}"
+      template: "Please summarize the following web page content (key points, key data, conclusions):",
+      includePageContent: true
     },
     {
       id: "painpoints_ideas",
       name: "Pain points & business ideas",
       template:
-        "Analyze the following web page content. List user pain points and needs, then propose 3–5 business ideas (target audience / value proposition / feasibility):\n\n{{content}}"
+        "Analyze the following web page content. List user pain points and needs, then propose 3–5 business ideas (target audience / value proposition / feasibility):",
+      includePageContent: true
     }
   ],
   es: [
@@ -817,26 +860,30 @@ const DEFAULT_PROMPTS_BY_LANGUAGE = {
       id: "summary",
       name: "Resume esta página",
       template:
-        "Resume el siguiente contenido de la página web (puntos clave, datos relevantes y conclusiones):\n\n{{content}}"
+        "Resume el siguiente contenido de la página web (puntos clave, datos relevantes y conclusiones):",
+      includePageContent: true
     },
     {
       id: "painpoints_ideas",
       name: "Dolores y ideas de negocio",
       template:
-        "Analiza el siguiente contenido de la página web. Enumera los dolores y necesidades del usuario y propone 3–5 ideas de negocio (cliente objetivo / propuesta de valor / viabilidad):\n\n{{content}}"
+        "Analiza el siguiente contenido de la página web. Enumera los dolores y necesidades del usuario y propone 3–5 ideas de negocio (cliente objetivo / propuesta de valor / viabilidad):",
+      includePageContent: true
     }
   ],
   "zh-TW": [
     {
       id: "summary",
       name: "摘要本頁文件",
-      template: "請用繁體中文摘要以下網頁內容，抓出重點、關鍵數據與結論：\n\n{{content}}"
+      template: "請用繁體中文摘要以下網頁內容，抓出重點、關鍵數據與結論：",
+      includePageContent: true
     },
     {
       id: "painpoints_ideas",
       name: "抓出痛點/需求與商業 idea",
       template:
-        "請分析以下網頁內容，列出使用者痛點與需求，並提出 3-5 個可發展成商業 idea 的建議（含目標客群/價值主張/可行性）：\n\n{{content}}"
+        "請分析以下網頁內容，列出使用者痛點與需求，並提出 3-5 個可發展成商業 idea 的建議（含目標客群/價值主張/可行性）：",
+      includePageContent: true
     }
   ]
 };
@@ -847,6 +894,14 @@ let historyItems = loadHistory();
 
 let currentSuggestions = [];
 let activeSuggestionIndex = -1;
+let isUrlInputComposing = false;
+let isChatInputComposing = false;
+let isVoiceRecording = false;
+let isVoiceTranscribing = false;
+let voiceRecorder = null;
+let voiceStream = null;
+let voiceChunks = [];
+let voiceAutoStopTimer = null;
 
 let prompts = [];
 let hasLoadedPrompts = false;
@@ -1390,6 +1445,7 @@ function getAiAssistantOptionsSnapshot() {
     provider: providerSelect.value === "gemini" ? "gemini" : "local",
     localModel: String(localModelSelect.value || ""),
     geminiModel: String(geminiModelSelect.value || ""),
+    voiceModel: String(voiceModelSelect?.value || ""),
     contextMode: String(contextModeSelect.value || "auto"),
     promptId: String(promptSelect.value || ""),
     fontSizeLevel: aiFontSizeLevel,
@@ -2327,27 +2383,62 @@ function navigateActiveTab(input) {
 }
 
 function getSelectedPrompt() {
-  return prompts.find((p) => p.id === promptSelect.value);
+  const id = String(promptSelect?.value || "");
+  return prompts.find((p) => p.id === id) || null;
 }
 
-function syncPromptFields() {
-  const p = getSelectedPrompt();
-  if (!p) {
+function getPromptDraftFromEditor() {
+  return {
+    name: String(promptNameInput?.value || "").trim(),
+    template: String(customPromptInput?.value || "").trim(),
+    includePageContent: Boolean(promptIncludeContentCheckbox?.checked)
+  };
+}
+
+function setPromptEditorFromPrompt(prompt) {
+  if (!prompt) {
     promptNameInput.value = "";
     promptIdInput.value = "";
     customPromptInput.value = "";
+    if (promptIncludeContentCheckbox) promptIncludeContentCheckbox.checked = true;
     return;
   }
-  promptNameInput.value = p.name ?? "";
-  promptIdInput.value = p.id ?? "";
-  customPromptInput.value = p.template ?? "";
+  promptNameInput.value = prompt.name ?? "";
+  promptIdInput.value = prompt.id ?? "";
+  customPromptInput.value = prompt.template ?? "";
+  if (promptIncludeContentCheckbox) {
+    promptIncludeContentCheckbox.checked = prompt.includePageContent !== false;
+  }
+}
+
+function isPromptEditorDirty(prompt) {
+  const draft = getPromptDraftFromEditor();
+  if (!prompt) return Boolean(draft.name || draft.template);
+  const sameName = String(prompt.name ?? "") === draft.name;
+  const sameTemplate = String(prompt.template ?? "") === draft.template;
+  const sameInclude = Boolean(prompt.includePageContent !== false) === Boolean(draft.includePageContent);
+  return !(sameName && sameTemplate && sameInclude);
+}
+
+function syncPromptEditorButtons() {
+  const prompt = getSelectedPrompt();
+  const draft = getPromptDraftFromEditor();
+  const templateOk = Boolean(draft.template);
+  const dirty = isPromptEditorDirty(prompt);
+  if (savePromptBtn) savePromptBtn.disabled = !prompt || !dirty || !templateOk;
+  if (deletePromptBtn) deletePromptBtn.disabled = !prompt;
+}
+
+function syncPromptFields() {
+  setPromptEditorFromPrompt(getSelectedPrompt());
+  syncPromptEditorButtons();
 }
 
 function renderPromptShortcuts() {
   if (!promptShortcuts) return;
   promptShortcuts.innerHTML = "";
 
-  for (const p of prompts) {
+  for (const p of prompts.filter((x) => String(x?.template || "").trim())) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "promptShortcutBtn";
@@ -2386,6 +2477,17 @@ function renderPromptSelect(selectedId) {
   renderPromptShortcuts();
 }
 
+function getNextPromptName(baseName) {
+  const base = String(baseName || "").trim() || t("prompts.add.defaultName");
+  const existing = new Set(prompts.map((p) => String(p?.name || "").trim()).filter(Boolean));
+  if (!existing.has(base)) return base;
+  for (let i = 2; i < 1000; i++) {
+    const candidate = `${base} ${i}`;
+    if (!existing.has(candidate)) return candidate;
+  }
+  return `${base} ${Date.now()}`;
+}
+
 function getDefaultPrompts(language = uiLanguage) {
   const lang = resolveUiLanguage(language);
   const seeded = DEFAULT_PROMPTS_BY_LANGUAGE[lang] || DEFAULT_PROMPTS_BY_LANGUAGE.en || [];
@@ -2401,6 +2503,7 @@ function looksLikeDefaultPrompts(list, language) {
     if (!found) return false;
     if (found.name !== def.name) return false;
     if ((found.template || "") !== (def.template || "")) return false;
+    if (Boolean(found.includePageContent) !== Boolean(def.includePageContent)) return false;
   }
   return true;
 }
@@ -2419,8 +2522,13 @@ function syncDefaultPromptsForLanguageChange(list, fromLanguage, toLanguage) {
     const target = toById.get(p.id);
     if (!target) return p;
     const prevDefault = fromById.get(p.id);
-    if (prevDefault && p.name === prevDefault.name && (p.template || "") === (prevDefault.template || "")) {
-      return { ...p, name: target.name, template: target.template };
+    if (
+      prevDefault &&
+      p.name === prevDefault.name &&
+      (p.template || "") === (prevDefault.template || "") &&
+      Boolean(p.includePageContent) === Boolean(prevDefault.includePageContent)
+    ) {
+      return { ...p, name: target.name, template: target.template, includePageContent: target.includePageContent };
     }
     return p;
   });
@@ -2433,13 +2541,29 @@ function syncDefaultPromptsForLanguageChange(list, fromLanguage, toLanguage) {
   return sanitizePromptsList(next);
 }
 
+function stripContentPlaceholderFromTemplate(template) {
+  const raw = String(template || "");
+  if (!raw) return "";
+  const withoutLine = raw.replace(/^[ \t]*\{\{content\}\}[ \t]*\r?\n?/gim, "");
+  const withoutToken = withoutLine.replaceAll("{{content}}", "");
+  return withoutToken.replace(/\n{3,}/g, "\n\n").trim();
+}
+
 function sanitizePromptItem(prompt) {
   if (!prompt || typeof prompt !== "object") return null;
   const id = String(prompt.id || "").trim();
   if (!id) return null;
   const name = typeof prompt.name === "string" && prompt.name.trim() ? prompt.name.trim() : id;
-  const template = typeof prompt.template === "string" ? prompt.template : "";
-  return { id, name, template };
+  const templateRaw = typeof prompt.template === "string" ? prompt.template : "";
+  const template = stripContentPlaceholderFromTemplate(templateRaw);
+  if (!template) return null;
+
+  const includePageContentRaw = prompt.includePageContent;
+  let includePageContent =
+    typeof includePageContentRaw === "boolean" ? includePageContentRaw : templateRaw.includes("{{content}}");
+  if (typeof includePageContentRaw !== "boolean") includePageContent = true;
+
+  return { id, name, template, includePageContent };
 }
 
 function sanitizePromptsList(list) {
@@ -2541,25 +2665,34 @@ promptSelect.addEventListener("change", () => {
   persistAiAssistantOptions();
 });
 
+promptNameInput.addEventListener("input", syncPromptEditorButtons);
+customPromptInput.addEventListener("input", syncPromptEditorButtons);
+promptIncludeContentCheckbox?.addEventListener("change", syncPromptEditorButtons);
+
 addPromptBtn.addEventListener("click", async () => {
-  const name = window.prompt(t("prompts.add.title"), t("prompts.add.defaultName"));
-  if (!name) return;
-  const id = `custom_${Date.now()}`;
-  const templateSeed = customPromptInput.value.trim() || t("prompts.add.defaultTemplate");
-  prompts.push({ id, name: name.trim(), template: templateSeed });
-  await persistPrompts();
+  const id = `custom_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const name = getNextPromptName(t("prompts.add.defaultName"));
+  prompts.push({ id, name, template: "", includePageContent: true });
   renderPromptSelect(id);
   persistAiAssistantOptions();
+  customPromptInput.focus();
 });
 
 savePromptBtn.addEventListener("click", async () => {
   const id = promptSelect.value;
   const idx = prompts.findIndex((p) => p.id === id);
   if (idx === -1) return;
+  const draft = getPromptDraftFromEditor();
+  if (!draft.template) {
+    window.aiBridge.showError(t("error.emptyPrompt"));
+    customPromptInput.focus();
+    return;
+  }
   prompts[idx] = {
     ...prompts[idx],
-    name: promptNameInput.value.trim() || prompts[idx].name,
-    template: customPromptInput.value.trim()
+    name: draft.name || prompts[idx].name,
+    template: draft.template,
+    includePageContent: Boolean(draft.includePageContent)
   };
   await persistPrompts();
   renderPromptSelect(id);
@@ -2584,7 +2717,15 @@ resetPromptsBtn.addEventListener("click", async () => {
   persistAiAssistantOptions();
 });
 
+urlInput.addEventListener("compositionstart", () => {
+  isUrlInputComposing = true;
+});
+urlInput.addEventListener("compositionend", () => {
+  isUrlInputComposing = false;
+});
+
 urlInput.addEventListener("keydown", (e) => {
+  if (isUrlInputComposing || e.isComposing || e.keyCode === 229) return;
   if (e.key === "ArrowDown") {
     if (suggestionsEl.classList.contains("hidden")) updateSuggestions();
     setActiveSuggestionIndex(activeSuggestionIndex + 1);
@@ -2631,6 +2772,7 @@ urlInput.addEventListener("focus", () => {
 });
 
 urlInput.addEventListener("blur", () => {
+  isUrlInputComposing = false;
   setTimeout(() => {
     if (document.activeElement !== urlInput) hideSuggestions();
   }, 120);
@@ -2685,6 +2827,7 @@ homeBtn.addEventListener("click", () => {
 function setAiPanelOpen(open) {
   const isOpen = Boolean(open);
   if (!isOpen) setAiHistoryOpen(false);
+  if (!isOpen) stopVoiceRecording();
   aiPanel.classList.toggle("hidden", !isOpen);
   aiPanel.setAttribute("aria-hidden", isOpen ? "false" : "true");
   aiToggleBtn.classList.toggle("active", isOpen);
@@ -2809,6 +2952,7 @@ userAgentNameInput?.addEventListener("input", () => {
 });
 
 userAgentNameInput?.addEventListener("keydown", (e) => {
+  if (e.isComposing || e.keyCode === 229) return;
   if (e.key !== "Enter") return;
   e.preventDefault();
   userAgentNameInput.blur();
@@ -2847,6 +2991,7 @@ startupUrlsInput.addEventListener("blur", () => saveBrowserSettings({ startupUrl
 saveHomePageBtn.addEventListener("click", () => saveBrowserSettings({ homePage: homePageInput.value }));
 
 homePageInput.addEventListener("keydown", (e) => {
+  if (e.isComposing || e.keyCode === 229) return;
   if (e.key === "Enter") {
     e.preventDefault();
     saveBrowserSettings({ homePage: homePageInput.value });
@@ -2871,6 +3016,7 @@ saveSearchTemplateBtn.addEventListener("click", async () => {
 });
 
 searchEngineTemplateInput.addEventListener("keydown", (e) => {
+  if (e.isComposing || e.keyCode === 229) return;
   if (e.key === "Enter") {
     e.preventDefault();
     saveSearchTemplateBtn.click();
@@ -2972,6 +3118,10 @@ aiFontSizeSelect?.addEventListener("change", () => {
   persistAiAssistantOptions();
 });
 
+voiceModelSelect?.addEventListener("change", () => {
+  persistAiAssistantOptions();
+});
+
 function isValidGeminiApiKey(apiKey) {
   const key = String(apiKey || "").trim();
   if (!key) return false;
@@ -3012,13 +3162,14 @@ async function loadAiSettings() {
     geminiModelSelect.value = model;
   }
 
-  const source = s.geminiApiKeySource;
-  const format = s.geminiApiKeyFormat;
-  const encryptionAvailable = Boolean(s.encryptionAvailable);
+	  const source = s.geminiApiKeySource;
+	  const format = s.geminiApiKeyFormat;
+	  const encryptionAvailable = Boolean(s.encryptionAvailable);
+	  geminiApiKeySource = source === "stored" || source === "env" ? source : "none";
 
-  if (source === "stored") {
-    const storageText =
-      format === "safeStorage"
+	  if (source === "stored") {
+	    const storageText =
+	      format === "safeStorage"
         ? t("aiSettings.gemini.keyStatus.savedEncrypted")
         : format === "plain"
           ? t("aiSettings.gemini.keyStatus.savedPlain")
@@ -3138,6 +3289,291 @@ function setChatSending(sending) {
   chatInput.disabled = isSendingChat;
   syncPromptShortcutsDisabledState();
   chatSendBtn.textContent = isSendingChat ? t("ai.chat.sending") : t("ai.chat.send");
+  syncChatMicButtonState();
+}
+
+function syncChatMicButtonState() {
+  if (!chatMicBtn) return;
+  const disabled = (isSendingChat || isVoiceTranscribing) && !isVoiceRecording;
+  chatMicBtn.disabled = disabled;
+  chatMicBtn.classList.toggle("recording", isVoiceRecording);
+  chatMicBtn.classList.toggle("busy", isVoiceTranscribing);
+  if (isVoiceRecording) {
+    chatMicBtn.textContent = "⏹";
+    chatMicBtn.title = t("ai.voice.listening");
+    chatMicBtn.setAttribute("aria-label", t("ai.voice.listening"));
+    return;
+  }
+  if (isVoiceTranscribing) {
+    chatMicBtn.textContent = "…";
+    chatMicBtn.title = t("ai.voice.transcribing");
+    chatMicBtn.setAttribute("aria-label", t("ai.voice.transcribing"));
+    return;
+  }
+  chatMicBtn.textContent = "🎙";
+  chatMicBtn.title = t("ai.voice.button");
+  chatMicBtn.setAttribute("aria-label", t("ai.voice.button"));
+}
+
+function stopVoiceStreamTracks(stream) {
+  const tracks = stream?.getTracks?.() || [];
+  for (const track of tracks) {
+    try {
+      track.stop();
+    } catch {
+    }
+  }
+}
+
+function pickVoiceRecorderMimeType() {
+  if (typeof MediaRecorder === "undefined" || typeof MediaRecorder.isTypeSupported !== "function") return "";
+  const candidates = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/ogg;codecs=opus",
+    "audio/ogg"
+  ];
+  for (const mimeType of candidates) {
+    if (MediaRecorder.isTypeSupported(mimeType)) return mimeType;
+  }
+  return "";
+}
+
+function decodeAudioData(audioContext, arrayBuffer) {
+  return new Promise((resolve, reject) => {
+    const maybePromise = audioContext.decodeAudioData(arrayBuffer, resolve, reject);
+    if (maybePromise && typeof maybePromise.then === "function") {
+      maybePromise.then(resolve).catch(reject);
+    }
+  });
+}
+
+function writeWavString(view, offset, text) {
+  for (let i = 0; i < text.length; i++) {
+    view.setUint8(offset + i, text.charCodeAt(i));
+  }
+}
+
+function floatTo16BitPCM(view, offset, input) {
+  for (let i = 0; i < input.length; i++) {
+    const s = Math.max(-1, Math.min(1, input[i]));
+    view.setInt16(offset + i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+}
+
+function downsampleFloat32Buffer(buffer, inputSampleRate, outputSampleRate) {
+  const inRate = Number(inputSampleRate);
+  const outRate = Number(outputSampleRate);
+  if (!Number.isFinite(inRate) || !Number.isFinite(outRate)) return buffer;
+  if (outRate >= inRate) return buffer;
+  const sampleRateRatio = inRate / outRate;
+  const newLength = Math.round(buffer.length / sampleRateRatio);
+  const result = new Float32Array(newLength);
+  let offsetResult = 0;
+  let offsetBuffer = 0;
+  while (offsetResult < result.length) {
+    const nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
+    let accum = 0;
+    let count = 0;
+    for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
+      accum += buffer[i];
+      count++;
+    }
+    result[offsetResult] = count ? accum / count : 0;
+    offsetResult++;
+    offsetBuffer = nextOffsetBuffer;
+  }
+  return result;
+}
+
+function mixAudioBufferToMono(audioBuffer) {
+  const channels = Number(audioBuffer?.numberOfChannels || 0);
+  if (!channels) return new Float32Array();
+  if (channels === 1) return audioBuffer.getChannelData(0);
+  const length = audioBuffer.length;
+  const mixed = new Float32Array(length);
+  for (let ch = 0; ch < channels; ch++) {
+    const data = audioBuffer.getChannelData(ch);
+    for (let i = 0; i < length; i++) mixed[i] += data[i] / channels;
+  }
+  return mixed;
+}
+
+function encodePcmAsWav(samples, sampleRate) {
+  const dataLength = samples.length * 2;
+  const buffer = new ArrayBuffer(44 + dataLength);
+  const view = new DataView(buffer);
+
+  writeWavString(view, 0, "RIFF");
+  view.setUint32(4, 36 + dataLength, true);
+  writeWavString(view, 8, "WAVE");
+  writeWavString(view, 12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeWavString(view, 36, "data");
+  view.setUint32(40, dataLength, true);
+  floatTo16BitPCM(view, 44, samples);
+
+  return buffer;
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error || new Error("Failed to read audio"));
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      const comma = result.indexOf(",");
+      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+    };
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function convertAudioBlobToWav(blob) {
+  const mime = String(blob?.type || "").toLowerCase();
+  if (mime === "audio/wav" || mime === "audio/wave") return blob;
+  const arrayBuffer = await blob.arrayBuffer();
+  const AudioContextImpl = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextImpl) throw new Error(t("ai.voice.error.notSupported"));
+  const audioContext = new AudioContextImpl();
+  try {
+    const decoded = await decodeAudioData(audioContext, arrayBuffer.slice(0));
+    const mono = mixAudioBufferToMono(decoded);
+    const inRate = Number(decoded.sampleRate) || 48000;
+    const outRate = inRate > 16000 ? 16000 : inRate;
+    const samples = outRate === inRate ? mono : downsampleFloat32Buffer(mono, inRate, outRate);
+    const wavArrayBuffer = encodePcmAsWav(samples, outRate);
+    return new Blob([wavArrayBuffer], { type: "audio/wav" });
+  } finally {
+    try {
+      await audioContext.close();
+    } catch {
+    }
+  }
+}
+
+async function transcribeVoiceAudioBlob(blob) {
+  if (!window.aiBridge?.transcribeAudio) throw new Error(t("ai.voice.error.notSupported"));
+  const wavBlob = await convertAudioBlobToWav(blob);
+  const base64 = await blobToBase64(wavBlob);
+  const model = String(voiceModelSelect?.value || DEFAULT_VOICE_MODEL).trim() || DEFAULT_VOICE_MODEL;
+  const res = await window.aiBridge.transcribeAudio({
+    model,
+    audio: { mimeType: wavBlob.type || "audio/wav", data: base64 }
+  });
+  if (!res?.ok) throw new Error(res?.error || t("error.aiGeneric"));
+  return String(res.text || "").trim();
+}
+
+function stopVoiceRecording() {
+  clearTimeout(voiceAutoStopTimer);
+  voiceAutoStopTimer = null;
+
+  if (!isVoiceRecording) return;
+  isVoiceRecording = false;
+  isVoiceTranscribing = true;
+  syncChatMicButtonState();
+  try {
+    voiceRecorder?.stop?.();
+  } catch {
+    isVoiceTranscribing = false;
+    syncChatMicButtonState();
+  }
+}
+
+async function startVoiceRecording() {
+  if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+    window.aiBridge.showError(t("ai.voice.error.notSupported"));
+    return;
+  }
+  if (isVoiceRecording || isVoiceTranscribing || isSendingChat) return;
+
+  if (geminiApiKeySource === "none") {
+    window.aiBridge.showError(t("ai.voice.error.noGeminiKey"));
+    setAiSettingsModalOpen(true);
+    return;
+  }
+
+  stopVoiceStreamTracks(voiceStream);
+  voiceStream = null;
+  voiceRecorder = null;
+  voiceChunks = [];
+
+  try {
+    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    window.aiBridge.showError(err?.name === "NotAllowedError" ? t("ai.voice.error.micPermission") : err?.message || err);
+    return;
+  }
+
+  const mimeType = pickVoiceRecorderMimeType();
+  try {
+    voiceRecorder = mimeType ? new MediaRecorder(voiceStream, { mimeType }) : new MediaRecorder(voiceStream);
+  } catch {
+    try {
+      voiceRecorder = new MediaRecorder(voiceStream);
+    } catch (err) {
+      stopVoiceStreamTracks(voiceStream);
+      voiceStream = null;
+      window.aiBridge.showError(err?.message || err);
+      return;
+    }
+  }
+
+  voiceRecorder.addEventListener("dataavailable", (e) => {
+    if (e.data && e.data.size) voiceChunks.push(e.data);
+  });
+
+  voiceRecorder.addEventListener("stop", async () => {
+    const chunks = voiceChunks;
+    voiceChunks = [];
+    const stream = voiceStream;
+    voiceStream = null;
+    stopVoiceStreamTracks(stream);
+
+    const blob = new Blob(chunks, { type: voiceRecorder?.mimeType || chunks[0]?.type || "audio/webm" });
+    voiceRecorder = null;
+
+    if (!blob.size) {
+      isVoiceTranscribing = false;
+      syncChatMicButtonState();
+      return;
+    }
+
+    try {
+      const text = await transcribeVoiceAudioBlob(blob);
+      if (!text) return;
+      const prev = String(chatInput.value || "").trim();
+      chatInput.value = prev ? `${prev}\n${text}` : text;
+      chatInput.focus();
+      chatInput.scrollTop = chatInput.scrollHeight;
+    } catch (err) {
+      window.aiBridge.showError(err?.message || err);
+    } finally {
+      isVoiceTranscribing = false;
+      syncChatMicButtonState();
+    }
+  });
+
+  try {
+    voiceRecorder.start();
+  } catch (err) {
+    stopVoiceStreamTracks(voiceStream);
+    voiceStream = null;
+    voiceRecorder = null;
+    window.aiBridge.showError(err?.message || err);
+    return;
+  }
+
+  isVoiceRecording = true;
+  syncChatMicButtonState();
+  voiceAutoStopTimer = setTimeout(() => stopVoiceRecording(), 30_000);
 }
 
 async function buildAiPageContext() {
@@ -3194,38 +3630,29 @@ function buildAiContextBlock({ pageTitle, pageUrl, contextLabel, pageContent }) 
   return chunks.join("\n\n").trim();
 }
 
-function buildPromptInstructionFromTemplate(template, { pageTitle, pageUrl, contextLabel }) {
-  let text = String(template || "").trim();
-  if (!text) return "";
+function applyPromptTemplateVars(template, { pageTitle, pageUrl }) {
   const title = String(pageTitle || "");
   const url = String(pageUrl || "");
-  const note = t("ai.context.attachedNote", { label: String(contextLabel || t("ai.context.currentPage")) });
-  text = text.replaceAll("{{title}}", title).replaceAll("{{url}}", url);
-  if (text.includes("{{content}}")) {
-    text = text.replaceAll("{{content}}", note);
-  } else {
-    text = `${text}\n\n${note}`;
-  }
-  return text.trim();
+  return String(template || "").replaceAll("{{title}}", title).replaceAll("{{url}}", url);
 }
 
-function buildPromptMessageFromTemplate(template, ctx) {
-  let text = String(template || "").trim();
-  if (!text) return "";
+function buildPromptInstructionFromPrompt(prompt, { pageTitle, pageUrl, contextLabel }) {
+  const template = String(prompt?.template || "").trim();
+  if (!template) return "";
+  let text = applyPromptTemplateVars(template, { pageTitle, pageUrl }).trim();
+  if (prompt?.includePageContent === false) return text;
+  const note = t("ai.context.attachedNote", { label: String(contextLabel || t("ai.context.currentPage")) });
+  return `${text}\n\n${note}`.trim();
+}
 
-  const title = String(ctx?.pageTitle || "");
-  const url = String(ctx?.pageUrl || "");
-  text = text.replaceAll("{{title}}", title).replaceAll("{{url}}", url);
-
+function buildPromptMessageFromPrompt(prompt, ctx) {
+  const template = String(prompt?.template || "").trim();
+  if (!template) return "";
+  let text = applyPromptTemplateVars(template, ctx || {}).trim();
+  if (prompt?.includePageContent === false) return text;
   const ctxBlock = buildAiContextBlock(ctx || {});
-  if (!ctxBlock) return text.trim();
-
-  if (text.includes("{{content}}")) {
-    text = text.replaceAll("{{content}}", ctxBlock);
-  } else {
-    text = `${text}\n\n${ctxBlock}`;
-  }
-  return text.trim();
+  if (!ctxBlock) return text;
+  return `${text}\n\n${ctxBlock}`.trim();
 }
 
 async function sendAiChatMessage({ displayText, buildUserMessage }) {
@@ -3349,8 +3776,26 @@ function sendChatFromInput() {
 }
 
 chatSendBtn.addEventListener("click", sendChatFromInput);
+chatMicBtn?.addEventListener("click", async () => {
+  if (isVoiceRecording) {
+    stopVoiceRecording();
+    return;
+  }
+  await startVoiceRecording();
+});
+
+chatInput.addEventListener("compositionstart", () => {
+  isChatInputComposing = true;
+});
+chatInput.addEventListener("compositionend", () => {
+  isChatInputComposing = false;
+});
+chatInput.addEventListener("blur", () => {
+  isChatInputComposing = false;
+});
 
 chatInput.addEventListener("keydown", (e) => {
+  if (isChatInputComposing || e.isComposing || e.keyCode === 229) return;
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     sendChatFromInput();
@@ -3365,12 +3810,11 @@ promptShortcuts?.addEventListener("click", (e) => {
   const p = prompts.find((x) => x.id === id);
   if (!p) return;
   const name = p.name || p.id;
-  const template = p.template || "";
   sendAiChatMessage({
     displayText: name,
     buildUserMessage: (ctx) => ({
-      history: buildPromptInstructionFromTemplate(template, ctx),
-      ai: buildPromptMessageFromTemplate(template, ctx)
+      history: buildPromptInstructionFromPrompt(p, ctx),
+      ai: buildPromptMessageFromPrompt(p, ctx)
     })
   });
 });
@@ -3577,16 +4021,26 @@ async function initAiAssistantOptions() {
       applyAiPanelWidth(Number(saved.panelWidthPx));
     }
 
-    if (Number.isFinite(Number(saved.fontSizeLevel))) {
-      applyAiFontSizeLevel(Number(saved.fontSizeLevel));
-    } else {
-      applyAiFontSizeLevel(aiFontSizeLevel);
-    }
+	    if (Number.isFinite(Number(saved.fontSizeLevel))) {
+	      applyAiFontSizeLevel(Number(saved.fontSizeLevel));
+	    } else {
+	      applyAiFontSizeLevel(aiFontSizeLevel);
+	    }
 
-    setProviderUI(providerSelect.value);
+	    const desiredVoiceModel = typeof saved.voiceModel === "string" ? saved.voiceModel.trim() : "";
+	    const fallbackVoiceModel = DEFAULT_VOICE_MODEL;
+	    if (voiceModelSelect) {
+	      if (desiredVoiceModel && Array.from(voiceModelSelect.options).some((o) => o.value === desiredVoiceModel)) {
+	        voiceModelSelect.value = desiredVoiceModel;
+	      } else if (Array.from(voiceModelSelect.options).some((o) => o.value === fallbackVoiceModel)) {
+	        voiceModelSelect.value = fallbackVoiceModel;
+	      }
+	    }
 
-    await loadPrompts(saved.promptId);
-    await refreshLocalModels();
+	    setProviderUI(providerSelect.value);
+
+	    await loadPrompts(saved.promptId);
+	    await refreshLocalModels();
 
     const desiredLocalModel = typeof saved.localModel === "string" ? saved.localModel.trim() : "";
     if (

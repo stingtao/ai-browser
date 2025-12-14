@@ -1,13 +1,13 @@
 {
   "name": "sting-ai-browser",
-  "productName": "stingtaoAI browser",
+  "productName": "stingtaoAI",
   "version": "0.1.0",
   "description": "AI browser with local-first LLM assistant",
   "main": "main.js",
   "author": "sting",
   "license": "MIT",
   "scripts": {
-    "start": "electron .",
+    "start": "node scripts/start.js",
     "fix-electron": "node node_modules/electron/install.js",
     "postinstall": "node node_modules/electron/install.js"
   },

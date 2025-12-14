@@ -35,11 +35,7 @@ npm install
 npm start
 ```
 
-If `npm start` fails with `app.whenReady is undefined`, make sure `ELECTRON_RUN_AS_NODE` is not set:
-
-```bash
-env -u ELECTRON_RUN_AS_NODE npm start
-```
+Note: if you run Electron directly (not via `npm start`), make sure `ELECTRON_RUN_AS_NODE` is not set.
 
 ## Local Models (Ollama)
 

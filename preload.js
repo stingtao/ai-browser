@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld("aiBridge", {
   setGeminiApiKey: (apiKey) => ipcRenderer.invoke("settings:setGeminiApiKey", apiKey),
   clearGeminiApiKey: () => ipcRenderer.invoke("settings:clearGeminiApiKey"),
   generate: (payload) => ipcRenderer.invoke("ai:generate", payload),
+  transcribeAudio: (payload) => ipcRenderer.invoke("ai:transcribeAudio", payload),
   getAppSettings: () => ipcRenderer.invoke("appSettings:get"),
   setBrowserSettings: (browserPatch) => ipcRenderer.invoke("appSettings:setBrowser", browserPatch),
   markChromeImportModalShown: () => ipcRenderer.invoke("appSettings:markChromeImportModalShown"),
