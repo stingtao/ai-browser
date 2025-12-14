@@ -35,7 +35,13 @@ npm install
 npm start
 ```
 
-Note: if you run Electron directly (not via `npm start`), make sure `ELECTRON_RUN_AS_NODE` is not set.
+The `npm start` script properly handles Electron startup and ensures `ELECTRON_RUN_AS_NODE` is not set.
+
+### Available Scripts
+
+- `npm start` - Start the application
+- `npm run fix-electron` - Fix Electron installation issues
+- `npm run postinstall` - Automatically runs after npm install to fix Electron
 
 ## Local Models (Ollama)
 
