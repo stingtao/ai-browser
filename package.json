@@ -1,0 +1,16 @@
+{
+  "name": "sting-ai-browser",
+  "version": "0.1.0",
+  "description": "AI browser with local-first LLM assistant",
+  "main": "main.js",
+  "author": "sting",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "fix-electron": "node node_modules/electron/install.js",
+    "postinstall": "node node_modules/electron/install.js"
+  },
+  "dependencies": {
+    "electron": "^34.0.0"
+  }
+}

@@ -1,0 +1,40 @@
+node_modules/
+
+# logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# misc
+.DS_Store
+.AppleDouble
+Thumbs.db
+Desktop.ini
+
+# editor / IDE
+.vscode/
+.idea/
+
+# env
+.env
+.env.*
+
+# build outputs
+dist/
+out/
+release/
+build/
+
+# caches
+.cache/
+.parcel-cache/
+

@@ -1,0 +1,482 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self'; style-src 'self' 'unsafe-inline';" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sting AI Browser</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header id="header">
+        <div id="tabBar" class="tabBar">
+          <button
+            id="tabsScrollLeftBtn"
+            class="iconBtn tabScrollBtn"
+            aria-label="Scroll tabs left"
+            title="Scroll tabs left"
+          >
+            ‹
+          </button>
+          <div id="tabStrip" class="tabStrip" role="tablist" aria-label="Tabs"></div>
+          <button
+            id="tabsScrollRightBtn"
+            class="iconBtn tabScrollBtn"
+            aria-label="Scroll tabs right"
+            title="Scroll tabs right"
+          >
+            ›
+          </button>
+          <button id="newTabBtn" class="iconBtn newTabBtn" aria-label="New tab" title="New tab">
+            +
+          </button>
+        </div>
+
+        <div id="toolbar" class="toolbar">
+          <div class="navControls">
+            <button id="backBtn" class="iconBtn" aria-label="Back" title="Back">←</button>
+            <button id="forwardBtn" class="iconBtn" aria-label="Forward" title="Forward">→</button>
+            <button id="reloadBtn" class="iconBtn" aria-label="Reload" title="Reload">⟳</button>
+            <button id="homeBtn" class="iconBtn" aria-label="Home" title="Home">⌂</button>
+          </div>
+
+          <div id="addressBar" class="addressBar">
+            <div class="addressInner">
+              <span id="addressStatusIcon" class="addressIcon" aria-hidden="true">🌐</span>
+              <input
+                id="urlInput"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="Search or enter address"
+              />
+              <button id="clearUrlBtn" class="iconBtn clearBtn hidden" aria-label="Clear" title="Clear">
+                ×
+              </button>
+            </div>
+            <div id="suggestions" class="suggestions hidden" role="listbox" aria-label="Suggestions"></div>
+          </div>
+
+          <div class="toolbarActions">
+            <button id="aiToggleBtn" class="pillBtn" title="AI Assistant" aria-expanded="false" aria-controls="aiPanel">
+              <span class="btnIcon" aria-hidden="true">✨</span>
+              <span class="btnLabel">AI Assistant</span>
+            </button>
+            <button
+              id="aiSettingsBtn"
+              class="iconBtn"
+              type="button"
+              aria-label="AI Assistant settings"
+              title="AI Assistant settings"
+            >
+              ⚙
+            </button>
+          </div>
+        </div>
+
+        <div id="loadingBar" class="loadingBar hidden" aria-hidden="true">
+          <div id="loadingBarInner" class="loadingBarInner"></div>
+        </div>
+      </header>
+
+      <div id="contentArea" class="contentArea">
+        <div id="webviewArea" class="webviewArea"></div>
+
+        <aside id="aiPanel" class="aiPanel hidden" aria-hidden="true" aria-label="AI Assistant">
+          <div
+            id="aiResizeHandle"
+            class="aiResizeHandle"
+            role="separator"
+            aria-orientation="vertical"
+            tabindex="0"
+            aria-label="Resize AI Assistant"
+          ></div>
+          <div class="panelHeader aiPanelHeader">
+            <div class="aiPanelHeaderTitle">
+              <span class="aiPanelIcon" aria-hidden="true">✨</span>
+              <span class="aiPanelHeaderText">AI Assistant</span>
+            </div>
+            <div class="aiPanelHeaderActions">
+              <button
+                id="aiNewConversationBtn"
+                class="iconBtn iconBtnSm"
+                type="button"
+                aria-label="New conversation"
+                title="New conversation"
+              >
+                +
+              </button>
+              <button
+                id="aiHistoryBtn"
+                class="iconBtn iconBtnSm"
+                type="button"
+                aria-label="Conversation history"
+                title="Conversation history"
+              >
+                🕒
+              </button>
+              <button id="aiCloseBtn" class="iconBtn iconBtnSm" type="button" aria-label="Close AI Assistant" title="Close">
+                ×
+              </button>
+            </div>
+          </div>
+          <div id="aiHistoryDrawer" class="aiHistoryDrawer hidden" aria-hidden="true" aria-label="AI Assistant history">
+            <div class="aiHistoryHeader">
+              <div class="aiHistoryHeaderTitle">
+                <span aria-hidden="true">🕒</span>
+                <span>對話紀錄</span>
+              </div>
+              <button
+                id="aiHistoryCloseBtn"
+                class="iconBtn iconBtnSm"
+                type="button"
+                aria-label="Close history"
+                title="Close history"
+              >
+                ×
+              </button>
+            </div>
+            <div id="aiHistoryList" class="aiHistoryList" aria-label="Conversation list"></div>
+          </div>
+          <div class="aiChatLayout">
+            <div class="contextCard aiChatContext">
+              <div id="aiContextTitle" class="contextTitle"></div>
+              <div id="aiContextUrl" class="contextUrl"></div>
+            </div>
+
+            <div id="aiChatMessages" class="aiChatMessages" aria-label="AI conversation"></div>
+
+            <div class="aiChatComposer">
+              <div id="promptShortcuts" class="promptShortcuts" aria-label="Prompt shortcuts"></div>
+
+              <div class="aiComposerInputRow">
+                <textarea id="chatInput" class="chatInput" rows="3" placeholder="輸入訊息…"></textarea>
+                <button id="chatSendBtn" class="primaryBtn" type="button">送出</button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <footer id="statusBar" class="statusBar">
+        <div id="statusText" class="statusLeft"></div>
+        <div id="statusMeta" class="statusRight"></div>
+      </footer>
+    </div>
+
+    <div id="aiSettingsModal" class="modalOverlay hidden" aria-hidden="true">
+      <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="aiSettingsTitle">
+        <div class="modalHeader">
+          <div id="aiSettingsTitle" class="modalTitle">AI Assistant 設定</div>
+          <button
+            id="aiSettingsCloseBtn"
+            class="iconBtn iconBtnSm"
+            type="button"
+            aria-label="Close settings"
+            title="Close"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="modalBody">
+          <div class="panelSection">
+            <div class="panelSectionTitle">模型來源</div>
+            <div class="row">
+              <label>Provider</label>
+              <select id="providerSelect">
+                <option value="local">Local (Ollama)</option>
+                <option value="gemini">Gemini API</option>
+              </select>
+            </div>
+
+            <div class="row" id="localModelRow">
+              <label>Local</label>
+              <select id="localModelSelect"></select>
+              <button id="refreshModelsBtn">刷新</button>
+            </div>
+
+            <div class="row" id="pullModelRow">
+              <label>Pull</label>
+              <input id="pullModelInput" />
+              <button id="pullModelBtn">下載模型</button>
+            </div>
+
+            <div class="panelSubSection hidden" id="geminiRow">
+              <div class="row">
+                <label>Model</label>
+                <select id="geminiModelSelect">
+                  <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                  <option value="gemini-2.5-flash" selected>gemini-2.5-flash (預設)</option>
+                  <option value="gemini-2.5-flash-preview-09-2025">gemini-2.5-flash-preview-09-2025</option>
+                  <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
+                  <option value="gemini-2.5-flash-lite-preview-09-2025">gemini-2.5-flash-lite-preview-09-2025</option>
+                  <option value="gemini-2.5-flash-native-audio-preview-12-2025">
+                    gemini-2.5-flash-native-audio-preview-12-2025
+                  </option>
+                  <option value="gemini-2.5-flash-preview-tts">gemini-2.5-flash-preview-tts</option>
+                </select>
+              </div>
+
+              <div class="row">
+                <label>API Key</label>
+                <input
+                  id="geminiApiKeyInput"
+                  type="password"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="AIza…"
+                />
+                <button
+                  id="toggleGeminiKeyBtn"
+                  class="iconBtn iconBtnSm"
+                  type="button"
+                  aria-label="Toggle API key visibility"
+                  title="Show/Hide"
+                >
+                  👁
+                </button>
+              </div>
+
+              <div class="row">
+                <label></label>
+                <small id="geminiKeyStatus" class="formHint">尚未設定</small>
+              </div>
+
+              <div class="row">
+                <label></label>
+                <button id="saveGeminiKeyBtn" type="button">儲存/更新</button>
+                <button id="clearGeminiKeyBtn" type="button" class="secondary">清除</button>
+              </div>
+
+              <div class="row hidden" id="geminiKeyErrorRow">
+                <label></label>
+                <div id="geminiKeyError" class="formError"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panelSection">
+            <div class="panelSectionTitle">上下文</div>
+            <div class="row">
+              <label>內容</label>
+              <select id="contextModeSelect">
+                <option value="auto">自動（有選取先用選取）</option>
+                <option value="selection">只用選取文字</option>
+                <option value="page">整頁文字</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="panelSection">
+            <div class="panelSectionTitle">外觀</div>
+            <div class="row">
+              <label>字體</label>
+              <select id="aiFontSizeSelect">
+                <option value="1">最小</option>
+                <option value="2">小</option>
+                <option value="3" selected>標準</option>
+                <option value="4">大</option>
+                <option value="5">最大</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="panelSection">
+            <div class="panelSectionTitle">Prompts</div>
+            <div class="row">
+              <label>Prompt</label>
+              <select id="promptSelect"></select>
+            </div>
+
+            <div class="row">
+              <label>名稱</label>
+              <input id="promptNameInput" placeholder="Prompt 名稱" />
+            </div>
+
+            <div class="row">
+              <label>ID</label>
+              <input id="promptIdInput" readonly />
+            </div>
+
+            <div class="row promptActions">
+              <button id="addPromptBtn">新增</button>
+              <button id="savePromptBtn">儲存</button>
+              <button id="deletePromptBtn">刪除</button>
+              <button id="resetPromptsBtn" class="secondary">重置預設</button>
+            </div>
+
+            <textarea id="customPromptInput" placeholder="可在這裡改寫 prompt..."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="appSettingsModal" class="modalOverlay hidden" aria-hidden="true">
+      <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="appSettingsTitle">
+        <div class="modalHeader">
+          <div id="appSettingsTitle" class="modalTitle">瀏覽器設定</div>
+          <button
+            id="appSettingsCloseBtn"
+            class="iconBtn iconBtnSm"
+            type="button"
+            aria-label="Close browser settings"
+            title="Close"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="modalBody">
+          <div class="panelSection">
+            <div class="panelSectionTitle">外觀</div>
+            <div class="row">
+              <label>主題</label>
+              <select id="themeSelect">
+                <option value="light">淺色</option>
+                <option value="dark">深色</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="panelSection">
+            <div class="panelSectionTitle">啟動時</div>
+            <div id="startupModeGroup" class="radioGroup" role="radiogroup" aria-label="Startup mode">
+              <label class="radioRow">
+                <input type="radio" name="startupMode" value="home" />
+                <span>開啟首頁</span>
+              </label>
+              <label class="radioRow">
+                <input type="radio" name="startupMode" value="continue" />
+                <span>繼續上次瀏覽（實驗性）</span>
+              </label>
+              <label class="radioRow">
+                <input type="radio" name="startupMode" value="urls" />
+                <span>開啟特定頁面</span>
+              </label>
+            </div>
+            <textarea
+              id="startupUrlsInput"
+              class="settingsTextarea"
+              rows="4"
+              placeholder="每行一個網址（僅支援 https/http）"
+            ></textarea>
+            <small class="formHint">提示：選擇「開啟特定頁面」時，會在每次啟動開啟這些網址。</small>
+          </div>
+
+          <div class="panelSection">
+            <div class="panelSectionTitle">首頁</div>
+            <div class="row">
+              <label>網址</label>
+              <input id="homePageInput" placeholder="https://example.com" />
+              <button id="saveHomePageBtn">套用</button>
+            </div>
+          </div>
+
+          <div class="panelSection">
+            <div class="panelSectionTitle">搜尋引擎</div>
+            <div class="row">
+              <label>預設</label>
+              <select id="searchEngineSelect">
+                <option value="google">Google</option>
+                <option value="bing">Bing</option>
+                <option value="duckduckgo">DuckDuckGo</option>
+                <option value="custom">自訂</option>
+              </select>
+            </div>
+            <div class="row" id="searchEngineTemplateRow">
+              <label>模板</label>
+              <input id="searchEngineTemplateInput" placeholder="https://...{query}..." />
+              <button id="saveSearchTemplateBtn">套用</button>
+            </div>
+            <small class="formHint">自訂模板需包含 <code>{query}</code>，會自動用關鍵字取代。</small>
+          </div>
+
+          <div class="panelSection">
+            <div class="panelSectionTitle">隱私</div>
+            <div class="row">
+              <label></label>
+              <button id="clearHistoryBtn" class="secondary">清除瀏覽紀錄</button>
+            </div>
+          </div>
+
+          <div class="panelSection">
+            <div class="panelSectionTitle">匯入</div>
+            <div class="row">
+              <label></label>
+              <button id="importChromeBtn">從 Chrome 匯入</button>
+              <small id="importChromeStatus" class="formHint"></small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="historyModal" class="modalOverlay hidden" aria-hidden="true">
+      <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+        <div class="modalHeader">
+          <div id="historyTitle" class="modalTitle">歷史紀錄</div>
+          <button
+            id="historyCloseBtn"
+            class="iconBtn iconBtnSm"
+            type="button"
+            aria-label="Close history"
+            title="Close"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="modalBody">
+          <div class="row">
+            <label>搜尋</label>
+            <input id="historySearchInput" placeholder="搜尋標題或網址..." />
+            <button id="historyClearBtn" class="secondary">清除</button>
+          </div>
+          <div id="historyList" class="historyList" aria-label="History list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="chromeImportModal" class="modalOverlay hidden" aria-hidden="true">
+      <div class="modalCard compactModalCard" role="dialog" aria-modal="true" aria-labelledby="chromeImportTitle">
+        <div class="modalHeader">
+          <div id="chromeImportTitle" class="modalTitle">從 Chrome 匯入設定？</div>
+          <button
+            id="chromeImportCloseBtn"
+            class="iconBtn iconBtnSm"
+            type="button"
+            aria-label="Close import"
+            title="Close"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="modalBody">
+          <div class="importIntro">
+            <div class="panelSectionTitle">第一次啟動</div>
+            <p class="formHint">
+              你可以從 Chrome 匯入常用設定，讓使用體驗更接近原本的瀏覽器。
+            </p>
+            <ul class="importList">
+              <li>首頁網址</li>
+              <li>預設搜尋引擎</li>
+              <li>啟動時行為（開啟特定頁面/繼續上次瀏覽）</li>
+            </ul>
+            <small id="chromeImportHint" class="formHint"></small>
+          </div>
+
+          <div class="actions">
+            <button id="chromeImportSkipBtn" class="secondary">略過</button>
+            <button id="chromeImportConfirmBtn">匯入</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="dragShield" class="dragShield hidden" aria-hidden="true"></div>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>
