@@ -1,5 +1,6 @@
 const DEFAULT_HOME_URL = "https://www.google.com";
 const DEFAULT_SEARCH_TEMPLATE = "https://www.google.com/search?q={query}";
+const DEFAULT_USER_AGENT_NAME = "stingtaoAI";
 const DEFAULT_FAVICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
     <rect width="16" height="16" rx="4" fill="#e8eaed"/>
@@ -144,6 +145,12 @@ const UI_I18N = {
     "appSettings.theme.light": "Light",
     "appSettings.theme.dark": "Dark",
     "appSettings.language.label": "Language",
+    "appSettings.userAgentName.label": "Browser agent",
+    "appSettings.userAgentName.placeholder": "stingtaoAI",
+    "appSettings.userAgentName.hint":
+      "Used as the User-Agent token for web requests. Takes effect on new navigations.",
+    "appSettings.userAgentName.error.invalid":
+      "Use letters, digits, ., _, -, optional /version (no spaces).",
     "appSettings.section.startup": "On startup",
     "appSettings.startup.aria": "Startup mode",
     "appSettings.startup.home": "Open the home page",
@@ -323,6 +330,12 @@ const UI_I18N = {
     "appSettings.theme.light": "Claro",
     "appSettings.theme.dark": "Oscuro",
     "appSettings.language.label": "Idioma",
+    "appSettings.userAgentName.label": "Agente del navegador",
+    "appSettings.userAgentName.placeholder": "stingtaoAI",
+    "appSettings.userAgentName.hint":
+      "Se usa como token de User-Agent para solicitudes web. Se aplica en nuevas navegaciones.",
+    "appSettings.userAgentName.error.invalid":
+      "Usa letras, números, ., _, -, /versión opcional (sin espacios).",
     "appSettings.section.startup": "Al iniciar",
     "appSettings.startup.aria": "Modo de inicio",
     "appSettings.startup.home": "Abrir la página de inicio",
@@ -498,6 +511,10 @@ const UI_I18N = {
     "appSettings.theme.light": "淺色",
     "appSettings.theme.dark": "深色",
     "appSettings.language.label": "語系",
+    "appSettings.userAgentName.label": "瀏覽器 Agent",
+    "appSettings.userAgentName.placeholder": "stingtaoAI",
+    "appSettings.userAgentName.hint": "用於網頁請求的 User-Agent token，會在新的導覽生效。",
+    "appSettings.userAgentName.error.invalid": "請使用英數與 . _ -（可選 /版本），不可包含空白。",
     "appSettings.section.startup": "啟動時",
     "appSettings.startup.aria": "啟動模式",
     "appSettings.startup.home": "開啟首頁",
@@ -628,11 +645,12 @@ function setUiLanguage(nextLanguage) {
   if (isAiHistoryOpen) renderAiConversationHistoryList();
   setChatSending(isSendingChat);
 
-  syncGeminiKeySaveState();
-  if (!aiSettingsModal.classList.contains("hidden")) {
-    loadAiSettings();
-  }
-}
+	  syncGeminiKeySaveState();
+	  if (!aiSettingsModal.classList.contains("hidden")) {
+	    loadAiSettings();
+	  }
+	  syncUserAgentNameInputState();
+	}
 
 const tabStrip = document.getElementById("tabStrip");
 const newTabBtn = document.getElementById("newTabBtn");
@@ -669,6 +687,10 @@ const appSettingsModal = document.getElementById("appSettingsModal");
 const appSettingsCloseBtn = document.getElementById("appSettingsCloseBtn");
 const themeSelect = document.getElementById("themeSelect");
 const languageSelect = document.getElementById("languageSelect");
+const userAgentNameInput = document.getElementById("userAgentNameInput");
+const userAgentNameHint = document.getElementById("userAgentNameHint");
+const userAgentNameErrorRow = document.getElementById("userAgentNameErrorRow");
+const userAgentNameError = document.getElementById("userAgentNameError");
 const startupModeGroup = document.getElementById("startupModeGroup");
 const startupUrlsInput = document.getElementById("startupUrlsInput");
 const homePageInput = document.getElementById("homePageInput");
@@ -766,6 +788,7 @@ let searchEngineTemplate = DEFAULT_SEARCH_TEMPLATE;
 let startupMode = "home";
 let startupUrls = [];
 let themeMode = "light";
+let userAgentName = DEFAULT_USER_AGENT_NAME;
 let uiLanguage = resolveUiLanguage(navigator.language);
 let hasShownChromeImportModal = false;
 let pageZoomFactor = loadPageZoomFactor();
@@ -1096,6 +1119,57 @@ function applyTheme(mode) {
   if (mode === "dark") document.body.classList.add("theme-dark");
 }
 
+function isValidUserAgentName(value) {
+  const text = String(value || "").trim();
+  if (!text) return true;
+  if (text.length > 80) return false;
+  return /^[A-Za-z0-9][A-Za-z0-9._-]{0,39}(?:\/[A-Za-z0-9][A-Za-z0-9._-]{0,39})?$/.test(text);
+}
+
+function sanitizeUserAgentName(value) {
+  const text = String(value || "").trim();
+  if (!text) return DEFAULT_USER_AGENT_NAME;
+  return isValidUserAgentName(text) ? text : DEFAULT_USER_AGENT_NAME;
+}
+
+function setUserAgentNameError(message) {
+  if (!userAgentNameErrorRow || !userAgentNameError) return;
+  const text = String(message || "").trim();
+  userAgentNameError.textContent = text;
+  userAgentNameErrorRow.classList.toggle("hidden", !text);
+}
+
+function syncUserAgentNameInputState() {
+  if (!userAgentNameInput) return;
+  const ok = isValidUserAgentName(userAgentNameInput.value);
+  setUserAgentNameError(ok ? "" : t("appSettings.userAgentName.error.invalid"));
+}
+
+function stripElectronTokenFromUserAgent(userAgent) {
+  const ua = String(userAgent || "");
+  return ua.replace(/\sElectron\/[0-9.]+/g, "").trim();
+}
+
+function buildWebviewUserAgent() {
+  const base = stripElectronTokenFromUserAgent(navigator.userAgent);
+  const token = sanitizeUserAgentName(userAgentName);
+  if (!token) return base;
+  const parts = base.split(/\s+/).filter(Boolean);
+  if (parts.includes(token)) return base;
+  return `${base} ${token}`.trim();
+}
+
+function applyUserAgentToWebview(webview) {
+  if (!webview) return;
+  safeCall(() => webview.setAttribute("useragent", buildWebviewUserAgent()), null);
+}
+
+function applyUserAgentToAllWebviews() {
+  for (const tab of tabs) {
+    applyUserAgentToWebview(tab.webview);
+  }
+}
+
 function clampPageZoomFactor(factor) {
   const raw = Number(factor);
   if (!Number.isFinite(raw)) return 1;
@@ -1160,6 +1234,10 @@ function syncBrowserSettingsUI() {
   if (languageSelect && Array.from(languageSelect.options).some((o) => o.value === uiLanguage)) {
     languageSelect.value = uiLanguage;
   }
+  if (userAgentNameInput) {
+    userAgentNameInput.value = userAgentName || "";
+    setUserAgentNameError("");
+  }
 
   const radio = startupModeGroup.querySelector(`input[name="startupMode"][value="${startupMode}"]`);
   if (radio) radio.checked = true;
@@ -1191,6 +1269,8 @@ function applyBrowserSettings(browser) {
   themeMode = b.theme === "dark" || b.theme === "light" ? b.theme : "light";
   applyTheme(themeMode);
   setUiLanguage(resolveUiLanguage(b.language));
+  userAgentName = sanitizeUserAgentName(b.userAgentName);
+  applyUserAgentToAllWebviews();
 }
 
 async function loadAppSettings() {
@@ -2152,6 +2232,7 @@ function createTab(initialUrl = homeUrl || DEFAULT_HOME_URL, { makeActive = true
   const webview = document.createElement("webview");
   webview.className = "tabWebview hiddenWebview";
   webview.setAttribute("allowpopups", "");
+  applyUserAgentToWebview(webview);
   webview.src = initialUrl;
   webviewArea.appendChild(webview);
 
@@ -2721,6 +2802,22 @@ themeSelect.addEventListener("change", async () => {
 
 languageSelect.addEventListener("change", async () => {
   await saveBrowserSettings({ language: languageSelect.value });
+});
+
+userAgentNameInput?.addEventListener("input", () => {
+  syncUserAgentNameInputState();
+});
+
+userAgentNameInput?.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  e.preventDefault();
+  userAgentNameInput.blur();
+});
+
+userAgentNameInput?.addEventListener("blur", async () => {
+  syncUserAgentNameInputState();
+  if (!isValidUserAgentName(userAgentNameInput.value)) return;
+  await saveBrowserSettings({ userAgentName: userAgentNameInput.value });
 });
 
 startupModeGroup.addEventListener("change", async (e) => {

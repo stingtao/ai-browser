@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta http-equiv="Content-Security-Policy" content="script-src 'self'; style-src 'self' 'unsafe-inline';" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sting AI Browser</title>
+    <title>stingtaoAI browser</title>
+    <link rel="icon" href="../assets/logo.svg" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -475,6 +476,23 @@
                 <option value="en">English</option>
                 <option value="es">Español</option>
               </select>
+            </div>
+            <div class="row">
+              <label data-i18n="appSettings.userAgentName.label">Browser agent</label>
+              <input
+                id="userAgentNameInput"
+                placeholder="stingtaoAI"
+                autocomplete="off"
+                spellcheck="false"
+                data-i18n-attrs="placeholder:appSettings.userAgentName.placeholder"
+              />
+            </div>
+            <small id="userAgentNameHint" class="formHint" data-i18n="appSettings.userAgentName.hint">
+              Used as the User-Agent token for web requests.
+            </small>
+            <div class="row hidden" id="userAgentNameErrorRow">
+              <label></label>
+              <div id="userAgentNameError" class="formError"></div>
             </div>
           </div>
 

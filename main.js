@@ -5,6 +5,17 @@ const fs = require("fs/promises");
 const { existsSync } = require("fs");
 const { spawn, spawnSync } = require("child_process");
 
+const APP_DISPLAY_NAME = "stingtaoAI browser";
+
+try {
+  app.setName(APP_DISPLAY_NAME);
+} catch {
+}
+try {
+  process.title = APP_DISPLAY_NAME;
+} catch {
+}
+
 let mainWindow;
 let currentUiLanguage = "en";
 
@@ -424,6 +435,7 @@ app.on("window-all-closed", () => {
 const DEFAULT_PROMPTS_PATH = path.join(__dirname, "prompts.json");
 const DEFAULT_HOME_PAGE = "https://www.google.com";
 const DEFAULT_SEARCH_TEMPLATE = "https://www.google.com/search?q={query}";
+const DEFAULT_USER_AGENT_NAME = "stingtaoAI";
 const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_MODELS = [
   "gemini-2.5-pro",
@@ -464,7 +476,8 @@ function sanitizeSettings(raw) {
       startupMode: "home",
       startupUrls: [],
       theme: "light",
-      language: defaultLanguage
+      language: defaultLanguage,
+      userAgentName: DEFAULT_USER_AGENT_NAME
     },
     geminiModel: DEFAULT_GEMINI_MODEL,
     geminiApiKeyData: null,
@@ -499,6 +512,9 @@ function sanitizeSettings(raw) {
     if (typeof browser.language === "string" && browser.language.trim()) {
       next.browser.language = resolveUiLanguage(browser.language);
     }
+    if (typeof browser.userAgentName === "string") {
+      next.browser.userAgentName = sanitizeUserAgentName(browser.userAgentName);
+    }
   }
 
   if (typeof raw.geminiModel === "string" && GEMINI_MODELS.includes(raw.geminiModel)) {
@@ -531,6 +547,14 @@ function sanitizeSearchEngineTemplate(value) {
   if (!text.includes("{query}")) return DEFAULT_SEARCH_TEMPLATE;
   if (!/^https?:\/\//i.test(text)) return DEFAULT_SEARCH_TEMPLATE;
   return text;
+}
+
+function sanitizeUserAgentName(value) {
+  const text = String(value || "").trim();
+  if (!text) return DEFAULT_USER_AGENT_NAME;
+  if (text.length > 80) return DEFAULT_USER_AGENT_NAME;
+  const ok = /^[A-Za-z0-9][A-Za-z0-9._-]{0,39}(?:\/[A-Za-z0-9][A-Za-z0-9._-]{0,39})?$/.test(text);
+  return ok ? text : DEFAULT_USER_AGENT_NAME;
 }
 
 function sanitizeStartupUrls(urls) {
@@ -580,6 +604,7 @@ function mergeBrowserSettings(currentBrowser, patch) {
   if (input.theme === "dark" || input.theme === "light") next.theme = input.theme;
   else if (input.theme === "system") next.theme = nativeTheme.shouldUseDarkColors ? "dark" : "light";
   if (typeof input.language === "string") next.language = resolveUiLanguage(input.language);
+  if (typeof input.userAgentName === "string") next.userAgentName = sanitizeUserAgentName(input.userAgentName);
 
   return sanitizeSettings({ browser: next }).browser;
 }
@@ -1156,7 +1181,7 @@ ipcMain.handle("app:showError", async (_e, message) => {
   try {
     await dialog.showMessageBox(mainWindow, {
       type: "error",
-      title: "Sting AI Browser",
+      title: APP_DISPLAY_NAME,
       message: tApp("errorOccurred"),
       detail: String(message || "")
     });

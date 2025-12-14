@@ -1,5 +1,6 @@
 {
   "name": "sting-ai-browser",
+  "productName": "stingtaoAI browser",
   "version": "0.1.0",
   "description": "AI browser with local-first LLM assistant",
   "main": "main.js",
