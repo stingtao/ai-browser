@@ -158,11 +158,55 @@
         </div>
       </header>
 
-	      <div id="contentArea" class="contentArea">
-	        <div id="webviewArea" class="webviewArea">
-	          <div id="loadErrorOverlay" class="loadErrorOverlay hidden" aria-hidden="true">
-	            <div class="loadErrorCard" role="status" aria-live="polite">
-	              <div id="loadErrorTitle" class="loadErrorTitle" data-i18n="pageError.title">無法連上這個網站</div>
+		      <div id="contentArea" class="contentArea">
+		        <div id="webviewArea" class="webviewArea">
+		          <div id="findBar" class="findBar hidden" aria-hidden="true">
+		            <div class="findBarInner" role="search">
+		              <input
+		                id="findInput"
+		                type="text"
+		                spellcheck="false"
+		                autocomplete="off"
+		                placeholder="Find in page…"
+		                aria-label="Find in page"
+		                data-i18n-attrs="placeholder:findInPage.inputPlaceholder,aria-label:findInPage.inputLabel"
+		              />
+		              <span id="findMatchCount" class="findMatchCount" aria-live="polite"></span>
+		              <button
+		                id="findPrevBtn"
+		                class="iconBtn iconBtnSm"
+		                type="button"
+		                aria-label="Previous match"
+		                title="Previous"
+		                data-i18n-attrs="aria-label:findInPage.prev,title:findInPage.prev"
+		              >
+		                ↑
+		              </button>
+		              <button
+		                id="findNextBtn"
+		                class="iconBtn iconBtnSm"
+		                type="button"
+		                aria-label="Next match"
+		                title="Next"
+		                data-i18n-attrs="aria-label:findInPage.next,title:findInPage.next"
+		              >
+		                ↓
+		              </button>
+		              <button
+		                id="findCloseBtn"
+		                class="iconBtn iconBtnSm"
+		                type="button"
+		                aria-label="Close"
+		                title="Close"
+		                data-i18n-attrs="aria-label:findInPage.close,title:findInPage.close"
+		              >
+		                ×
+		              </button>
+		            </div>
+		          </div>
+		          <div id="loadErrorOverlay" class="loadErrorOverlay hidden" aria-hidden="true">
+		            <div class="loadErrorCard" role="status" aria-live="polite">
+		              <div id="loadErrorTitle" class="loadErrorTitle" data-i18n="pageError.title">無法連上這個網站</div>
 	              <div id="loadErrorUrl" class="loadErrorUrl"></div>
 	              <div id="loadErrorMessage" class="loadErrorMessage"></div>
 	              <div class="loadErrorActions">
@@ -198,7 +242,7 @@
               <span class="aiPanelIcon" aria-hidden="true">✨</span>
               <span class="aiPanelHeaderText" data-i18n="ai.label">AI Assistant</span>
             </div>
-            <div class="aiPanelHeaderActions">
+	            <div class="aiPanelHeaderActions">
               <button
                 id="aiNewConversationBtn"
                 class="iconBtn iconBtnSm"
@@ -219,11 +263,21 @@
               >
                 🕒
               </button>
-              <button
-                id="aiCloseBtn"
-                class="iconBtn iconBtnSm"
-                type="button"
-                aria-label="Close AI Assistant"
+	              <button
+	                id="aiAgentStopBtn"
+	                class="iconBtn iconBtnSm hidden"
+	                type="button"
+	                aria-label="Stop agent"
+	                title="Stop agent"
+	                data-i18n-attrs="aria-label:ai.agent.stop,title:ai.agent.stop"
+	              >
+	                ⏹
+	              </button>
+	              <button
+	                id="aiCloseBtn"
+	                class="iconBtn iconBtnSm"
+	                type="button"
+	                aria-label="Close AI Assistant"
                 title="Close"
                 data-i18n-attrs="aria-label:ai.close,title:aiSettings.close"
               >
@@ -362,12 +416,13 @@
           <div class="panelSection">
             <div class="panelSectionTitle" data-i18n="aiSettings.section.modelSource">模型來源</div>
             <div class="row">
-              <label data-i18n="aiSettings.provider.label">Provider</label>
-              <select id="providerSelect">
-                <option value="local" data-i18n="aiSettings.provider.local">Local (Ollama)</option>
-                <option value="gemini" data-i18n="aiSettings.provider.gemini">Gemini API</option>
-              </select>
-            </div>
+		              <label data-i18n="aiSettings.provider.label">Provider</label>
+		              <select id="providerSelect">
+		                <option value="local" data-i18n="aiSettings.provider.local">Local (Ollama)</option>
+		                <option value="gemini" data-i18n="aiSettings.provider.gemini">Gemini API</option>
+		                <option value="openai" data-i18n="aiSettings.provider.openai">OpenAI-compatible</option>
+		              </select>
+		            </div>
 
             <div class="row" id="localModelRow">
               <label data-i18n="aiSettings.local.label">Local</label>
@@ -381,7 +436,7 @@
               <button id="pullModelBtn" data-i18n="aiSettings.pull.button">下載模型</button>
             </div>
 
-            <div class="panelSubSection hidden" id="geminiRow">
+		            <div class="panelSubSection hidden" id="geminiRow">
               <div class="row">
                 <label data-i18n="aiSettings.gemini.model">Model</label>
                 <select id="geminiModelSelect">
@@ -441,13 +496,91 @@
 	              <div class="row hidden" id="geminiKeyErrorRow">
 	                <label></label>
 	                <div id="geminiKeyError" class="formError"></div>
-	              </div>
-	            </div>
-	          </div>
+		            </div>
+		            </div>
 
-		          <div class="panelSection">
-		            <div class="panelSectionTitle" data-i18n="aiSettings.section.voice">語音輸入</div>
-		            <div class="row">
+		            <div class="panelSubSection hidden" id="openAiRow">
+		              <div class="row">
+		                <label data-i18n="aiSettings.openai.baseUrl">Base URL</label>
+		                <input
+		                  id="openAiBaseUrlInput"
+		                  spellcheck="false"
+		                  placeholder="http://127.0.0.1:11434/v1"
+		                />
+		              </div>
+
+		              <div class="row">
+		                <label data-i18n="aiSettings.openai.model">Model</label>
+		                <input
+		                  id="openAiModelInput"
+		                  spellcheck="false"
+		                  placeholder="gpt-4o-mini / llama3.1:8b / qwen2.5:14b"
+		                />
+		              </div>
+
+		              <div class="row">
+		                <label data-i18n="aiSettings.openai.apiKey">API Key</label>
+		                <input
+		                  id="openAiApiKeyInput"
+		                  type="password"
+		                  autocomplete="off"
+		                  spellcheck="false"
+		                  placeholder="sk-…"
+		                />
+		                <button
+		                  id="toggleOpenAiKeyBtn"
+		                  class="iconBtn iconBtnSm"
+		                  type="button"
+		                  aria-label="Toggle API key visibility"
+		                  title="Show/Hide"
+		                  data-i18n-attrs="aria-label:aiSettings.openai.toggleKeyAria,title:aiSettings.openai.toggleKey"
+		                >
+		                  👁
+		                </button>
+		                <span id="openAiKeyStatus" class="formHint"></span>
+		                <button id="saveOpenAiKeyBtn" type="button" data-i18n="aiSettings.openai.keySave">儲存/更新</button>
+		                <button
+		                  id="clearOpenAiKeyBtn"
+		                  type="button"
+		                  class="secondary"
+		                  data-i18n="aiSettings.openai.keyClear"
+		                >
+		                  清除
+		                </button>
+		              </div>
+
+		              <div class="row hidden" id="openAiKeyErrorRow">
+		                <label></label>
+		                <div id="openAiKeyError" class="formError"></div>
+		              </div>
+		            </div>
+		          </div>
+
+			          <div class="panelSection">
+			            <div class="panelSectionTitle" data-i18n="aiSettings.section.agent">Agent</div>
+			            <div class="row">
+			              <label data-i18n="aiSettings.agent.mode">Mode</label>
+			              <select id="aiModeSelect">
+			                <option value="chat" data-i18n="aiSettings.agent.mode.chat">Chat</option>
+			                <option value="browser" data-i18n="aiSettings.agent.mode.browser">Browser agent (Playwright)</option>
+			              </select>
+			            </div>
+			            <div class="row">
+			              <label data-i18n="aiSettings.agent.confirm.label">Actions</label>
+			              <label class="checkboxRow">
+			                <input id="agentConfirmCheckbox" type="checkbox" checked />
+			                <span data-i18n="aiSettings.agent.confirm">Ask before actions</span>
+			              </label>
+			            </div>
+			            <div class="row">
+			              <label data-i18n="aiSettings.agent.maxSteps.label">Max steps</label>
+			              <input id="agentMaxStepsInput" type="number" min="1" max="50" step="1" value="10" />
+			            </div>
+			          </div>
+
+			          <div class="panelSection">
+			            <div class="panelSectionTitle" data-i18n="aiSettings.section.voice">語音輸入</div>
+			            <div class="row">
 		              <label data-i18n="aiSettings.voice.model">模型</label>
 		              <select id="voiceModelSelect">
 		                <option value="gemini-2.5-flash-native-audio-preview-12-2025" selected>

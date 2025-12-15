@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs/promises");
 const { existsSync } = require("fs");
 const { spawn, spawnSync } = require("child_process");
+const { chromium } = require("playwright-core");
 
 const APP_DISPLAY_NAME = "stingtaoAI";
 
@@ -14,6 +15,29 @@ try {
 try {
   process.title = APP_DISPLAY_NAME;
 } catch {
+}
+
+const DEFAULT_CDP_ADDRESS = "127.0.0.1";
+const DEFAULT_CDP_PORT = 9222;
+const CDP_ENABLED = String(process.env.STING_CDP_ENABLE || "1").trim() !== "0";
+const CDP_ADDRESS = String(process.env.STING_CDP_ADDRESS || DEFAULT_CDP_ADDRESS).trim() || DEFAULT_CDP_ADDRESS;
+const CDP_PORT = (() => {
+  const raw = Number(process.env.STING_CDP_PORT || DEFAULT_CDP_PORT);
+  if (!Number.isFinite(raw)) return DEFAULT_CDP_PORT;
+  const port = Math.floor(raw);
+  if (port < 1 || port > 65535) return DEFAULT_CDP_PORT;
+  return port;
+})();
+
+if (CDP_ENABLED) {
+  try {
+    app.commandLine.appendSwitch("remote-debugging-address", CDP_ADDRESS);
+  } catch {
+  }
+  try {
+    app.commandLine.appendSwitch("remote-debugging-port", String(CDP_PORT));
+  } catch {
+  }
 }
 
 let mainWindow;
@@ -802,6 +826,8 @@ const DEFAULT_USER_AGENT_NAME = "stingtaoAI";
 const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
 const DEFAULT_GEMINI_VOICE_MODEL = "gemini-2.5-flash-lite";
 const DEFAULT_GEMINI_LIVE_VOICE_MODEL = "gemini-2.5-flash-native-audio-preview-12-2025";
+const DEFAULT_OPENAI_COMPAT_BASE_URL = "http://127.0.0.1:11434/v1";
+const DEFAULT_OPENAI_COMPAT_MODEL = "";
 const GEMINI_LIVE_VOICE_MODELS = [DEFAULT_GEMINI_LIVE_VOICE_MODEL];
 const GEMINI_LIVE_AUDIO_MIME_TYPE = "audio/pcm;rate=16000";
 const GEMINI_LIVE_WS_ENDPOINT =
@@ -828,6 +854,557 @@ const GEMINI_AUDIO_MIME_TYPES = new Set([
 
 function log(...args) {
   console.log("[sting-ai]", ...args);
+}
+
+let playwrightBrowser = null;
+let playwrightBrowserPromise = null;
+
+function getCdpEndpointUrl() {
+  return `http://${CDP_ADDRESS}:${CDP_PORT}`;
+}
+
+async function getPlaywrightBrowser() {
+  if (!CDP_ENABLED) throw new Error("CDP is disabled (set STING_CDP_ENABLE=1)");
+  if (playwrightBrowser) return playwrightBrowser;
+  if (!playwrightBrowserPromise) {
+    playwrightBrowserPromise = (async () => {
+      const endpoint = getCdpEndpointUrl();
+      const browser = await chromium.connectOverCDP(endpoint);
+      playwrightBrowser = browser;
+      try {
+        browser.on("disconnected", () => {
+          playwrightBrowser = null;
+        });
+      } catch {
+      }
+      return browser;
+    })().finally(() => {
+      playwrightBrowserPromise = null;
+    });
+  }
+  return playwrightBrowserPromise;
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withBrowserCdpSession(handler) {
+  const browser = await getPlaywrightBrowser();
+  const cdp = await browser.newBrowserCDPSession();
+  try {
+    return await handler(cdp);
+  } finally {
+    try {
+      await cdp.detach();
+    } catch {
+    }
+  }
+}
+
+function removeListenerSafe(emitter, event, listener) {
+  try {
+    if (typeof emitter?.off === "function") emitter.off(event, listener);
+    else if (typeof emitter?.removeListener === "function") emitter.removeListener(event, listener);
+  } catch {
+  }
+}
+
+function createCdpTargetMessenger(cdp) {
+  let nextId = 1;
+  const pending = new Map();
+
+  const onMessage = (evt) => {
+    const messageText = String(evt?.message || "");
+    if (!messageText) return;
+    let msg;
+    try {
+      msg = JSON.parse(messageText);
+    } catch {
+      return;
+    }
+    const id = msg?.id;
+    if (typeof id !== "number") return;
+    const entry = pending.get(id);
+    if (!entry) return;
+    pending.delete(id);
+    clearTimeout(entry.timer);
+    if (msg?.error) {
+      const err = msg.error;
+      entry.reject(new Error(String(err?.message || err?.data || JSON.stringify(err))));
+      return;
+    }
+    entry.resolve(msg?.result);
+  };
+
+  cdp.on("Target.receivedMessageFromTarget", onMessage);
+
+  const sendToTarget = async (sessionId, method, params, { timeoutMs = 12_000 } = {}) => {
+    const sid = String(sessionId || "").trim();
+    if (!sid) throw new Error("Missing CDP sessionId");
+    const id = nextId++;
+    const message = JSON.stringify({ id, method, params: params || {} });
+
+    const resultPromise = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        pending.delete(id);
+        reject(new Error(`CDP target call timed out: ${method}`));
+      }, timeoutMs);
+      pending.set(id, { resolve, reject, timer });
+    });
+
+    await cdp.send("Target.sendMessageToTarget", { sessionId: sid, message });
+    return resultPromise;
+  };
+
+  const dispose = () => {
+    removeListenerSafe(cdp, "Target.receivedMessageFromTarget", onMessage);
+    for (const entry of pending.values()) {
+      clearTimeout(entry.timer);
+      try {
+        entry.reject(new Error("CDP session disposed"));
+      } catch {
+      }
+    }
+    pending.clear();
+  };
+
+  return { sendToTarget, dispose };
+}
+
+async function cdpEvalValue(sendToTarget, sessionId, expression, { timeoutMs = 12_000 } = {}) {
+  const res = await sendToTarget(
+    sessionId,
+    "Runtime.evaluate",
+    {
+      expression: String(expression || ""),
+      returnByValue: true,
+      awaitPromise: true,
+      userGesture: true
+    },
+    { timeoutMs }
+  );
+  if (res?.exceptionDetails) {
+    const text = String(res.exceptionDetails?.text || res.exceptionDetails?.exception?.description || "Evaluation failed");
+    throw new Error(text);
+  }
+  return res?.result?.value;
+}
+
+async function findWebviewTargetInfo({ cdp, sendToTarget }, { marker, url, title } = {}) {
+  const { targetInfos } = await cdp.send("Target.getTargets");
+  const webviews = (Array.isArray(targetInfos) ? targetInfos : [])
+    .filter((t) => t && t.type === "webview" && typeof t.targetId === "string");
+
+  if (!webviews.length) {
+    throw new Error("No webview targets found via CDP (make sure a tab is open).");
+  }
+
+  const wantUrl = String(url || "").trim();
+  const wantTitle = String(title || "").trim();
+  const wantMarker = String(marker || "").trim();
+
+  const byUrl = wantUrl ? webviews.filter((t) => String(t.url || "") === wantUrl) : [];
+  if (byUrl.length === 1) return byUrl[0];
+
+  if (wantTitle) {
+    const matchTitle = (byUrl.length ? byUrl : webviews).find((t) => String(t.title || "") === wantTitle);
+    if (matchTitle) return matchTitle;
+  }
+
+  if (wantMarker) {
+    const toCheck = (byUrl.length ? byUrl : webviews).slice(0, 20);
+    for (const t of toCheck) {
+      let sessionId = "";
+      try {
+        const attached = await cdp.send("Target.attachToTarget", { targetId: t.targetId });
+        sessionId = String(attached?.sessionId || "");
+        if (!sessionId) continue;
+        await sendToTarget(sessionId, "Runtime.enable", {}, { timeoutMs: 4_000 });
+        const value = await cdpEvalValue(sendToTarget, sessionId, "(() => window.__stingAgentMarker || \"\")()", {
+          timeoutMs: 4_000
+        });
+        if (String(value || "") === wantMarker) return t;
+      } catch {
+        // ignore and continue
+      } finally {
+        if (sessionId) {
+          try {
+            await cdp.send("Target.detachFromTarget", { sessionId });
+          } catch {
+          }
+        }
+      }
+    }
+  }
+
+  if (byUrl.length > 1) return byUrl[0];
+  if (webviews.length === 1) return webviews[0];
+
+  const sample = webviews
+    .slice(0, 6)
+    .map((t) => `- ${String(t.title || "").trim() || "(untitled)"} :: ${String(t.url || "").trim()}`)
+    .join("\n");
+  throw new Error(`Target webview not found.\nAvailable webviews:\n${sample}`);
+}
+
+async function withWebviewTargetSession({ marker, url, title } = {}, handler) {
+  return withBrowserCdpSession(async (cdp) => {
+    const messenger = createCdpTargetMessenger(cdp);
+    try {
+      const targetInfo = await findWebviewTargetInfo(
+        { cdp, sendToTarget: messenger.sendToTarget },
+        { marker, url, title }
+      );
+      const attached = await cdp.send("Target.attachToTarget", { targetId: targetInfo.targetId });
+      const sessionId = String(attached?.sessionId || "");
+      if (!sessionId) throw new Error("Failed to attach to target");
+      try {
+        await messenger.sendToTarget(sessionId, "Runtime.enable", {}, { timeoutMs: 4_000 });
+        await messenger.sendToTarget(sessionId, "Page.enable", {}, { timeoutMs: 4_000 });
+        return await handler({ cdp, sessionId, targetInfo, sendToTarget: messenger.sendToTarget });
+      } finally {
+        try {
+          await cdp.send("Target.detachFromTarget", { sessionId });
+        } catch {
+        }
+      }
+    } finally {
+      messenger.dispose();
+    }
+  });
+}
+
+const CDP_SNAPSHOT_EXPRESSION = `(() => {
+  const clean = (s) => String(s || "").replace(/\\s+/g, " ").trim();
+  const toRect = (el) => {
+    try {
+      const r = el.getBoundingClientRect();
+      return { x: r.x, y: r.y, w: r.width, h: r.height };
+    } catch {
+      return null;
+    }
+  };
+  const isVisible = (el) => {
+    try {
+      const style = window.getComputedStyle(el);
+      if (!style) return false;
+      if (style.visibility === "hidden" || style.display === "none") return false;
+      const rect = el.getBoundingClientRect();
+      if (!rect || rect.width < 4 || rect.height < 4) return false;
+      if (rect.bottom < 0 || rect.right < 0) return false;
+      if (rect.top > (window.innerHeight || 0) || rect.left > (window.innerWidth || 0)) return false;
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  try {
+    document.querySelectorAll("[data-sting-agent-id]").forEach((el) => el.removeAttribute("data-sting-agent-id"));
+  } catch {
+  }
+
+  const candidates = Array.from(
+    document.querySelectorAll(
+      "a,button,input,textarea,select,[role=\\"button\\"],[role=\\"link\\"],[onclick],[contenteditable=\\"true\\"]"
+    )
+  );
+
+  const elements = [];
+  let nextId = 1;
+  for (const el of candidates) {
+    if (!isVisible(el)) continue;
+    const id = String(nextId++);
+    try {
+      el.setAttribute("data-sting-agent-id", id);
+    } catch {
+      continue;
+    }
+
+    const tag = String(el.tagName || "").toLowerCase();
+    const role = clean(el.getAttribute && el.getAttribute("role"));
+    const text = clean(el.innerText || el.textContent);
+    const ariaLabel = clean(el.getAttribute && el.getAttribute("aria-label"));
+    const placeholder = clean(el.getAttribute && el.getAttribute("placeholder"));
+    const name = clean(el.getAttribute && el.getAttribute("name"));
+    const type = clean(el.getAttribute && el.getAttribute("type"));
+    const href = tag === "a" ? clean(el.getAttribute && el.getAttribute("href")) : "";
+    const value = tag === "input" || tag === "textarea" ? clean(el.value) : "";
+    elements.push({
+      id,
+      tag,
+      role,
+      text: text.slice(0, 120),
+      ariaLabel: ariaLabel.slice(0, 120),
+      placeholder: placeholder.slice(0, 120),
+      name: name.slice(0, 80),
+      type: type.slice(0, 40),
+      href: href.slice(0, 300),
+      value: value.slice(0, 120),
+      rect: toRect(el)
+    });
+    if (elements.length >= 120) break;
+  }
+
+  let visibleText = "";
+  try {
+    visibleText = clean(document.body && document.body.innerText ? document.body.innerText : "");
+  } catch {
+    visibleText = "";
+  }
+
+  return {
+    url: String(location.href || ""),
+    title: clean(document.title || ""),
+    viewport: { w: Number(window.innerWidth) || 0, h: Number(window.innerHeight) || 0 },
+    scroll: { x: Number(window.scrollX) || 0, y: Number(window.scrollY) || 0 },
+    elements,
+    visibleText: visibleText.slice(0, 4000)
+  };
+})()`;
+
+async function agentSnapshot({ url, title, marker } = {}) {
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    return cdpEvalValue(sendToTarget, sessionId, CDP_SNAPSHOT_EXPRESSION, { timeoutMs: 15_000 });
+  });
+}
+
+async function agentClick({ url, title, marker, elementId } = {}) {
+  const id = String(elementId || "").trim();
+  if (!id) throw new Error("Missing elementId");
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    const expr = `(() => {
+      const id = ${JSON.stringify(id)};
+      const sel = '[data-sting-agent-id=\"' + id + '\"]';
+      const el = document.querySelector(sel);
+      if (!el) return { ok: false, error: 'Element not found: ' + id };
+      try { el.scrollIntoView({ block: 'center', inline: 'center' }); } catch {}
+      try { el.focus && el.focus(); } catch {}
+      try { el.click(); return { ok: true }; } catch (err) { return { ok: false, error: String(err && err.message ? err.message : err) }; }
+    })()`;
+    const res = await cdpEvalValue(sendToTarget, sessionId, expr, { timeoutMs: 15_000 });
+    if (!res || res.ok !== true) throw new Error(String(res?.error || "Click failed"));
+    return { ok: true };
+  });
+}
+
+async function agentType({ url, title, marker, elementId, text } = {}) {
+  const id = String(elementId || "").trim();
+  if (!id) throw new Error("Missing elementId");
+  const value = String(text ?? "");
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    const expr = `(() => {
+      const id = ${JSON.stringify(id)};
+      const text = ${JSON.stringify(value)};
+      const sel = '[data-sting-agent-id=\"' + id + '\"]';
+      const el = document.querySelector(sel);
+      if (!el) return { ok: false, error: 'Element not found: ' + id };
+      try { el.scrollIntoView({ block: 'center', inline: 'center' }); } catch {}
+      try { el.focus && el.focus(); } catch {}
+
+      const setValue = (node, v) => {
+        try {
+          const proto = Object.getPrototypeOf(node);
+          const desc = proto ? Object.getOwnPropertyDescriptor(proto, 'value') : null;
+          if (desc && typeof desc.set === 'function') { desc.set.call(node, v); return true; }
+        } catch {}
+        try { node.value = v; return true; } catch {}
+        return false;
+      };
+
+      try {
+        if (el.isContentEditable) {
+          el.textContent = text;
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+          return { ok: true };
+        }
+        if ('value' in el) {
+          if (!setValue(el, text)) return { ok: false, error: 'Failed to set value' };
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+          return { ok: true };
+        }
+        return { ok: false, error: 'Element is not writable' };
+      } catch (err) {
+        return { ok: false, error: String(err && err.message ? err.message : err) };
+      }
+    })()`;
+    const res = await cdpEvalValue(sendToTarget, sessionId, expr, { timeoutMs: 15_000 });
+    if (!res || res.ok !== true) throw new Error(String(res?.error || "Type failed"));
+    return { ok: true };
+  });
+}
+
+function normalizePressKey(rawKey) {
+  const key = String(rawKey || "").trim();
+  if (!key) return null;
+
+  if (key === " ") return { key: " ", code: "Space", vk: 32 };
+
+  const normalized = key.replace(/[\s_-]+/g, "").toLowerCase();
+  const map = {
+    enter: { key: "Enter", code: "Enter", vk: 13 },
+    tab: { key: "Tab", code: "Tab", vk: 9 },
+    esc: { key: "Escape", code: "Escape", vk: 27 },
+    escape: { key: "Escape", code: "Escape", vk: 27 },
+    backspace: { key: "Backspace", code: "Backspace", vk: 8 },
+    delete: { key: "Delete", code: "Delete", vk: 46 },
+    del: { key: "Delete", code: "Delete", vk: 46 },
+    pageup: { key: "PageUp", code: "PageUp", vk: 33 },
+    pgup: { key: "PageUp", code: "PageUp", vk: 33 },
+    pagedown: { key: "PageDown", code: "PageDown", vk: 34 },
+    pgdown: { key: "PageDown", code: "PageDown", vk: 34 },
+    pgdn: { key: "PageDown", code: "PageDown", vk: 34 },
+    home: { key: "Home", code: "Home", vk: 36 },
+    end: { key: "End", code: "End", vk: 35 },
+    arrowdown: { key: "ArrowDown", code: "ArrowDown", vk: 40 },
+    down: { key: "ArrowDown", code: "ArrowDown", vk: 40 },
+    arrowup: { key: "ArrowUp", code: "ArrowUp", vk: 38 },
+    up: { key: "ArrowUp", code: "ArrowUp", vk: 38 },
+    arrowleft: { key: "ArrowLeft", code: "ArrowLeft", vk: 37 },
+    left: { key: "ArrowLeft", code: "ArrowLeft", vk: 37 },
+    arrowright: { key: "ArrowRight", code: "ArrowRight", vk: 39 },
+    right: { key: "ArrowRight", code: "ArrowRight", vk: 39 },
+    space: { key: " ", code: "Space", vk: 32 },
+    spacebar: { key: " ", code: "Space", vk: 32 }
+  };
+  return map[normalized] || null;
+}
+
+async function agentPress({ url, title, marker, key } = {}) {
+  const info = normalizePressKey(key);
+  if (!info) {
+    throw new Error(
+      "Unsupported key (supported: Enter, Tab, Escape, Backspace, Delete, PageUp, PageDown, Home, End, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Space)."
+    );
+  }
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    const scrollStateExpr = `(() => {
+      const se = document.scrollingElement || document.documentElement || document.body;
+      return {
+        x: Number(se && se.scrollLeft ? se.scrollLeft : 0) || 0,
+        y: Number(se && se.scrollTop ? se.scrollTop : 0) || 0,
+        vh: Number(window.innerHeight) || 0,
+        sh: Number(se && se.scrollHeight ? se.scrollHeight : 0) || 0
+      };
+    })()`;
+
+    const base = {
+      key: info.key,
+      code: info.code,
+      windowsVirtualKeyCode: info.vk,
+      nativeVirtualKeyCode: info.vk
+    };
+    const isScrollKey = ["PageDown", "PageUp", "Home", "End", "Space"].includes(info.code);
+    const beforeScroll = isScrollKey ? await cdpEvalValue(sendToTarget, sessionId, scrollStateExpr, { timeoutMs: 3_000 }) : null;
+
+    try {
+      await cdpEvalValue(
+        sendToTarget,
+        sessionId,
+        "(() => { try { window.focus(); } catch {} try { document.body && document.body.focus && document.body.focus(); } catch {} return true; })()",
+        { timeoutMs: 2_000 }
+      );
+    } catch {
+    }
+
+    try {
+      await sendToTarget(sessionId, "Input.dispatchKeyEvent", { type: "rawKeyDown", ...base }, { timeoutMs: 8_000 });
+      await sendToTarget(sessionId, "Input.dispatchKeyEvent", { type: "keyUp", ...base }, { timeoutMs: 8_000 });
+    } catch {
+      // Some CDP targets (e.g. webview) may ignore Input events; scroll fallback below.
+    }
+
+    if (isScrollKey) {
+      await delay(80);
+      const afterScroll = await cdpEvalValue(sendToTarget, sessionId, scrollStateExpr, { timeoutMs: 3_000 });
+      if (beforeScroll && afterScroll && Number(beforeScroll.y) === Number(afterScroll.y)) {
+        const code = info.code;
+        const fallbackExpr = `(() => {
+          const isScrollable = (el) => {
+            if (!el) return false;
+            const ch = Number(el.clientHeight) || 0;
+            const sh = Number(el.scrollHeight) || 0;
+            if (sh <= ch + 4) return false;
+            try {
+              const style = window.getComputedStyle(el);
+              const oy = String(style && style.overflowY ? style.overflowY : "");
+              if (oy === "auto" || oy === "scroll") return true;
+            } catch {
+            }
+            return el === document.scrollingElement || el === document.documentElement || el === document.body;
+          };
+          const pickScrollable = () => {
+            const root = document.scrollingElement || document.documentElement || document.body;
+            if (isScrollable(root)) return root;
+            const x = Math.floor((Number(window.innerWidth) || 0) / 2);
+            const y = Math.floor((Number(window.innerHeight) || 0) / 2);
+            let el = null;
+            try { el = document.elementFromPoint(x, y); } catch { el = null; }
+            while (el) {
+              if (isScrollable(el)) return el;
+              el = el.parentElement;
+            }
+            return root;
+          };
+          const se = pickScrollable();
+          const beforeY = Number(se && se.scrollTop ? se.scrollTop : 0) || 0;
+          const vh = Number(window.innerHeight) || 800;
+          const sh = Number(se && se.scrollHeight ? se.scrollHeight : 0) || 0;
+          const maxY = Math.max(0, sh - vh);
+          const clamp = (v) => Math.min(Math.max(Number(v) || 0, 0), maxY);
+          const code = ${JSON.stringify(code)};
+          let nextY = beforeY;
+          if (code === "Home") nextY = 0;
+          else if (code === "End") nextY = maxY;
+          else if (code === "PageDown") nextY = beforeY + Math.max(200, Math.round(vh * 0.85));
+          else if (code === "PageUp") nextY = beforeY - Math.max(200, Math.round(vh * 0.85));
+          else if (code === "Space") nextY = beforeY + Math.max(200, Math.round(vh * 0.75));
+          try { se.scrollTop = clamp(nextY); } catch {}
+          const afterY = Number(se && se.scrollTop ? se.scrollTop : 0) || 0;
+          return { ok: true, beforeY, afterY };
+        })()`;
+        try {
+          await cdpEvalValue(sendToTarget, sessionId, fallbackExpr, { timeoutMs: 6_000 });
+        } catch {
+        }
+      }
+    }
+    return { ok: true };
+  });
+}
+
+async function agentNavigate({ url, title, marker, toUrl } = {}) {
+  const next = String(toUrl || "").trim();
+  if (!next) throw new Error("Missing url");
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    await sendToTarget(sessionId, "Page.navigate", { url: next }, { timeoutMs: 15_000 });
+    return { ok: true };
+  });
+}
+
+async function agentWaitForLoad({ url, title, marker, state } = {}) {
+  const s = String(state || "networkidle").trim().toLowerCase();
+  const desired = s === "domcontentloaded" ? "domcontentloaded" : s === "load" ? "load" : "networkidle";
+  const timeoutMs = 20_000;
+
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const readyState = await cdpEvalValue(sendToTarget, sessionId, "document.readyState", { timeoutMs: 3_000 });
+      const rs = String(readyState || "").toLowerCase();
+      if (desired === "domcontentloaded") {
+        if (rs === "interactive" || rs === "complete") return { ok: true };
+      } else if (rs === "complete") {
+        if (desired === "networkidle") await delay(350);
+        return { ok: true };
+      }
+      await delay(180);
+    }
+    throw new Error(`Timed out waiting for load (${desired})`);
+  });
 }
 
 function getPromptStorePath() {
@@ -860,7 +1437,11 @@ function sanitizeSettings(raw) {
     },
     geminiModel: DEFAULT_GEMINI_MODEL,
     geminiApiKeyData: null,
-    geminiApiKeyFormat: null
+    geminiApiKeyFormat: null,
+    openAiBaseUrl: DEFAULT_OPENAI_COMPAT_BASE_URL,
+    openAiModel: DEFAULT_OPENAI_COMPAT_MODEL,
+    openAiApiKeyData: null,
+    openAiApiKeyFormat: null
   };
 
   if (!raw || typeof raw !== "object") return next;
@@ -905,6 +1486,19 @@ function sanitizeSettings(raw) {
   if (raw.geminiApiKeyFormat === "safeStorage" || raw.geminiApiKeyFormat === "plain") {
     next.geminiApiKeyFormat = raw.geminiApiKeyFormat;
   }
+
+  if (typeof raw.openAiBaseUrl === "string") {
+    next.openAiBaseUrl = sanitizeOpenAiBaseUrl(raw.openAiBaseUrl);
+  }
+  if (typeof raw.openAiModel === "string") {
+    next.openAiModel = sanitizeOpenAiModel(raw.openAiModel);
+  }
+  if (typeof raw.openAiApiKeyData === "string" && raw.openAiApiKeyData.trim()) {
+    next.openAiApiKeyData = raw.openAiApiKeyData.trim();
+  }
+  if (raw.openAiApiKeyFormat === "safeStorage" || raw.openAiApiKeyFormat === "plain") {
+    next.openAiApiKeyFormat = raw.openAiApiKeyFormat;
+  }
   return next;
 }
 
@@ -946,6 +1540,39 @@ function sanitizeStartupUrls(urls) {
     if (out.length >= 12) break;
   }
   return out;
+}
+
+function sanitizeOpenAiBaseUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return DEFAULT_OPENAI_COMPAT_BASE_URL;
+  if (raw.length > 400) return DEFAULT_OPENAI_COMPAT_BASE_URL;
+
+  let urlText = raw;
+  if (!/^https?:\/\//i.test(urlText)) urlText = `http://${urlText}`;
+
+  let url;
+  try {
+    url = new URL(urlText);
+  } catch {
+    return DEFAULT_OPENAI_COMPAT_BASE_URL;
+  }
+
+  if (url.protocol !== "http:" && url.protocol !== "https:") return DEFAULT_OPENAI_COMPAT_BASE_URL;
+  if (url.username || url.password) return DEFAULT_OPENAI_COMPAT_BASE_URL;
+
+  url.hash = "";
+  url.search = "";
+  url.pathname = url.pathname.replace(/\/+$/, "");
+
+  return url.toString().replace(/\/+$/, "");
+}
+
+function sanitizeOpenAiModel(value) {
+  const text = String(value || "").trim();
+  if (!text) return DEFAULT_OPENAI_COMPAT_MODEL;
+  if (text.length > 120) return DEFAULT_OPENAI_COMPAT_MODEL;
+  const ok = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,119}$/.test(text);
+  return ok ? text : DEFAULT_OPENAI_COMPAT_MODEL;
 }
 
 async function loadSettings() {
@@ -1146,6 +1773,15 @@ function isValidGeminiApiKey(apiKey) {
   return true;
 }
 
+function isValidOpenAiApiKey(apiKey) {
+  const key = String(apiKey || "").trim();
+  if (!key) return false;
+  if (key.length < 8) return false;
+  if (key.length > 400) return false;
+  if (/\s/.test(key)) return false;
+  return true;
+}
+
 function encryptGeminiApiKey(apiKey) {
   const key = String(apiKey || "").trim();
   if (!key) return { format: null, data: null };
@@ -1172,6 +1808,32 @@ function decryptGeminiApiKey({ format, data }) {
   return null;
 }
 
+function encryptOpenAiApiKey(apiKey) {
+  const key = String(apiKey || "").trim();
+  if (!key) return { format: null, data: null };
+
+  if (safeStorage.isEncryptionAvailable()) {
+    const encrypted = safeStorage.encryptString(key);
+    return { format: "safeStorage", data: encrypted.toString("base64") };
+  }
+  return { format: "plain", data: key };
+}
+
+function decryptOpenAiApiKey({ format, data }) {
+  if (!data || typeof data !== "string") return null;
+  if (format === "safeStorage") {
+    if (!safeStorage.isEncryptionAvailable()) return null;
+    try {
+      return safeStorage.decryptString(Buffer.from(data, "base64"));
+    } catch (err) {
+      log("failed to decrypt openai api key:", err?.message || err);
+      return null;
+    }
+  }
+  if (format === "plain") return data;
+  return null;
+}
+
 async function getGeminiApiKey() {
   const settings = await loadSettings();
   const stored = decryptGeminiApiKey({
@@ -1180,6 +1842,16 @@ async function getGeminiApiKey() {
   });
   if (stored) return stored;
   return process.env.GEMINI_API_KEY || null;
+}
+
+async function getOpenAiApiKey() {
+  const settings = await loadSettings();
+  const stored = decryptOpenAiApiKey({
+    format: settings.openAiApiKeyFormat,
+    data: settings.openAiApiKeyData
+  });
+  if (stored) return stored;
+  return process.env.OPENAI_API_KEY || null;
 }
 
 async function loadPrompts() {
@@ -1253,11 +1925,14 @@ async function ollamaPullModel(modelName) {
   });
 }
 
-async function ollamaChat({ model, messages }) {
+async function ollamaChat({ model, messages, format }) {
+  const body = { model, messages, stream: false };
+  const fmt = typeof format === "string" ? format.trim() : "";
+  if (fmt) body.format = fmt;
   const res = await fetch("http://127.0.0.1:11434/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model, messages, stream: false })
+    body: JSON.stringify(body)
   });
   if (!res.ok) {
     const text = await res.text();
@@ -1343,6 +2018,49 @@ async function geminiChat({ model, messages }) {
   const data = await res.json();
   const parts = data?.candidates?.[0]?.content?.parts ?? [];
   return parts.map((p) => p.text).join("");
+}
+
+function buildOpenAiCompatibleChatCompletionsUrl(baseUrl) {
+  const raw = String(baseUrl || "").trim();
+  const sanitized = raw ? sanitizeOpenAiBaseUrl(raw) : DEFAULT_OPENAI_COMPAT_BASE_URL;
+  const withScheme = /^https?:\/\//i.test(sanitized) ? sanitized : `http://${sanitized}`;
+  const url = new URL(withScheme);
+  const basePath = url.pathname.replace(/\/+$/, "");
+  const needsV1 = !basePath.endsWith("/v1");
+  url.pathname = `${needsV1 ? `${basePath}/v1` : basePath}/chat/completions`;
+  url.hash = "";
+  url.search = "";
+  return url.toString();
+}
+
+async function openAiCompatibleChat({ baseUrl, apiKey, model, messages }) {
+  const modelName = String(model || "").trim();
+  if (!modelName) throw new Error("OpenAI-compatible model not set");
+
+  const url = buildOpenAiCompatibleChatCompletionsUrl(baseUrl);
+  const headers = { "Content-Type": "application/json" };
+  const key = String(apiKey || "").trim();
+  if (key) headers.Authorization = `Bearer ${key}`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      model: modelName,
+      messages: Array.isArray(messages) ? messages : [],
+      stream: false
+    })
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `OpenAI-compatible error ${res.status}`);
+  }
+  const data = await res.json();
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content === "string") return content;
+  const text = data?.choices?.[0]?.text;
+  if (typeof text === "string") return text;
+  return "";
 }
 
 function isAllowedGeminiAudioMimeType(mimeType) {
@@ -1650,7 +2368,8 @@ ipcMain.handle("ai:generate", async (_e, payload) => {
   log("ai:generate start", { provider, model });
   try {
     if (provider === "local") {
-      const text = await ollamaChat({ model, messages });
+      const format = typeof payload?.format === "string" ? payload.format : "";
+      const text = await ollamaChat({ model, messages, format });
       log("ai:generate done", Date.now() - start, "ms");
       return { ok: true, text };
     }
@@ -1659,6 +2378,15 @@ ipcMain.handle("ai:generate", async (_e, payload) => {
       const text = useChat
         ? await geminiChat({ model, messages })
         : await geminiGenerate({ model, prompt });
+      log("ai:generate done", Date.now() - start, "ms");
+      return { ok: true, text };
+    }
+    if (provider === "openai") {
+      const settings = await loadSettings();
+      const baseUrl = typeof payload?.baseUrl === "string" ? payload.baseUrl : settings.openAiBaseUrl;
+      const modelName = String(model || settings.openAiModel || "").trim();
+      const apiKey = await getOpenAiApiKey();
+      const text = await openAiCompatibleChat({ baseUrl, apiKey, model: modelName, messages });
       log("ai:generate done", Date.now() - start, "ms");
       return { ok: true, text };
     }
@@ -1745,6 +2473,86 @@ ipcMain.handle("ai:liveVoiceStop", async (e) => {
   }
 });
 
+ipcMain.handle("agent:status", async () => {
+  try {
+    if (!CDP_ENABLED) {
+      return { ok: true, cdpEnabled: false, cdpEndpoint: getCdpEndpointUrl(), webviewsCount: 0, webviews: [] };
+    }
+
+    let webviews = [];
+    await withBrowserCdpSession(async (cdp) => {
+      const { targetInfos } = await cdp.send("Target.getTargets");
+      webviews = (Array.isArray(targetInfos) ? targetInfos : [])
+        .filter((t) => t && t.type === "webview")
+        .slice(0, 6)
+        .map((t) => ({ title: String(t.title || ""), url: String(t.url || ""), targetId: String(t.targetId || "") }));
+    });
+    return {
+      ok: true,
+      cdpEnabled: CDP_ENABLED,
+      cdpEndpoint: getCdpEndpointUrl(),
+      webviewsCount: webviews.length,
+      webviews
+    };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:snapshot", async (_e, payload) => {
+  try {
+    const snapshot = await agentSnapshot(payload || {});
+    return { ok: true, snapshot };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:click", async (_e, payload) => {
+  try {
+    await agentClick(payload || {});
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:type", async (_e, payload) => {
+  try {
+    await agentType(payload || {});
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:press", async (_e, payload) => {
+  try {
+    await agentPress(payload || {});
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:navigate", async (_e, payload) => {
+  try {
+    await agentNavigate(payload || {});
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:waitForLoad", async (_e, payload) => {
+  try {
+    await agentWaitForLoad(payload || {});
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
 ipcMain.handle("prompts:list", async () => {
   try {
     const prompts = await loadPrompts();
@@ -1784,12 +2592,20 @@ ipcMain.handle("settings:get", async () => {
     const hasStoredKey = Boolean(settings.geminiApiKeyData);
     const hasEnvKey = Boolean(process.env.GEMINI_API_KEY);
     const geminiApiKeySource = hasStoredKey ? "stored" : hasEnvKey ? "env" : "none";
+
+    const openAiHasStoredKey = Boolean(settings.openAiApiKeyData);
+    const openAiHasEnvKey = Boolean(process.env.OPENAI_API_KEY);
+    const openAiApiKeySource = openAiHasStoredKey ? "stored" : openAiHasEnvKey ? "env" : "none";
     return {
       ok: true,
       settings: {
         geminiModel: settings.geminiModel,
         geminiApiKeySource,
         geminiApiKeyFormat: settings.geminiApiKeyFormat,
+        openAiBaseUrl: settings.openAiBaseUrl,
+        openAiModel: settings.openAiModel,
+        openAiApiKeySource,
+        openAiApiKeyFormat: settings.openAiApiKeyFormat,
         encryptionAvailable: safeStorage.isEncryptionAvailable()
       }
     };
@@ -1838,6 +2654,61 @@ ipcMain.handle("settings:clearGeminiApiKey", async () => {
     return { ok: true };
   } catch (err) {
     log("settings:clearGeminiApiKey error", err?.message || err);
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("settings:setOpenAiBaseUrl", async (_e, baseUrl) => {
+  try {
+    const nextBaseUrl = sanitizeOpenAiBaseUrl(baseUrl);
+    const settings = await loadSettings();
+    settings.openAiBaseUrl = nextBaseUrl;
+    await saveSettings(settings);
+    return { ok: true, openAiBaseUrl: nextBaseUrl };
+  } catch (err) {
+    log("settings:setOpenAiBaseUrl error", err?.message || err);
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("settings:setOpenAiModel", async (_e, model) => {
+  try {
+    const nextModel = sanitizeOpenAiModel(model);
+    const settings = await loadSettings();
+    settings.openAiModel = nextModel;
+    await saveSettings(settings);
+    return { ok: true, openAiModel: nextModel };
+  } catch (err) {
+    log("settings:setOpenAiModel error", err?.message || err);
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("settings:setOpenAiApiKey", async (_e, apiKey) => {
+  try {
+    const key = String(apiKey || "").trim();
+    if (!isValidOpenAiApiKey(key)) throw new Error("Invalid API key format");
+    const settings = await loadSettings();
+    const stored = encryptOpenAiApiKey(key);
+    settings.openAiApiKeyFormat = stored.format;
+    settings.openAiApiKeyData = stored.data;
+    await saveSettings(settings);
+    return { ok: true, encryptionAvailable: safeStorage.isEncryptionAvailable() };
+  } catch (err) {
+    log("settings:setOpenAiApiKey error", err?.message || err);
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("settings:clearOpenAiApiKey", async () => {
+  try {
+    const settings = await loadSettings();
+    settings.openAiApiKeyFormat = null;
+    settings.openAiApiKeyData = null;
+    await saveSettings(settings);
+    return { ok: true };
+  } catch (err) {
+    log("settings:clearOpenAiApiKey error", err?.message || err);
     return { ok: false, error: String(err?.message || err) };
   }
 });
@@ -1934,6 +2805,27 @@ ipcMain.handle("app:showError", async (_e, message) => {
   } catch (err) {
     log("app:showError error", err?.message || err);
     return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.on("app:log", (_e, payload) => {
+  try {
+    const scope = String(payload?.scope || "renderer").trim().slice(0, 60) || "renderer";
+    const message = String(payload?.message || "").trim().slice(0, 1600);
+    let dataText = "";
+    if (payload && Object.prototype.hasOwnProperty.call(payload, "data")) {
+      const data = payload.data;
+      try {
+        dataText = typeof data === "string" ? data : JSON.stringify(data);
+      } catch {
+        dataText = String(data);
+      }
+    }
+    if (dataText.length > 4000) dataText = `${dataText.slice(0, 4000)}… (truncated)`;
+    if (message || dataText) {
+      log(`ui:${scope}`, message, dataText);
+    }
+  } catch {
   }
 });
 

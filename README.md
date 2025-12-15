@@ -1,10 +1,16 @@
-# AI Browser (Sting AI Browser)
+# 🤖 Sting AI Browser
 
-A minimal Electron-based browser with an integrated AI Assistant side panel. The assistant can use local models (Ollama) or Gemini, and is designed to feel like a native part of the browser UI.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Electron](https://img.shields.io/badge/Electron-34.0.0-blue.svg)](https://electronjs.org/)
+
+A minimal, privacy-focused Electron-based browser with an integrated AI Assistant side panel. The assistant supports local models (Ollama), Gemini, and OpenAI-compatible APIs, designed to feel like a native part of the browser UI.
+
+> **⚠️ Note**: This is a hobby project in active development. Not recommended for security-critical workflows.
 
 ## Features
 
 - Chrome-like layout: tabs, address bar, content area, status bar
+- Find in page (match count + next/prev): `Cmd/Ctrl+F`
 - Browser Settings:
   - Theme: light / dark / system
   - Home page, search engine, startup behavior
@@ -17,12 +23,18 @@ A minimal Electron-based browser with an integrated AI Assistant side panel. The
 - Download Manager: built-in download tracking with progress bars and file management
 - AI Assistant:
   - Integrated, resizable side panel
+  - Per-tab AI Assistant panel (open/close is independent per tab)
+  - Per-tab chat conversations (history list is shared)
   - Chat-style conversation UI with conversation history
+  - Stop button to cancel an in-flight chat/agent run
   - Real-time voice input with Gemini Live API (speech-to-text)
   - Prompt shortcuts + prompt manager (template placeholders: `{{content}}`, `{{title}}`, `{{url}}`)
   - Safe Markdown rendering (sanitized HTML)
   - AI settings modal (provider/model/context mode)
-  - Support for both local Ollama models and Gemini API
+  - Support for local Ollama models, Gemini API, and OpenAI-compatible APIs
+  - Experimental Browser Agent mode (Playwright): can navigate/click/type in the active tab (reuses your login session)
+  - Agent step trace UI (auto-collapses on completion; toggle to expand)
+  - Agent max steps limit (configurable in AI settings)
   - Gemini API key manager with encryption support (save/update/clear) with validation
   - AI panel font size (5 levels)
   - Context modes: auto-selection, selection-only, or full page content
@@ -32,8 +44,11 @@ A minimal Electron-based browser with an integrated AI Assistant side panel. The
 ### v0.1.0 - December 15, 2025
 - 🎙️ **Real-time Voice Input**: Added Gemini Live API integration for real-time speech-to-text
 - 📥 **Download Manager**: Complete download tracking with progress bars, file management, and folder access
+- 🔎 **Find in Page**: Added a Find Bar UI (`Cmd/Ctrl+F`) with match count and next/prev navigation
 - 🌐 **Enhanced Multi-language Support**: Improved internationalization (English, Spanish, Traditional Chinese)
 - ⚙️ **Advanced AI Settings**: Multiple context modes (auto-selection, selection-only, full page)
+- 🧠 **AI Assistant Improvements**: Per-tab conversations, per-tab panel open/close, and a Stop button for in-flight runs
+- 🧭 **Browser Agent UX**: Collapsible step trace + configurable max steps
 - 🔧 **Browser Customization**: System theme support, custom user agent strings, enhanced startup options
 - 🎨 **UI Improvements**: Better responsive design, improved accessibility, enhanced visual feedback
 - 🔒 **Security Enhancements**: Encrypted API key storage with fallback to safe storage
@@ -41,12 +56,18 @@ A minimal Electron-based browser with an integrated AI Assistant side panel. The
 - 🗣️ **Voice Models**: Support for Gemini voice models with audio transcription capabilities
 - 💾 **Settings Persistence**: Robust settings management with validation and sanitization
 
-## Requirements
+## 📋 Requirements
 
-- Node.js (LTS recommended)
-- macOS / Windows / Linux (Electron)
-- Optional: Ollama for local models
-- Optional: Gemini API key for Gemini models
+### System Requirements
+- **Node.js**: LTS version recommended (18+)
+- **Operating System**: macOS 10.15+, Windows 10+, Linux (Ubuntu 18.04+)
+- **RAM**: 4GB minimum, 8GB recommended
+- **Storage**: 500MB free space
+
+### Optional Dependencies
+- **Ollama**: For local AI models (https://ollama.com)
+- **Gemini API Key**: For Google's Gemini models
+- **OpenAI-compatible API**: For alternative AI providers
 
 ## Getting Started (Development)
 
@@ -84,6 +105,41 @@ Alternative: set an environment variable:
 export GEMINI_API_KEY="YOUR_KEY"
 ```
 
+## OpenAI-compatible APIs
+
+Use this if you have an OpenAI-compatible endpoint (for example: local servers, self-hosted gateways, or providers exposing `/v1/chat/completions`).
+
+- Open AI settings (`⚙`)
+- Set Provider to `OpenAI-compatible`
+- Set:
+  - Base URL (example: `http://127.0.0.1:11434/v1`)
+  - Model (example: `gpt-4o-mini` or `llama3.1:8b`)
+  - Optional API key (Save/Update), or use `OPENAI_API_KEY`
+
+```bash
+export OPENAI_API_KEY="YOUR_KEY"
+```
+
+## Browser Agent (Playwright)
+
+In AI settings → Agent → Mode, switch to `Browser agent (Playwright)`.
+
+- Runs a tool-using agent loop that can operate the current tab (so it can reuse your login state)
+- Uses Chromium CDP on `127.0.0.1` by default
+- Shows intermediate tool steps in a collapsible “Agent steps” trace (auto-collapses when finished)
+- `Max steps` is configurable in AI settings (prevents runaway loops)
+- Use the Stop button (`⏹`) to cancel an in-flight agent run
+
+Environment variables:
+
+```bash
+export STING_CDP_ENABLE=1
+export STING_CDP_PORT=9222
+export STING_CDP_ADDRESS=127.0.0.1
+```
+
+Security note: CDP grants powerful control of the browser; keep it bound to localhost and avoid running untrusted local processes.
+
 ## Keyboard Shortcuts
 
 - Settings: `Cmd/Ctrl+,`
@@ -100,16 +156,86 @@ export GEMINI_API_KEY="YOUR_KEY"
 
 - Browser settings are stored in Electron `userData` as JSON.
 - Gemini API key is stored using Electron `safeStorage` encryption when available; otherwise it falls back to plaintext storage on the device.
+- OpenAI-compatible API key is stored using Electron `safeStorage` encryption when available; otherwise it falls back to plaintext storage on the device.
 - AI Assistant options, prompts, chat history, and page zoom are stored in renderer `localStorage`.
 
-## Project Architecture
+## 🏗️ Architecture & Technologies
 
-- **Electron Main Process** (`main.js`): Handles window management, IPC communication, settings persistence, and system integration
+### Core Technologies
+- **Electron**: Cross-platform desktop app framework
+- **Playwright**: Browser automation for AI agent functionality
+- **WebSocket**: Real-time voice communication with Gemini Live API
+- **Web APIs**: Native browser APIs for web content interaction
+
+### Project Structure
+- **Main Process** (`main.js`): Window management, IPC communication, settings persistence, system integration
 - **Preload Script** (`preload.js`): Secure IPC bridge between main and renderer processes
-- **Renderer Process** (`renderer/`): Web-based UI with browser tabs, AI assistant panel, and all user interactions
-- **WebSocket Integration**: Real-time voice communication with Gemini Live API
-- **Settings Storage**: JSON-based configuration with encrypted API key storage
-- **Multi-language Support**: Built-in internationalization system
+- **Renderer Process** (`renderer/`): Web-based UI with browser tabs, AI assistant panel, and user interactions
+  - `renderer.js`: Main application logic
+  - `index.html`: UI structure and templates
+  - `styles.css`: Responsive design with light/dark theme support
+
+### Key Features Implementation
+- **AI Integration**: Multi-provider support (Ollama, Gemini, OpenAI-compatible)
+- **Browser Agent**: CDP-based automation using Playwright Core
+- **Download Manager**: Electron session-based download tracking
+- **Voice Input**: WebSocket-based real-time audio streaming
+- **Settings System**: JSON storage with encrypted API key management
+- **Internationalization**: Built-in i18n system supporting 3 languages
+
+### Security Features
+- **Context Isolation**: Electron security best practices
+- **API Key Encryption**: SafeStorage with fallback mechanisms
+- **CSP Headers**: Content Security Policy implementation
+- **Input Sanitization**: XSS protection for user-generated content
+
+## 🚀 Roadmap
+
+### Planned Features
+- [ ] **Extension System**: Browser extension API support
+- [ ] **Sync**: Cross-device settings synchronization
+- [ ] **Performance**: Better memory management and tab unloading
+- [ ] **Privacy**: Enhanced tracking protection and cookie management
+- [ ] **Accessibility**: Screen reader improvements and keyboard navigation
+
+### Known Issues
+- Browser Agent mode is experimental and may have stability issues
+- Voice input requires stable internet connection
+- Large page content may impact AI response performance
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+### Development Setup
+
+1. Fork the repository
+2. Clone your fork: `git clone https://github.com/your-username/sting_browser.git`
+3. Install dependencies: `npm install`
+4. Start development: `npm start`
+
+### Project Structure
+
+- `main.js` - Electron main process (window management, IPC, settings)
+- `preload.js` - Secure IPC bridge between main and renderer
+- `renderer/` - Web-based UI (browser tabs, AI assistant, interactions)
+  - `renderer.js` - Main renderer logic
+  - `index.html` - UI structure
+  - `styles.css` - Styling
+- `scripts/` - Development and build scripts
+- `assets/` - Static assets (icons, logos)
+
+## 🙏 Acknowledgments
+
+- **Electron**: For the amazing cross-platform framework
+- **Google Gemini**: For powerful AI models and Live API
+- **Ollama**: For making local AI accessible
+- **Playwright**: For browser automation capabilities
+- **OpenAI**: For the API standards that enable interoperability
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Security Disclaimer
 

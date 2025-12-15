@@ -72,6 +72,10 @@ const UI_I18N = {
     "ai.history": "Conversation history",
     "ai.history.title": "Conversation history",
     "ai.history.close": "Close history",
+    "ai.agent.stop": "Stop agent",
+    "ai.agent.stopped": "Agent stopped.",
+    "ai.chat.stopped": "Stopped.",
+    "ai.agent.steps.title": "Agent steps",
     "ai.history.list": "Conversation list",
     "ai.history.empty": "No conversations yet.",
     "ai.history.count": "{{count}} messages",
@@ -81,6 +85,8 @@ const UI_I18N = {
     "ai.chat.placeholder": "Type a message…",
     "ai.chat.send": "Send",
     "ai.chat.sending": "Generating…",
+    "ai.chat.copy": "Copy",
+    "ai.chat.copied": "Copied",
     "ai.voice.button": "Voice input",
     "ai.voice.listening": "Listening…",
     "ai.voice.transcribing": "Transcribing…",
@@ -89,9 +95,11 @@ const UI_I18N = {
     "ai.voice.error.noGeminiKey": "Gemini API key not set. Open AI settings to add it.",
     "ai.meta.user": "You",
     "ai.meta.assistant": "AI",
+    "ai.meta.stopped": "Stopped",
     "ai.meta.error": "Error",
     "ai.meta.provider.local": "Local",
     "ai.meta.provider.gemini": "Gemini",
+    "ai.meta.provider.openai": "OpenAI-compatible",
     "ai.context.currentPage": "Current page content",
     "ai.context.selection": "Selection",
     "ai.context.pageTitle": "Page title",
@@ -108,9 +116,11 @@ const UI_I18N = {
     "aiSettings.title": "AI Assistant Settings",
     "aiSettings.close": "Close",
     "aiSettings.section.modelSource": "Model Source",
+    "aiSettings.section.agent": "Agent",
     "aiSettings.provider.label": "Provider",
     "aiSettings.provider.local": "Local (Ollama)",
     "aiSettings.provider.gemini": "Gemini API",
+    "aiSettings.provider.openai": "OpenAI-compatible",
     "aiSettings.local.label": "Local",
     "aiSettings.refresh": "Refresh",
     "aiSettings.pull.label": "Pull",
@@ -136,6 +146,33 @@ const UI_I18N = {
     "aiSettings.gemini.keyClearConfirm": "Clear the saved Gemini API key?",
     "aiSettings.gemini.keyError.invalid":
       "Invalid API key format. Please paste the full key (often starts with AIza...).",
+
+    "aiSettings.openai.baseUrl": "Base URL",
+    "aiSettings.openai.model": "Model",
+    "aiSettings.openai.apiKey": "API Key",
+    "aiSettings.openai.toggleKey": "Show/Hide",
+    "aiSettings.openai.toggleKeyAria": "Toggle API key visibility",
+    "aiSettings.openai.keyStatus.notSet": "Not set",
+    "aiSettings.openai.keyStatus.env": "Set (environment variable OPENAI_API_KEY)",
+    "aiSettings.openai.keyStatus.savedEncrypted": "Saved (encrypted)",
+    "aiSettings.openai.keyStatus.savedPlain": "Saved (plain text)",
+    "aiSettings.openai.keyStatus.saved": "Saved",
+    "aiSettings.openai.keyStatus.notSetEncryptedAvailable": "Not set (can be saved encrypted here)",
+    "aiSettings.openai.keyStatus.notSetNoEncryption":
+      "Not set (this device can't encrypt; it will be stored in plain text)",
+    "aiSettings.openai.keyStatus.saving": "Saving…",
+    "aiSettings.openai.keySave": "Save/Update",
+    "aiSettings.openai.keySave.saving": "Saving…",
+    "aiSettings.openai.keyClear": "Clear",
+    "aiSettings.openai.keyClearConfirm": "Clear the saved OpenAI-compatible API key?",
+    "aiSettings.openai.keyError.invalid": "Invalid API key format.",
+
+    "aiSettings.agent.mode": "Mode",
+    "aiSettings.agent.mode.chat": "Chat",
+    "aiSettings.agent.mode.browser": "Browser agent (Playwright)",
+    "aiSettings.agent.confirm.label": "Actions",
+    "aiSettings.agent.confirm": "Ask before actions",
+    "aiSettings.agent.maxSteps.label": "Max steps",
 
     "aiSettings.section.context": "Context",
     "aiSettings.context.label": "Content",
@@ -242,6 +279,11 @@ const UI_I18N = {
     "error.noActiveTab": "No active tab",
 
     "findInPage.prompt": "Find in page",
+    "findInPage.inputPlaceholder": "Find in page…",
+    "findInPage.inputLabel": "Find in page",
+    "findInPage.prev": "Previous",
+    "findInPage.next": "Next",
+    "findInPage.close": "Close",
     "aiSettings.localModel.missing": "{{model}} (not downloaded or Ollama not installed)",
     "aiSettings.localModel.unavailable": "Ollama is not available (install/start Ollama, then click Refresh).",
     "aiSettings.localModel.noneInstalled": "No local models installed (use Pull to download one)."
@@ -289,6 +331,10 @@ const UI_I18N = {
     "ai.history": "Historial de conversaciones",
     "ai.history.title": "Historial de conversaciones",
     "ai.history.close": "Cerrar historial",
+    "ai.agent.stop": "Detener agente",
+    "ai.agent.stopped": "Agente detenido.",
+    "ai.chat.stopped": "Detenido.",
+    "ai.agent.steps.title": "Pasos del agente",
     "ai.history.list": "Lista de conversaciones",
     "ai.history.empty": "Aún no hay conversaciones.",
     "ai.history.count": "{{count}} mensajes",
@@ -298,6 +344,8 @@ const UI_I18N = {
     "ai.chat.placeholder": "Escribe un mensaje…",
     "ai.chat.send": "Enviar",
     "ai.chat.sending": "Generando…",
+    "ai.chat.copy": "Copiar",
+    "ai.chat.copied": "Copiado",
     "ai.voice.button": "Entrada de voz",
     "ai.voice.listening": "Escuchando…",
     "ai.voice.transcribing": "Transcribiendo…",
@@ -306,9 +354,11 @@ const UI_I18N = {
     "ai.voice.error.noGeminiKey": "La clave de Gemini API no está configurada. Abre ajustes de IA para añadirla.",
     "ai.meta.user": "Tú",
     "ai.meta.assistant": "IA",
+    "ai.meta.stopped": "Detenido",
     "ai.meta.error": "Error",
     "ai.meta.provider.local": "Local",
     "ai.meta.provider.gemini": "Gemini",
+    "ai.meta.provider.openai": "OpenAI-compatible",
     "ai.context.currentPage": "Contenido de la página actual",
     "ai.context.selection": "Selección",
     "ai.context.pageTitle": "Título de la página",
@@ -325,9 +375,11 @@ const UI_I18N = {
     "aiSettings.title": "Ajustes del asistente de IA",
     "aiSettings.close": "Cerrar",
     "aiSettings.section.modelSource": "Origen del modelo",
+    "aiSettings.section.agent": "Agente",
     "aiSettings.provider.label": "Proveedor",
     "aiSettings.provider.local": "Local (Ollama)",
     "aiSettings.provider.gemini": "Gemini API",
+    "aiSettings.provider.openai": "OpenAI-compatible",
     "aiSettings.local.label": "Local",
     "aiSettings.refresh": "Actualizar",
     "aiSettings.pull.label": "Descargar",
@@ -353,6 +405,33 @@ const UI_I18N = {
     "aiSettings.gemini.keyClearConfirm": "¿Borrar la clave API de Gemini guardada?",
     "aiSettings.gemini.keyError.invalid":
       "Formato de clave API no válido. Pega la clave completa (a menudo empieza por AIza...).",
+
+    "aiSettings.openai.baseUrl": "Base URL",
+    "aiSettings.openai.model": "Modelo",
+    "aiSettings.openai.apiKey": "Clave API",
+    "aiSettings.openai.toggleKey": "Mostrar/Ocultar",
+    "aiSettings.openai.toggleKeyAria": "Mostrar u ocultar la clave API",
+    "aiSettings.openai.keyStatus.notSet": "No configurado",
+    "aiSettings.openai.keyStatus.env": "Configurado (variable de entorno OPENAI_API_KEY)",
+    "aiSettings.openai.keyStatus.savedEncrypted": "Guardado (cifrado)",
+    "aiSettings.openai.keyStatus.savedPlain": "Guardado (texto plano)",
+    "aiSettings.openai.keyStatus.saved": "Guardado",
+    "aiSettings.openai.keyStatus.notSetEncryptedAvailable": "No configurado (puedes guardarlo cifrado aquí)",
+    "aiSettings.openai.keyStatus.notSetNoEncryption":
+      "No configurado (este dispositivo no puede cifrar; se guardará en texto plano)",
+    "aiSettings.openai.keyStatus.saving": "Guardando…",
+    "aiSettings.openai.keySave": "Guardar/Actualizar",
+    "aiSettings.openai.keySave.saving": "Guardando…",
+    "aiSettings.openai.keyClear": "Borrar",
+    "aiSettings.openai.keyClearConfirm": "¿Borrar la clave API OpenAI-compatible guardada?",
+    "aiSettings.openai.keyError.invalid": "Formato de clave API no válido.",
+
+    "aiSettings.agent.mode": "Modo",
+    "aiSettings.agent.mode.chat": "Chat",
+    "aiSettings.agent.mode.browser": "Agente del navegador (Playwright)",
+    "aiSettings.agent.confirm.label": "Acciones",
+    "aiSettings.agent.confirm": "Pedir confirmación antes de actuar",
+    "aiSettings.agent.maxSteps.label": "Máx. pasos",
 
     "aiSettings.section.context": "Contexto",
     "aiSettings.context.label": "Contenido",
@@ -459,6 +538,11 @@ const UI_I18N = {
     "error.noActiveTab": "No hay pestaña activa",
 
     "findInPage.prompt": "Buscar en la página",
+    "findInPage.inputPlaceholder": "Buscar en la página…",
+    "findInPage.inputLabel": "Buscar en la página",
+    "findInPage.prev": "Anterior",
+    "findInPage.next": "Siguiente",
+    "findInPage.close": "Cerrar",
     "aiSettings.localModel.missing": "{{model}} (no descargado o Ollama no instalado)",
     "aiSettings.localModel.unavailable": "Ollama no está disponible (instala/inicia Ollama y luego pulsa Actualizar).",
     "aiSettings.localModel.noneInstalled": "No hay modelos locales instalados (usa Descargar para instalar uno)."
@@ -506,16 +590,22 @@ const UI_I18N = {
     "ai.history": "對話紀錄",
     "ai.history.title": "對話紀錄",
     "ai.history.close": "關閉紀錄",
+    "ai.agent.stop": "停止代理",
+    "ai.agent.stopped": "代理已停止。",
+    "ai.chat.stopped": "已停止。",
+    "ai.agent.steps.title": "代理步驟",
     "ai.history.list": "對話列表",
     "ai.history.empty": "尚無對話紀錄。",
     "ai.history.count": "{{count}} 則",
     "ai.history.newConversationTitle": "新對話",
     "ai.chat.aria": "AI 對話",
     "ai.prompts.shortcuts": "Prompt 快捷鍵",
-    "ai.chat.placeholder": "輸入訊息…",
-    "ai.chat.send": "送出",
-    "ai.chat.sending": "生成中...",
-    "ai.voice.button": "語音輸入",
+	    "ai.chat.placeholder": "輸入訊息…",
+	    "ai.chat.send": "送出",
+	    "ai.chat.sending": "生成中...",
+	    "ai.chat.copy": "複製",
+	    "ai.chat.copied": "已複製",
+	    "ai.voice.button": "語音輸入",
     "ai.voice.listening": "錄音中…",
     "ai.voice.transcribing": "轉文字中…",
     "ai.voice.error.notSupported": "目前環境不支援語音輸入。",
@@ -523,9 +613,11 @@ const UI_I18N = {
     "ai.voice.error.noGeminiKey": "尚未設定 Gemini API Key，請先到 AI 設定新增。",
     "ai.meta.user": "你",
     "ai.meta.assistant": "AI",
+    "ai.meta.stopped": "已停止",
     "ai.meta.error": "錯誤",
     "ai.meta.provider.local": "本地",
     "ai.meta.provider.gemini": "Gemini",
+    "ai.meta.provider.openai": "OpenAI 相容",
     "ai.context.currentPage": "目前網頁內容",
     "ai.context.selection": "選取文字",
     "ai.context.pageTitle": "頁面標題",
@@ -540,9 +632,11 @@ const UI_I18N = {
     "aiSettings.title": "AI Assistant 設定",
     "aiSettings.close": "關閉",
     "aiSettings.section.modelSource": "模型來源",
+    "aiSettings.section.agent": "代理",
     "aiSettings.provider.label": "Provider",
     "aiSettings.provider.local": "Local (Ollama)",
     "aiSettings.provider.gemini": "Gemini API",
+    "aiSettings.provider.openai": "OpenAI 相容",
     "aiSettings.local.label": "Local",
     "aiSettings.refresh": "刷新",
     "aiSettings.pull.label": "Pull",
@@ -566,6 +660,32 @@ const UI_I18N = {
     "aiSettings.gemini.keyClear": "清除",
     "aiSettings.gemini.keyClearConfirm": "確定清除已儲存的 Gemini API Key？",
     "aiSettings.gemini.keyError.invalid": "API Key 格式不正確，請貼上完整 key（通常以 AIza... 開頭）。",
+
+    "aiSettings.openai.baseUrl": "Base URL",
+    "aiSettings.openai.model": "Model",
+    "aiSettings.openai.apiKey": "API Key",
+    "aiSettings.openai.toggleKey": "顯示/隱藏",
+    "aiSettings.openai.toggleKeyAria": "切換 API Key 顯示",
+    "aiSettings.openai.keyStatus.notSet": "尚未設定",
+    "aiSettings.openai.keyStatus.env": "已設定（環境變數 OPENAI_API_KEY）",
+    "aiSettings.openai.keyStatus.savedEncrypted": "已儲存（加密）",
+    "aiSettings.openai.keyStatus.savedPlain": "已儲存（明文）",
+    "aiSettings.openai.keyStatus.saved": "已儲存",
+    "aiSettings.openai.keyStatus.notSetEncryptedAvailable": "尚未設定（可於此處加密儲存）",
+    "aiSettings.openai.keyStatus.notSetNoEncryption": "尚未設定（此裝置無法加密，將以明文儲存）",
+    "aiSettings.openai.keyStatus.saving": "儲存中...",
+    "aiSettings.openai.keySave": "儲存/更新",
+    "aiSettings.openai.keySave.saving": "儲存中...",
+    "aiSettings.openai.keyClear": "清除",
+    "aiSettings.openai.keyClearConfirm": "確定清除已儲存的 OpenAI 相容 API Key？",
+    "aiSettings.openai.keyError.invalid": "API Key 格式不正確。",
+
+    "aiSettings.agent.mode": "模式",
+    "aiSettings.agent.mode.chat": "Chat",
+    "aiSettings.agent.mode.browser": "瀏覽器代理（Playwright）",
+    "aiSettings.agent.confirm.label": "動作",
+    "aiSettings.agent.confirm": "執行前先詢問確認",
+    "aiSettings.agent.maxSteps.label": "最大步數",
 
     "aiSettings.section.context": "上下文",
     "aiSettings.context.label": "內容",
@@ -668,6 +788,11 @@ const UI_I18N = {
     "error.noActiveTab": "沒有作用中的分頁",
 
     "findInPage.prompt": "在頁面中搜尋",
+    "findInPage.inputPlaceholder": "在頁面中搜尋…",
+    "findInPage.inputLabel": "在頁面中搜尋",
+    "findInPage.prev": "上一個",
+    "findInPage.next": "下一個",
+    "findInPage.close": "關閉",
 	    "aiSettings.localModel.missing": "{{model}}（未下載/或未安裝 Ollama）",
 	    "aiSettings.localModel.unavailable": "Ollama 不可用（請安裝/啟動 Ollama 後按重新整理）。",
 	    "aiSettings.localModel.noneInstalled": "尚未安裝本機模型（請使用下載來安裝）。"
@@ -761,6 +886,12 @@ const newTabBtn = document.getElementById("newTabBtn");
 const tabsScrollLeftBtn = document.getElementById("tabsScrollLeftBtn");
 const tabsScrollRightBtn = document.getElementById("tabsScrollRightBtn");
 const webviewArea = document.getElementById("webviewArea");
+const findBar = document.getElementById("findBar");
+const findInput = document.getElementById("findInput");
+const findMatchCount = document.getElementById("findMatchCount");
+const findPrevBtn = document.getElementById("findPrevBtn");
+const findNextBtn = document.getElementById("findNextBtn");
+const findCloseBtn = document.getElementById("findCloseBtn");
 const loadErrorOverlay = document.getElementById("loadErrorOverlay");
 const loadErrorTitle = document.getElementById("loadErrorTitle");
 const loadErrorUrl = document.getElementById("loadErrorUrl");
@@ -794,6 +925,7 @@ const promptShortcuts = document.getElementById("promptShortcuts");
 const chatInput = document.getElementById("chatInput");
 const chatMicBtn = document.getElementById("chatMicBtn");
 const chatSendBtn = document.getElementById("chatSendBtn");
+const aiAgentStopBtn = document.getElementById("aiAgentStopBtn");
 const aiSettingsModal = document.getElementById("aiSettingsModal");
 const aiSettingsCloseBtn = document.getElementById("aiSettingsCloseBtn");
 const appSettingsModal = document.getElementById("appSettingsModal");
@@ -838,6 +970,15 @@ const downloadsList = document.getElementById("downloadsList");
 const contextModeSelect = document.getElementById("contextModeSelect");
 contextModeSelect.addEventListener("change", () => persistAiAssistantOptions());
 const providerSelect = document.getElementById("providerSelect");
+const aiModeSelect = document.getElementById("aiModeSelect");
+const agentConfirmCheckbox = document.getElementById("agentConfirmCheckbox");
+const agentMaxStepsInput = document.getElementById("agentMaxStepsInput");
+aiModeSelect?.addEventListener("change", () => persistAiAssistantOptions());
+agentConfirmCheckbox?.addEventListener("change", () => persistAiAssistantOptions());
+agentMaxStepsInput?.addEventListener("change", () => {
+  if (agentMaxStepsInput) agentMaxStepsInput.value = String(clampAgentMaxSteps(agentMaxStepsInput.value));
+  persistAiAssistantOptions();
+});
 const localModelSelect = document.getElementById("localModelSelect");
 localModelSelect.addEventListener("change", () => persistAiAssistantOptions());
 const refreshModelsBtn = document.getElementById("refreshModelsBtn");
@@ -854,6 +995,16 @@ const clearGeminiKeyBtn = document.getElementById("clearGeminiKeyBtn");
 const geminiKeyStatus = document.getElementById("geminiKeyStatus");
 const geminiKeyErrorRow = document.getElementById("geminiKeyErrorRow");
 const geminiKeyError = document.getElementById("geminiKeyError");
+const openAiRow = document.getElementById("openAiRow");
+const openAiBaseUrlInput = document.getElementById("openAiBaseUrlInput");
+const openAiModelInput = document.getElementById("openAiModelInput");
+const openAiApiKeyInput = document.getElementById("openAiApiKeyInput");
+const toggleOpenAiKeyBtn = document.getElementById("toggleOpenAiKeyBtn");
+const saveOpenAiKeyBtn = document.getElementById("saveOpenAiKeyBtn");
+const clearOpenAiKeyBtn = document.getElementById("clearOpenAiKeyBtn");
+const openAiKeyStatus = document.getElementById("openAiKeyStatus");
+const openAiKeyErrorRow = document.getElementById("openAiKeyErrorRow");
+const openAiKeyError = document.getElementById("openAiKeyError");
 
 const aiFontSizeSelect = document.getElementById("aiFontSizeSelect");
 const voiceModelSelect = document.getElementById("voiceModelSelect");
@@ -870,6 +1021,9 @@ const customPromptInput = document.getElementById("customPromptInput");
 
 const DEFAULT_LOCAL_MODEL = "MaziyarPanahi/calme-3.2-instruct-78b";
 const DEFAULT_VOICE_MODEL = "gemini-2.5-flash-native-audio-preview-12-2025";
+const AGENT_MAX_STEPS_MIN = 1;
+const AGENT_MAX_STEPS_MAX = 50;
+const AGENT_MAX_STEPS_DEFAULT = 10;
 pullModelInput.value = DEFAULT_LOCAL_MODEL;
 pullModelInput.addEventListener("input", () => persistAiAssistantOptions());
 
@@ -901,8 +1055,16 @@ let aiChatConversations = [];
 let aiActiveConversationId = null;
 let isAiHistoryOpen = false;
 let isSendingChat = false;
+let isAgentRunning = false;
+let agentRunSeq = 0;
+let chatRunSeq = 0;
+let activeChatRun = null;
+let activeAgentRun = null;
 let isSyncingAiAssistantOptions = false;
 let geminiApiKeySource = "none";
+let openAiApiKeySource = "none";
+let isFindBarOpen = false;
+let findDebounceTimer = null;
 
 let homeUrl = DEFAULT_HOME_URL;
 let searchEngineTemplate = DEFAULT_SEARCH_TEMPLATE;
@@ -1123,13 +1285,35 @@ function getActiveAiConversationRecord() {
   return getAiConversationRecord(aiActiveConversationId);
 }
 
+function syncAiConversationForActiveTab() {
+  const tab = getActiveTab();
+  const tabConvId = String(tab?.aiConversationId || "").trim();
+  const conv = tabConvId ? getAiConversationRecord(tabConvId) : null;
+  if (!conv) {
+    aiActiveConversationId = null;
+    aiConversation = [];
+    if (tab && tabConvId) tab.aiConversationId = null;
+    renderAiConversationMessages(aiConversation);
+    if (isAiHistoryOpen) renderAiConversationHistoryList();
+    return;
+  }
+  aiActiveConversationId = conv.id;
+  aiConversation = conv.messages;
+  pruneAiChatConversations();
+  renderAiConversationMessages(aiConversation);
+  if (isAiHistoryOpen) renderAiConversationHistoryList();
+}
+
 function ensureActiveAiConversation() {
-  let active = getActiveAiConversationRecord();
+  const tab = getActiveTab();
+  const tabConvId = String(tab?.aiConversationId || "").trim();
+  let active = tabConvId ? getAiConversationRecord(tabConvId) : null;
   if (!active) {
     active = createAiConversationRecord();
     aiChatConversations.unshift(active);
-    aiActiveConversationId = active.id;
+    if (tab) tab.aiConversationId = active.id;
   }
+  aiActiveConversationId = active.id;
   aiConversation = active.messages;
   pruneAiChatConversations();
 }
@@ -1154,6 +1338,8 @@ function setActiveAiConversation(id) {
   if (!conv) return;
   aiActiveConversationId = conv.id;
   aiConversation = conv.messages;
+  const tab = getActiveTab();
+  if (tab) tab.aiConversationId = conv.id;
   persistAiChatStore();
   renderAiConversationMessages(aiConversation);
   if (isAiHistoryOpen) renderAiConversationHistoryList();
@@ -1164,6 +1350,8 @@ function startNewAiConversation() {
   aiChatConversations.unshift(conv);
   aiActiveConversationId = conv.id;
   aiConversation = conv.messages;
+  const tab = getActiveTab();
+  if (tab) tab.aiConversationId = conv.id;
   persistAiChatStore();
   renderAiConversationMessages(aiConversation);
   setAiHistoryOpen(false);
@@ -1486,6 +1674,13 @@ function clampAiFontSizeLevel(level) {
   return Math.max(AI_FONT_SIZE_LEVEL_MIN, Math.min(AI_FONT_SIZE_LEVEL_MAX, intValue));
 }
 
+function clampAgentMaxSteps(value) {
+  const raw = Number(value);
+  if (!Number.isFinite(raw)) return AGENT_MAX_STEPS_DEFAULT;
+  const intValue = Math.round(raw);
+  return Math.max(AGENT_MAX_STEPS_MIN, Math.min(AGENT_MAX_STEPS_MAX, intValue));
+}
+
 function getAiFontScaleForLevel(level) {
   const key = clampAiFontSizeLevel(level);
   const scale = AI_FONT_SCALE_BY_LEVEL[key];
@@ -1537,7 +1732,10 @@ applyAiFontSizeLevel(aiFontSizeLevel);
 function getAiAssistantOptionsSnapshot() {
   return {
     version: 1,
-    provider: providerSelect.value === "gemini" ? "gemini" : "local",
+    provider: String(providerSelect.value || "local"),
+    mode: String(aiModeSelect?.value || "chat"),
+    agentConfirm: Boolean(agentConfirmCheckbox?.checked),
+    agentMaxSteps: clampAgentMaxSteps(agentMaxStepsInput?.value),
     localModel: String(localModelSelect.value || ""),
     geminiModel: String(geminiModelSelect.value || ""),
     voiceModel: String(voiceModelSelect?.value || ""),
@@ -1862,12 +2060,44 @@ function scrollAiChatToBottom({ behavior = "auto" } = {}) {
   });
 }
 
-function createAiChatMessage({ role, meta, text, markdown }) {
+function createAiChatMessage({ role, meta, text, markdown, parentEl }) {
+  const parent = parentEl || aiChatMessages;
   const root = document.createElement("div");
   root.className = `aiMsg ${role}`;
 
   const bubble = document.createElement("div");
   bubble.className = "aiMsgBubble";
+
+  const initialCopyText = markdown != null ? String(markdown ?? "") : String(text ?? "");
+  try {
+    root.dataset.copyText = initialCopyText;
+  } catch {
+  }
+
+  const copyBtn = document.createElement("button");
+  copyBtn.type = "button";
+  copyBtn.className = "aiMsgCopyBtn iconBtn iconBtnSm";
+  copyBtn.textContent = "⧉";
+  copyBtn.title = t("ai.chat.copy");
+  copyBtn.setAttribute("aria-label", t("ai.chat.copy"));
+  copyBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const value = String(root.dataset.copyText || "").trim() || String(contentEl?.innerText || "").trim();
+    if (!value) return;
+    const res = window.aiBridge?.copyText?.(value);
+    if (res && res.ok === false) {
+      window.aiBridge?.showError?.(res.error || "Failed to copy");
+      return;
+    }
+    const prev = copyBtn.textContent;
+    copyBtn.textContent = "✓";
+    copyBtn.title = t("ai.chat.copied");
+    setTimeout(() => {
+      copyBtn.textContent = prev;
+      copyBtn.title = t("ai.chat.copy");
+    }, 900);
+  });
 
   const metaEl = document.createElement("div");
   metaEl.className = "aiMsgMeta";
@@ -1883,13 +2113,58 @@ function createAiChatMessage({ role, meta, text, markdown }) {
     contentEl.textContent = String(text ?? "");
   }
 
+  bubble.appendChild(copyBtn);
   bubble.appendChild(metaEl);
   bubble.appendChild(contentEl);
+  root.appendChild(bubble);
+  parent.appendChild(root);
+  scrollAiChatToBottom();
+
+  return { root, bubble, metaEl, contentEl, copyBtn };
+}
+
+function createAiAgentStepsGroup({ meta, title }) {
+  const root = document.createElement("div");
+  root.className = "aiMsg assistant aiAgentStepsMsg";
+
+  const bubble = document.createElement("div");
+  bubble.className = "aiMsgBubble aiAgentStepsBubble";
+
+  const metaEl = document.createElement("div");
+  metaEl.className = "aiMsgMeta";
+  metaEl.textContent = String(meta || "");
+
+  const detailsEl = document.createElement("details");
+  detailsEl.className = "aiAgentStepsDetails";
+  detailsEl.open = true;
+
+  const summaryEl = document.createElement("summary");
+  summaryEl.className = "aiAgentStepsSummary";
+
+  const titleEl = document.createElement("span");
+  titleEl.className = "aiAgentStepsSummaryTitle";
+  titleEl.textContent = String(title || "");
+
+  const metaCountEl = document.createElement("span");
+  metaCountEl.className = "aiAgentStepsSummaryMeta";
+  metaCountEl.textContent = "";
+
+  summaryEl.appendChild(titleEl);
+  summaryEl.appendChild(metaCountEl);
+
+  const listEl = document.createElement("div");
+  listEl.className = "aiAgentStepsList";
+
+  detailsEl.appendChild(summaryEl);
+  detailsEl.appendChild(listEl);
+
+  bubble.appendChild(metaEl);
+  bubble.appendChild(detailsEl);
   root.appendChild(bubble);
   aiChatMessages.appendChild(root);
   scrollAiChatToBottom();
 
-  return { root, bubble, metaEl, contentEl };
+  return { root, bubble, metaEl, detailsEl, summaryEl, titleEl, metaCountEl, listEl };
 }
 
 function getTab(tabId) {
@@ -1902,6 +2177,102 @@ function getActiveTab() {
 
 function getActiveWebview() {
   return getActiveTab()?.webview ?? null;
+}
+
+function resetFindInPageState(tab, { clearQuery = false } = {}) {
+  if (!tab) return;
+  if (clearQuery) tab.findQuery = "";
+  tab.findRequestId = 0;
+  tab.findMatches = 0;
+  tab.findActiveMatchOrdinal = 0;
+}
+
+function updateFindMatchCountUi(tab) {
+  if (!findMatchCount) return;
+  const query = String(tab?.findQuery || "").trim();
+  if (!query) {
+    findMatchCount.textContent = "";
+    return;
+  }
+  const matches = Math.max(0, Number(tab?.findMatches || 0) || 0);
+  const active = Math.max(0, Number(tab?.findActiveMatchOrdinal || 0) || 0);
+  const activeShown = matches > 0 ? Math.max(1, Math.min(active, matches)) : 0;
+  findMatchCount.textContent = `${activeShown}/${matches}`;
+}
+
+function requestFindInPage({ findNext = false, forward = true } = {}) {
+  const tab = getActiveTab();
+  const webview = getActiveWebview();
+  if (!tab || !webview || !findInput) return;
+
+  const query = String(findInput.value || "").trim();
+  tab.findQuery = query;
+
+  if (!query) {
+    safeCall(() => webview.stopFindInPage("clearSelection"), null);
+    resetFindInPageState(tab, { clearQuery: true });
+    if (tab.id === activeTabId) updateFindMatchCountUi(tab);
+    return;
+  }
+
+  const requestId = safeCall(() => webview.findInPage(query, { forward, findNext }), null);
+  if (typeof requestId === "number") tab.findRequestId = requestId;
+  if (tab.id === activeTabId) updateFindMatchCountUi(tab);
+}
+
+function scheduleFindInPage() {
+  if (findDebounceTimer) clearTimeout(findDebounceTimer);
+  findDebounceTimer = setTimeout(() => {
+    findDebounceTimer = null;
+    requestFindInPage({ findNext: false, forward: true });
+  }, 120);
+}
+
+async function openFindBar({ prefillSelection = false } = {}) {
+  if (!findBar || !findInput) return;
+
+  isFindBarOpen = true;
+  findBar.classList.remove("hidden");
+  findBar.setAttribute("aria-hidden", "false");
+
+  const tab = getActiveTab();
+  const webview = getActiveWebview();
+
+  let value = String(tab?.findQuery || "");
+  if (prefillSelection && webview) {
+    try {
+      const sel = await webview.executeJavaScript("String(window.getSelection && window.getSelection() || '')", true);
+      const next = String(sel || "").trim();
+      if (next) value = next.slice(0, 200);
+    } catch {
+    }
+  }
+
+  if (tab) tab.findQuery = value;
+  findInput.value = value;
+  findInput.focus();
+  findInput.select();
+  if (tab?.id === activeTabId) updateFindMatchCountUi(tab);
+  if (value) requestFindInPage({ findNext: false, forward: true });
+}
+
+function closeFindBar() {
+  if (!findBar) return;
+  isFindBarOpen = false;
+  findBar.classList.add("hidden");
+  findBar.setAttribute("aria-hidden", "true");
+  if (findMatchCount) findMatchCount.textContent = "";
+  const webview = getActiveWebview();
+  safeCall(() => webview?.stopFindInPage?.("clearSelection"), null);
+  safeCall(() => webview?.focus?.(), null);
+}
+
+function syncFindBarForActiveTab() {
+  if (!isFindBarOpen || !findBar || !findInput) return;
+  const tab = getActiveTab();
+  findInput.value = String(tab?.findQuery || "");
+  updateFindMatchCountUi(tab);
+  if (String(tab?.findQuery || "").trim()) requestFindInPage({ findNext: false, forward: true });
 }
 
 function buildSearchUrl(queryText) {
@@ -2596,20 +2967,32 @@ function attachWebviewEvents(tab) {
     updateTabElement(tab.id);
   });
 
-	  const syncUrlFromWebview = () => {
-	    tab.url = safeCall(() => webview.getURL(), tab.url);
-	    recordHistoryVisit(tab.url, tab.title);
-	    persistLastSessionTabs();
-	    if (tab.id === activeTabId && document.activeElement !== urlInput) {
-	      urlInput.value = tab.url || "";
+		  const syncUrlFromWebview = () => {
+		    tab.url = safeCall(() => webview.getURL(), tab.url);
+		    resetFindInPageState(tab);
+		    if (tab.id === activeTabId) updateFindMatchCountUi(tab);
+		    recordHistoryVisit(tab.url, tab.title);
+		    persistLastSessionTabs();
+		    if (tab.id === activeTabId && document.activeElement !== urlInput) {
+		      urlInput.value = tab.url || "";
 	      syncClearButton();
 	    }
-	    updateNavButtons();
-	    if (tab.id === activeTabId) syncAiContext();
-	  };
+		    updateNavButtons();
+		    if (tab.id === activeTabId) syncAiContext();
+		  };
 
-  webview.addEventListener("did-navigate", syncUrlFromWebview);
-  webview.addEventListener("did-navigate-in-page", syncUrlFromWebview);
+	  webview.addEventListener("did-navigate", syncUrlFromWebview);
+	  webview.addEventListener("did-navigate-in-page", syncUrlFromWebview);
+
+	  webview.addEventListener("found-in-page", (e) => {
+	    const result = e?.result && typeof e.result === "object" ? e.result : e;
+	    const requestId = Number(result?.requestId);
+	    if (!Number.isFinite(requestId) || requestId <= 0) return;
+	    if (tab.findRequestId && requestId !== tab.findRequestId) return;
+	    tab.findActiveMatchOrdinal = Number(result?.activeMatchOrdinal || 0) || 0;
+	    tab.findMatches = Number(result?.matches || 0) || 0;
+	    if (tab.id === activeTabId) updateFindMatchCountUi(tab);
+	  });
 
   webview.addEventListener("update-target-url", (e) => {
     tab.hoverUrl = e.url || "";
@@ -2654,19 +3037,25 @@ function createTab(initialUrl = homeUrl || DEFAULT_HOME_URL, { makeActive = true
   webview.src = initialUrl;
   webviewArea.appendChild(webview);
 
-  const tab = {
-    id,
-    url: initialUrl,
-    title: t("tabs.newTitle"),
-    favicon: null,
-    isLoading: false,
-    loadError: null,
-    hoverUrl: "",
-    webview,
-    tabEl: null,
-    faviconEl: null,
-    titleEl: null
-  };
+		  const tab = {
+		    id,
+		    url: initialUrl,
+		    title: t("tabs.newTitle"),
+		    favicon: null,
+		    isLoading: false,
+		    loadError: null,
+		    hoverUrl: "",
+	    aiPanelOpen: Boolean(getActiveTab()?.aiPanelOpen),
+	    aiConversationId: null,
+	    findQuery: "",
+	    findRequestId: 0,
+	    findMatches: 0,
+	    findActiveMatchOrdinal: 0,
+		    webview,
+		    tabEl: null,
+		    faviconEl: null,
+		    titleEl: null
+		  };
   tabs.push(tab);
   attachWebviewEvents(tab);
   createTabElement(tab);
@@ -2693,9 +3082,12 @@ function setActiveTab(tabId) {
 
   updateNavButtons();
   updateLoadingUI();
-  syncStatusBar();
-  syncAiContext();
-  updateLoadErrorOverlay();
+	  syncStatusBar();
+	  syncAiContext();
+	  syncAiConversationForActiveTab();
+	  syncAiPanelOpenForActiveTab({ focus: false });
+	  syncFindBarForActiveTab();
+	  updateLoadErrorOverlay();
 
   tab.tabEl?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
 }
@@ -3233,7 +3625,29 @@ loadErrorCopyBtn?.addEventListener("click", async () => {
   }
 });
 
-function setAiPanelOpen(open) {
+findInput?.addEventListener("input", () => {
+  if (!isFindBarOpen) return;
+  scheduleFindInPage();
+});
+
+findInput?.addEventListener("keydown", (e) => {
+  if (!isFindBarOpen) return;
+  if (e.key === "Enter") {
+    e.preventDefault();
+    requestFindInPage({ findNext: true, forward: !e.shiftKey });
+    return;
+  }
+  if (e.key === "Escape") {
+    e.preventDefault();
+    closeFindBar();
+  }
+});
+
+findPrevBtn?.addEventListener("click", () => requestFindInPage({ findNext: true, forward: false }));
+findNextBtn?.addEventListener("click", () => requestFindInPage({ findNext: true, forward: true }));
+findCloseBtn?.addEventListener("click", closeFindBar);
+
+function applyAiPanelOpenState(open, { focus = true } = {}) {
   const isOpen = Boolean(open);
   if (!isOpen) setAiHistoryOpen(false);
   if (!isOpen) stopVoiceRecording();
@@ -3244,12 +3658,25 @@ function setAiPanelOpen(open) {
   if (isOpen) {
     applyAiPanelWidth(aiPanelWidthPx);
     syncAiContext();
-    chatInput.focus();
+    syncAiConversationForActiveTab();
+    if (focus) chatInput.focus();
   }
 }
 
+function setAiPanelOpen(open, { focus = true } = {}) {
+  const tab = getActiveTab();
+  if (tab) tab.aiPanelOpen = Boolean(open);
+  applyAiPanelOpenState(open, { focus });
+}
+
+function syncAiPanelOpenForActiveTab({ focus = false } = {}) {
+  const tab = getActiveTab();
+  applyAiPanelOpenState(Boolean(tab?.aiPanelOpen), { focus });
+}
+
 aiToggleBtn.addEventListener("click", () => {
-  setAiPanelOpen(aiPanel.classList.contains("hidden"));
+  const tab = getActiveTab();
+  setAiPanelOpen(!tab?.aiPanelOpen);
 });
 
 aiCloseBtn.addEventListener("click", () => {
@@ -3506,15 +3933,11 @@ document.addEventListener("keydown", (e) => {
 });
 
 function setProviderUI(provider) {
-  if (provider === "local") {
-    localModelRow.classList.remove("hidden");
-    pullModelRow.classList.remove("hidden");
-    geminiRow.classList.add("hidden");
-  } else {
-    localModelRow.classList.add("hidden");
-    pullModelRow.classList.add("hidden");
-    geminiRow.classList.remove("hidden");
-  }
+  const key = String(provider || "").trim();
+  localModelRow.classList.toggle("hidden", key !== "local");
+  pullModelRow.classList.toggle("hidden", key !== "local");
+  geminiRow.classList.toggle("hidden", key !== "gemini");
+  openAiRow.classList.toggle("hidden", key !== "openai");
 }
 
 providerSelect.addEventListener("change", () => {
@@ -3540,10 +3963,25 @@ function isValidGeminiApiKey(apiKey) {
   return true;
 }
 
+function isValidOpenAiApiKey(apiKey) {
+  const key = String(apiKey || "").trim();
+  if (!key) return false;
+  if (key.length < 8) return false;
+  if (key.length > 400) return false;
+  if (/\\s/.test(key)) return false;
+  return true;
+}
+
 function setGeminiKeyError(message) {
   const text = String(message || "").trim();
   geminiKeyError.textContent = text;
   geminiKeyErrorRow.classList.toggle("hidden", !text);
+}
+
+function setOpenAiKeyError(message) {
+  const text = String(message || "").trim();
+  openAiKeyError.textContent = text;
+  openAiKeyErrorRow.classList.toggle("hidden", !text);
 }
 
 function syncGeminiKeySaveState() {
@@ -3556,6 +3994,18 @@ function syncGeminiKeySaveState() {
   const ok = isValidGeminiApiKey(key);
   saveGeminiKeyBtn.disabled = !ok;
   setGeminiKeyError(ok ? "" : t("aiSettings.gemini.keyError.invalid"));
+}
+
+function syncOpenAiKeySaveState() {
+  const key = openAiApiKeyInput.value.trim();
+  if (!key) {
+    saveOpenAiKeyBtn.disabled = true;
+    setOpenAiKeyError("");
+    return;
+  }
+  const ok = isValidOpenAiApiKey(key);
+  saveOpenAiKeyBtn.disabled = !ok;
+  setOpenAiKeyError(ok ? "" : t("aiSettings.openai.keyError.invalid"));
 }
 
 async function loadAiSettings() {
@@ -3596,6 +4046,34 @@ async function loadAiSettings() {
   }
 
   syncGeminiKeySaveState();
+
+  openAiBaseUrlInput.value = typeof s.openAiBaseUrl === "string" ? s.openAiBaseUrl : "";
+  openAiModelInput.value = typeof s.openAiModel === "string" ? s.openAiModel : "";
+
+  const openAiSource = s.openAiApiKeySource;
+  const openAiFormat = s.openAiApiKeyFormat;
+  openAiApiKeySource = openAiSource === "stored" || openAiSource === "env" ? openAiSource : "none";
+
+  if (openAiSource === "stored") {
+    const storageText =
+      openAiFormat === "safeStorage"
+        ? t("aiSettings.openai.keyStatus.savedEncrypted")
+        : openAiFormat === "plain"
+          ? t("aiSettings.openai.keyStatus.savedPlain")
+          : t("aiSettings.openai.keyStatus.saved");
+    openAiKeyStatus.textContent = storageText;
+    clearOpenAiKeyBtn.disabled = false;
+  } else if (openAiSource === "env") {
+    openAiKeyStatus.textContent = t("aiSettings.openai.keyStatus.env");
+    clearOpenAiKeyBtn.disabled = true;
+  } else {
+    openAiKeyStatus.textContent = encryptionAvailable
+      ? t("aiSettings.openai.keyStatus.notSetEncryptedAvailable")
+      : t("aiSettings.openai.keyStatus.notSetNoEncryption");
+    clearOpenAiKeyBtn.disabled = true;
+  }
+
+  syncOpenAiKeySaveState();
   persistAiAssistantOptions();
 }
 
@@ -3645,6 +4123,70 @@ clearGeminiKeyBtn.addEventListener("click", async () => {
   if (!confirm(t("aiSettings.gemini.keyClearConfirm"))) return;
   clearGeminiKeyBtn.disabled = true;
   const res = await window.aiBridge.clearGeminiApiKey();
+  if (!res.ok) {
+    window.aiBridge.showError(res.error);
+    return;
+  }
+  await loadAiSettings();
+});
+
+openAiBaseUrlInput.addEventListener("change", async () => {
+  const baseUrl = String(openAiBaseUrlInput.value || "").trim();
+  const res = await window.aiBridge.setOpenAiBaseUrl(baseUrl);
+  if (!res.ok) {
+    window.aiBridge.showError(res.error);
+    await loadAiSettings();
+    return;
+  }
+  if (typeof res.openAiBaseUrl === "string") openAiBaseUrlInput.value = res.openAiBaseUrl;
+});
+
+openAiModelInput.addEventListener("change", async () => {
+  const model = String(openAiModelInput.value || "").trim();
+  const res = await window.aiBridge.setOpenAiModel(model);
+  if (!res.ok) {
+    window.aiBridge.showError(res.error);
+    await loadAiSettings();
+    return;
+  }
+  if (typeof res.openAiModel === "string") openAiModelInput.value = res.openAiModel;
+});
+
+toggleOpenAiKeyBtn.addEventListener("click", () => {
+  openAiApiKeyInput.type = openAiApiKeyInput.type === "password" ? "text" : "password";
+});
+
+openAiApiKeyInput.addEventListener("input", syncOpenAiKeySaveState);
+
+saveOpenAiKeyBtn.addEventListener("click", async () => {
+  const key = openAiApiKeyInput.value.trim();
+  if (!isValidOpenAiApiKey(key)) {
+    syncOpenAiKeySaveState();
+    return;
+  }
+  saveOpenAiKeyBtn.disabled = true;
+  const prevText = saveOpenAiKeyBtn.textContent;
+  saveOpenAiKeyBtn.textContent = t("aiSettings.openai.keySave.saving");
+  try {
+    const res = await window.aiBridge.setOpenAiApiKey(key);
+    if (!res.ok) {
+      window.aiBridge.showError(res.error);
+      return;
+    }
+    openAiApiKeyInput.value = "";
+    openAiApiKeyInput.type = "password";
+    setOpenAiKeyError("");
+    await loadAiSettings();
+  } finally {
+    saveOpenAiKeyBtn.textContent = prevText;
+    syncOpenAiKeySaveState();
+  }
+});
+
+clearOpenAiKeyBtn.addEventListener("click", async () => {
+  if (!confirm(t("aiSettings.openai.keyClearConfirm"))) return;
+  clearOpenAiKeyBtn.disabled = true;
+  const res = await window.aiBridge.clearOpenAiApiKey();
   if (!res.ok) {
     window.aiBridge.showError(res.error);
     return;
@@ -3711,7 +4253,136 @@ function setChatSending(sending) {
   syncPromptShortcutsDisabledState();
   chatSendBtn.textContent = isSendingChat ? t("ai.chat.sending") : t("ai.chat.send");
   syncChatMicButtonState();
+  syncAiStopButtonState();
 }
+
+function setAgentRunning(running) {
+  isAgentRunning = Boolean(running);
+  syncAiStopButtonState();
+}
+
+function syncAiStopButtonState() {
+  if (!aiAgentStopBtn) return;
+  const visible = isSendingChat || isAgentRunning;
+  aiAgentStopBtn.classList.toggle("hidden", !visible);
+  aiAgentStopBtn.disabled = !visible;
+}
+
+function stopAgentRun() {
+  if (!isAgentRunning) return;
+  agentRunSeq++;
+  setAgentRunning(false);
+  setChatSending(false);
+}
+
+function stopChatRun() {
+  if (!isSendingChat || isAgentRunning) return;
+  const run = activeChatRun && typeof activeChatRun === "object" ? activeChatRun : null;
+  if (run) run.stopped = true;
+
+  chatRunSeq++;
+  setChatSending(false);
+
+  const stoppedText = t("ai.chat.stopped");
+  const stoppedMeta = `${t("ai.meta.assistant")} · ${t("ai.meta.stopped")}`;
+
+  const assistantMsg = run?.assistantMsg;
+  if (assistantMsg?.root?.isConnected) {
+    assistantMsg.metaEl.textContent = stoppedMeta;
+    assistantMsg.contentEl.className = "aiMsgText";
+    assistantMsg.contentEl.textContent = stoppedText;
+    try {
+      assistantMsg.root.dataset.copyText = stoppedText;
+    } catch {
+    }
+    try {
+      aiChatMessages.appendChild(assistantMsg.root);
+    } catch {
+    }
+  }
+
+  const conv = run?.conversationRecord;
+  if (conv && Array.isArray(conv.messages)) {
+    const ts = Date.now();
+    conv.messages.push({ role: "assistant", meta: stoppedMeta, content: stoppedText, ts, skipContext: true });
+    conv.updatedAt = ts;
+    persistAiChatStore();
+
+    if (
+      !assistantMsg?.root?.isConnected &&
+      run?.tabId &&
+      run.tabId === activeTabId &&
+      getActiveTab()?.aiConversationId === run?.conversationId
+    ) {
+      renderAiConversationMessages(conv.messages);
+    }
+  }
+
+  if (activeChatRun?.seq === run?.seq) activeChatRun = null;
+  scrollAiChatToBottom({ behavior: "smooth" });
+}
+
+function stopAgentFlow() {
+  if (!isAgentRunning) return;
+  const run = activeAgentRun && typeof activeAgentRun === "object" ? activeAgentRun : null;
+  if (run) {
+    run.stopped = true;
+    run.uiStopped = true;
+  }
+
+  const stoppedText = t("ai.agent.stopped");
+  const stoppedMeta = `${t("ai.meta.assistant")} · Agent · ${t("ai.meta.stopped")}`;
+  const assistantMsg = run?.assistantMsg;
+  if (assistantMsg?.root?.isConnected) {
+    assistantMsg.metaEl.textContent = stoppedMeta;
+    assistantMsg.contentEl.className = "aiMsgText";
+    assistantMsg.contentEl.textContent = stoppedText;
+    try {
+      assistantMsg.root.dataset.copyText = stoppedText;
+    } catch {
+    }
+  }
+
+  const stepsGroup = run?.stepsGroup;
+  if (stepsGroup?.root) {
+    try {
+      stepsGroup.root.classList.add("done");
+    } catch {
+    }
+    try {
+      if (stepsGroup.detailsEl) stepsGroup.detailsEl.open = false;
+    } catch {
+    }
+  }
+
+  const conv = run?.conversationRecord;
+  if (conv && Array.isArray(conv.messages)) {
+    const ts = Date.now();
+    conv.messages.push({ role: "assistant", meta: stoppedMeta, content: stoppedText, ts, skipContext: true });
+    conv.updatedAt = ts;
+    persistAiChatStore();
+
+    if (
+      !assistantMsg?.root?.isConnected &&
+      run?.tabId &&
+      run.tabId === activeTabId &&
+      getActiveTab()?.aiConversationId === run?.conversationId
+    ) {
+      renderAiConversationMessages(conv.messages);
+    }
+  }
+
+  stopAgentRun();
+  if (activeAgentRun?.seq === run?.seq) activeAgentRun = null;
+  scrollAiChatToBottom({ behavior: "smooth" });
+}
+
+function stopAiFlow() {
+  if (isAgentRunning) return stopAgentFlow();
+  return stopChatRun();
+}
+
+aiAgentStopBtn?.addEventListener("click", stopAiFlow);
 
 function syncChatMicButtonState() {
   if (!chatMicBtn) return;
@@ -4210,8 +4881,8 @@ async function startVoiceRecording() {
   voiceAutoStopTimer = setTimeout(() => stopVoiceRecording(), 30_000);
 }
 
-async function buildAiPageContext() {
-  const webview = getActiveWebview();
+async function buildAiPageContext(webviewOverride) {
+  const webview = webviewOverride || getActiveWebview();
   if (!webview) throw new Error(t("error.noActiveTab"));
 
   const pageTitle = await webview.executeJavaScript("document.title");
@@ -4294,6 +4965,11 @@ async function sendAiChatMessage({ displayText, buildUserMessage }) {
   if (!shown) return;
   if (isSendingChat) return;
 
+  const seq = ++chatRunSeq;
+  const tab = getActiveTab();
+  const tabId = tab?.id || null;
+  const webview = tab?.webview || null;
+
   const userMsg = createAiChatMessage({ role: "user", meta: t("ai.meta.user"), text: shown });
   const assistantMsg = createAiChatMessage({
     role: "assistant",
@@ -4302,18 +4978,61 @@ async function sendAiChatMessage({ displayText, buildUserMessage }) {
   });
   setChatSending(true);
 
-  let didAppendUser = false;
-  let userContentForHistory = "";
+  ensureActiveAiConversation();
+  const conversationId = aiActiveConversationId;
+  const conv = conversationId ? getAiConversationRecord(conversationId) : null;
+  const historyForAi = (Array.isArray(conv?.messages) ? conv.messages : [])
+    .filter((m) => m && !m.skipContext && (m.role === "user" || m.role === "assistant"))
+    .map((m) => ({ role: m.role, content: m.content }));
+
+  const now = Date.now();
+  const userRecord = {
+    role: "user",
+    meta: t("ai.meta.user"),
+    content: shown,
+    ts: now,
+    skipContext: false
+  };
+  if (conv && Array.isArray(conv.messages)) {
+    conv.messages.push(userRecord);
+    conv.updatedAt = now;
+    persistAiChatStore();
+  }
+
+  activeChatRun = {
+    seq,
+    tabId,
+    conversationId,
+    conversationRecord: conv,
+    assistantMsg,
+    userMsg,
+    userRecord,
+    stopped: false
+  };
 
   try {
-    ensureActiveAiConversation();
-    const ctx = await buildAiPageContext();
-    if (ctx.pageTitle) aiContextTitle.textContent = ctx.pageTitle;
-    if (ctx.pageUrl) aiContextUrl.textContent = ctx.pageUrl;
+    const ctx = await buildAiPageContext(webview);
+    if (seq !== chatRunSeq) return;
 
-    const provider = providerSelect.value === "gemini" ? "gemini" : "local";
-    const model = provider === "local" ? String(localModelSelect.value || "").trim() : geminiModelSelect.value || "gemini-2.5-flash";
-    if (provider === "local" && !model) throw new Error(t("ai.error.localModelMissing"));
+    if (tabId && tabId === activeTabId) {
+      if (ctx.pageTitle) aiContextTitle.textContent = ctx.pageTitle;
+      if (ctx.pageUrl) aiContextUrl.textContent = ctx.pageUrl;
+    }
+
+    const providerValue = String(providerSelect.value || "").trim();
+    const provider = providerValue === "gemini" ? "gemini" : providerValue === "openai" ? "openai" : "local";
+    let model = "";
+    let baseUrl = "";
+    if (provider === "local") {
+      model = String(localModelSelect.value || "").trim();
+      if (!model) throw new Error(t("ai.error.localModelMissing"));
+    } else if (provider === "gemini") {
+      model = String(geminiModelSelect.value || "gemini-2.5-flash");
+    } else {
+      model = String(openAiModelInput.value || "").trim();
+      baseUrl = String(openAiBaseUrlInput.value || "").trim();
+      if (!model) throw new Error("OpenAI-compatible model not set");
+    }
 
     const built = typeof buildUserMessage === "function" ? buildUserMessage(ctx) : "";
     const historyText =
@@ -4324,29 +5043,15 @@ async function sendAiChatMessage({ displayText, buildUserMessage }) {
     if (!aiMessage) throw new Error(t("error.emptyPrompt"));
 
     if (userMessage && userMessage !== shown) {
-      userMsg.contentEl.textContent = userMessage;
+      userRecord.content = userMessage;
+      if (userMsg?.root?.isConnected) userMsg.contentEl.textContent = userMessage;
+      try {
+        if (userMsg?.root) userMsg.root.dataset.copyText = userMessage;
+      } catch {
+      }
     }
 
     const systemPrompt = buildAiSystemPrompt(ctx);
-
-    const historyForAi = (Array.isArray(aiConversation) ? aiConversation : [])
-      .filter((m) => m && !m.skipContext && (m.role === "user" || m.role === "assistant"))
-      .map((m) => ({ role: m.role, content: m.content }));
-
-    const now = Date.now();
-    userContentForHistory = userMessage || shown;
-    aiConversation.push({
-      role: "user",
-      meta: t("ai.meta.user"),
-      content: userContentForHistory,
-      ts: now,
-      skipContext: false
-    });
-    didAppendUser = true;
-
-    const conv = getActiveAiConversationRecord();
-    if (conv) conv.updatedAt = now;
-    persistAiChatStore();
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -4354,50 +5059,891 @@ async function sendAiChatMessage({ displayText, buildUserMessage }) {
       { role: "user", content: aiMessage }
     ];
 
-    const res = await window.aiBridge.generate({ provider, model, messages, prompt: aiMessage });
+    const res = await window.aiBridge.generate({ provider, model, baseUrl, messages, prompt: aiMessage });
+    if (seq !== chatRunSeq) return;
     if (!res.ok) throw new Error(res.error || t("error.aiGeneric"));
 
-    const providerLabel = provider === "local" ? t("ai.meta.provider.local") : t("ai.meta.provider.gemini");
+    const providerLabel =
+      provider === "local"
+        ? t("ai.meta.provider.local")
+        : provider === "gemini"
+          ? t("ai.meta.provider.gemini")
+          : t("ai.meta.provider.openai");
     const assistantMeta = `${t("ai.meta.assistant")} · ${providerLabel} · ${model}`;
-    assistantMsg.metaEl.textContent = assistantMeta;
-    assistantMsg.contentEl.className = "aiMarkdown";
-    assistantMsg.contentEl.innerHTML = renderAiMarkdownToSanitizedHtml(res.text);
-
+    const assistantText = String(res.text ?? "").trim();
+    if (assistantMsg?.root?.isConnected) {
+      assistantMsg.metaEl.textContent = assistantMeta;
+      assistantMsg.contentEl.className = "aiMarkdown";
+      assistantMsg.contentEl.innerHTML = renderAiMarkdownToSanitizedHtml(assistantText);
+      try {
+        assistantMsg.root.dataset.copyText = assistantText;
+      } catch {
+      }
+    }
     const doneAt = Date.now();
-    aiConversation.push({
-      role: "assistant",
-      meta: assistantMeta,
-      content: String(res.text ?? "").trim(),
-      ts: doneAt,
-      skipContext: false
-    });
-    if (conv) conv.updatedAt = doneAt;
-    persistAiChatStore();
+    if (conv && Array.isArray(conv.messages)) {
+      conv.messages.push({
+        role: "assistant",
+        meta: assistantMeta,
+        content: assistantText,
+        ts: doneAt,
+        skipContext: false
+      });
+      conv.updatedAt = doneAt;
+      persistAiChatStore();
+    }
+
+    if (
+      !assistantMsg?.root?.isConnected &&
+      tabId &&
+      tabId === activeTabId &&
+      getActiveTab()?.aiConversationId === conversationId
+    ) {
+      renderAiConversationMessages(conv?.messages || []);
+    }
   } catch (err) {
+    if (seq !== chatRunSeq) return;
     const message = String(err?.message || err);
     const errorMeta = `${t("ai.meta.assistant")} · ${t("ai.meta.error")}`;
-    assistantMsg.metaEl.textContent = errorMeta;
-    assistantMsg.contentEl.className = "aiMsgText";
-    assistantMsg.contentEl.textContent = message;
-    if (didAppendUser) {
-      const conv = getActiveAiConversationRecord();
+    if (assistantMsg?.root?.isConnected) {
+      assistantMsg.metaEl.textContent = errorMeta;
+      assistantMsg.contentEl.className = "aiMsgText";
+      assistantMsg.contentEl.textContent = message;
+      try {
+        assistantMsg.root.dataset.copyText = message;
+      } catch {
+      }
+    }
+    if (conv && Array.isArray(conv.messages)) {
       const ts = Date.now();
-      aiConversation.push({ role: "assistant", meta: errorMeta, content: message, ts, skipContext: true });
-      if (conv) conv.updatedAt = ts;
+      conv.messages.push({ role: "assistant", meta: errorMeta, content: message, ts, skipContext: true });
+      conv.updatedAt = ts;
       persistAiChatStore();
+    }
+    if (
+      !assistantMsg?.root?.isConnected &&
+      tabId &&
+      tabId === activeTabId &&
+      getActiveTab()?.aiConversationId === conversationId
+    ) {
+      renderAiConversationMessages(conv?.messages || []);
     }
     window.aiBridge.showError(message);
   } finally {
-    setChatSending(false);
-    scrollAiChatToBottom({ behavior: "smooth" });
+    if (activeChatRun?.seq === seq) activeChatRun = null;
+    if (seq === chatRunSeq) setChatSending(false);
+    if (seq === chatRunSeq) scrollAiChatToBottom({ behavior: "smooth" });
   }
+}
+
+function isBrowserAgentMode() {
+  return String(aiModeSelect?.value || "chat") === "browser";
+}
+
+function parseJsonObjectFromText(text) {
+  const raw = String(text ?? "").trim();
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+  }
+
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (fenced && fenced[1]) {
+    try {
+      const parsed = JSON.parse(fenced[1]);
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch {
+    }
+  }
+
+  const first = raw.indexOf("{");
+  const last = raw.lastIndexOf("}");
+  if (first >= 0 && last > first) {
+    const slice = raw.slice(first, last + 1);
+    try {
+      const parsed = JSON.parse(slice);
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch {
+    }
+  }
+  return null;
+}
+
+function truncateText(text, maxLen = 900) {
+  const raw = String(text ?? "");
+  if (raw.length <= maxLen) return raw;
+  return `${raw.slice(0, maxLen)}… (truncated, ${raw.length} chars)`;
+}
+
+function agentDebugLog(message, data) {
+  try {
+    window.aiBridge?.logToMain?.({ scope: "agent", message: String(message || ""), data });
+  } catch {
+  }
+}
+
+function coerceJsonObject(value) {
+  if (!value) return null;
+  if (typeof value !== "object") return null;
+  if (Array.isArray(value)) return null;
+  return value;
+}
+
+function coerceJsonObjectFromText(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return coerceJsonObject(parsed);
+  } catch {
+    return null;
+  }
+}
+
+function normalizeBrowserAgentToolName(tool) {
+  const raw = String(tool || "").trim();
+  if (!raw) return null;
+  const compact = raw.toLowerCase().replace(/[^a-z]/g, "");
+  if (!compact) return null;
+  if (["snapshot", "observe", "inspect", "scan"].includes(compact)) return "snapshot";
+  if (["click", "tap"].includes(compact)) return "click";
+  if (["type", "fill", "input", "setvalue"].includes(compact)) return "type";
+  if (["press", "keypress", "key"].includes(compact)) return "press";
+  if (["navigate", "goto", "open", "visit"].includes(compact)) return "navigate";
+  if (["wait", "waitforload", "waitfornavigation", "waituntil"].includes(compact)) return "waitForLoad";
+  return null;
+}
+
+function inferBrowserAgentToolNameFromArgsObject(obj, rawText) {
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return null;
+
+  const hasOwn = (key) => Object.prototype.hasOwnProperty.call(obj, key);
+  const get = (key) => {
+    if (!hasOwn(key)) return null;
+    const value = obj[key];
+    if (value == null) return null;
+    const text = String(value).trim();
+    return text ? text : null;
+  };
+
+  const hasAny = (keys) => keys.some((key) => get(key) != null);
+  const keyCount = Object.keys(obj).length;
+
+  if (hasAny(["url", "toUrl", "href"])) return "navigate";
+  if (hasAny(["state", "waitUntil", "wait_until"])) return "waitForLoad";
+  if (hasAny(["key", "keys"])) return "press";
+
+  const hasId = hasAny(["id", "elementId", "element_id", "selectorId"]);
+  const hasText = hasAny(["text", "value"]);
+  if (hasId && hasText) return "type";
+
+  const raw = String(rawText || "");
+  if (hasId) {
+    if (/(type|fill|input|enter|paste|輸入|填入)/i.test(raw)) return "type";
+    if (/(click|tap|點擊|點選|按一下|選擇)/i.test(raw)) return "click";
+    return "click";
+  }
+
+  if (keyCount === 0) return "snapshot";
+
+  if (/(navigate|goto|go to|open|visit|前往|打開|開啟|進入)/i.test(raw)) return "navigate";
+  if (/(wait|loading|networkidle|等待|載入)/i.test(raw)) return "waitForLoad";
+  if (/(press|pagedown|page down|pgdn|enter|tab|按下|按鍵)/i.test(raw)) return "press";
+  if (/(type|fill|input|輸入|填入)/i.test(raw)) return "type";
+  if (/(click|tap|點擊|點選|按一下|選擇)/i.test(raw)) return "click";
+  if (/(snapshot|observe|screen|inspect|快照|截圖|查看)/i.test(raw)) return "snapshot";
+  return null;
+}
+
+function normalizeBrowserAgentArgs(tool, args) {
+  const raw = args && typeof args === "object" ? args : {};
+  const out = { ...raw };
+
+  if (tool === "click" || tool === "type") {
+    if (out.id == null && out.elementId != null) out.id = out.elementId;
+    if (out.id == null && out.element_id != null) out.id = out.element_id;
+    if (out.id == null && out.selectorId != null) out.id = out.selectorId;
+    out.id = String(out.id ?? "").trim();
+  }
+
+  if (tool === "type") {
+    if (out.text == null && out.value != null) out.text = out.value;
+    out.text = String(out.text ?? "");
+  }
+
+  if (tool === "press") {
+    if (out.key == null && out.keys != null) out.key = out.keys;
+    out.key = String(out.key ?? "").trim();
+  }
+
+  if (tool === "navigate") {
+    if (out.url == null && out.toUrl != null) out.url = out.toUrl;
+    if (out.url == null && out.href != null) out.url = out.href;
+    out.url = String(out.url ?? "").trim();
+  }
+
+  if (tool === "waitForLoad") {
+    if (out.state == null && out.waitUntil != null) out.state = out.waitUntil;
+    if (out.state == null && out.wait_until != null) out.state = out.wait_until;
+    out.state = String(out.state ?? "").trim();
+  }
+
+  return out;
+}
+
+function normalizeBrowserAgentAction(parsed, rawText) {
+  let obj = parsed;
+  if (Array.isArray(obj)) {
+    obj = obj.find((item) => item && typeof item === "object" && !Array.isArray(item));
+  }
+  if (obj && typeof obj === "object" && obj.action && typeof obj.action === "object") {
+    obj = obj.action;
+  }
+
+  if (!obj || typeof obj !== "object") {
+    return { ok: false, error: "Agent returned invalid JSON object." };
+  }
+
+  const typeRaw = String(obj.type ?? obj.kind ?? obj.responseType ?? obj.response_type ?? "").trim().toLowerCase();
+  const typeCompact = typeRaw.replace(/[^a-z]/g, "");
+  const finalCandidate = obj.final ?? obj.answer ?? obj.response;
+  const finalText = typeof finalCandidate === "string" ? finalCandidate : null;
+
+  const isExplicitTool = typeCompact === "tool";
+  const isExplicitFinal = ["final", "finalanswer", "done", "answer", "result", "output"].includes(typeCompact);
+  const type = isExplicitFinal || (finalText != null && !isExplicitTool) ? "final" : "tool";
+
+  if (type === "final") {
+    return { ok: true, type: "final", final: String(finalText || "").trim() };
+  }
+
+  let toolName = obj.tool ?? obj.toolName ?? obj.tool_name ?? obj.name ?? obj.action ?? obj.command ?? null;
+  let argsRaw =
+    obj.args ?? obj.arguments ?? obj.params ?? obj.parameters ?? obj.input ?? obj.data ?? null;
+
+  if (!toolName && obj.function_call && typeof obj.function_call === "object") {
+    toolName = obj.function_call.name;
+    argsRaw = obj.function_call.arguments;
+  }
+
+  const toolCalls = Array.isArray(obj.tool_calls) ? obj.tool_calls : null;
+  if (!toolName && toolCalls && toolCalls.length) {
+    const call = toolCalls[0];
+    const fn = call?.function && typeof call.function === "object" ? call.function : call;
+    toolName = fn?.name ?? call?.name ?? null;
+    argsRaw = fn?.arguments ?? call?.arguments ?? null;
+  }
+
+  if (!toolName && obj.tool_call && typeof obj.tool_call === "object") {
+    toolName = obj.tool_call.name ?? obj.tool_call.tool ?? obj.tool_call.action ?? null;
+    argsRaw = obj.tool_call.arguments ?? obj.tool_call.args ?? null;
+  }
+
+  if (!toolName && typeCompact && !isExplicitTool && !isExplicitFinal) {
+    toolName = obj.type;
+  }
+
+  if (!toolName) {
+    const inferred = inferBrowserAgentToolNameFromArgsObject(obj, rawText);
+    if (inferred) toolName = inferred;
+    if (!argsRaw) argsRaw = obj;
+  }
+
+  const tool = normalizeBrowserAgentToolName(toolName);
+  if (!tool) {
+    const printable = truncateText(typeof rawText === "string" ? rawText : JSON.stringify(obj), 900);
+    return {
+      ok: false,
+      error:
+        `Unknown tool: ${String(toolName || "").trim() || "(missing)"}.\n` +
+        `Expected one of: snapshot, click, type, press, navigate, waitForLoad.\n\n` +
+        `Raw response:\n${printable}`
+    };
+  }
+
+  let args = null;
+  if (typeof argsRaw === "string") {
+    args = coerceJsonObjectFromText(argsRaw);
+  } else {
+    args = coerceJsonObject(argsRaw);
+  }
+
+  if (!args) {
+    const fallback = obj && typeof obj === "object" ? obj : {};
+    args = coerceJsonObject(fallback) || {};
+  }
+
+  const normalizedArgs = normalizeBrowserAgentArgs(tool, args);
+  if (tool === "click" || tool === "type") {
+    if (!normalizedArgs.id) {
+      return { ok: false, error: `Missing element id for tool: ${tool}.` };
+    }
+  }
+  if (tool === "press") {
+    if (!normalizedArgs.key) {
+      return { ok: false, error: "Missing key for tool: press." };
+    }
+  }
+  if (tool === "navigate") {
+    if (!normalizedArgs.url) {
+      return { ok: false, error: "Missing url for tool: navigate." };
+    }
+  }
+
+  const reason = String(obj.reason || "").trim();
+  return { ok: true, type: "tool", tool, args: normalizedArgs, reason };
+}
+
+function getAgentLanguageHint() {
+  if (uiLanguage === "zh-TW") return "Traditional Chinese";
+  if (uiLanguage === "es") return "Spanish";
+  return "English";
+}
+
+function buildBrowserAgentSystemPrompt() {
+  const lang = getAgentLanguageHint();
+  return [
+    "You are a browser automation agent running inside an Electron browser.",
+    "You can control the currently active tab using tools (Playwright over CDP).",
+    "Always respond with a single JSON object and nothing else (no Markdown).",
+    `For the final answer, respond in ${lang}.`
+  ].join("\n");
+}
+
+function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
+  const safeTask = String(task || "").trim();
+  const snap = snapshot && typeof snapshot === "object" ? snapshot : {};
+  const elements = Array.isArray(snap.elements) ? snap.elements : [];
+  const compactElements = elements.slice(0, 80).map((e) => ({
+    id: String(e?.id || ""),
+    tag: String(e?.tag || ""),
+    role: String(e?.role || ""),
+    text: String(e?.text || ""),
+    ariaLabel: String(e?.ariaLabel || ""),
+    placeholder: String(e?.placeholder || ""),
+    name: String(e?.name || ""),
+    type: String(e?.type || ""),
+    href: String(e?.href || "")
+  }));
+
+  const history = Array.isArray(steps) ? steps.slice(-12) : [];
+
+  return [
+    `TASK:\n${safeTask}`,
+    "",
+    "CURRENT_PAGE_SNAPSHOT (JSON):",
+    JSON.stringify(
+      {
+        url: String(snap.url || ""),
+        title: String(snap.title || ""),
+        scroll: snap.scroll || null,
+        viewport: snap.viewport || null,
+        visibleText: String(snap.visibleText || ""),
+        elements: compactElements
+      },
+      null,
+      2
+    ),
+    "",
+    "PREVIOUS_STEPS (JSON):",
+    JSON.stringify(history, null, 2),
+    "",
+    "TOOLS:",
+    '- snapshot: {}',
+    '- click: {"id":"<elementId>"}',
+    '- type: {"id":"<elementId>","text":"..."}',
+    '- press: {"key":"Enter|Tab|Escape|Backspace|Delete|PageUp|PageDown|Home|End|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|Space"}',
+    '- navigate: {"url":"https://..."}',
+    '- waitForLoad: {"state":"domcontentloaded|load|networkidle"}',
+    "",
+    "RESPONSE_SCHEMA (choose one):",
+    '{"type":"tool","tool":"snapshot","args":{},"reason":"..."}',
+    '{"type":"tool","tool":"click","args":{"id":"12"},"reason":"..."}',
+    '{"type":"tool","tool":"type","args":{"id":"5","text":"hello"},"reason":"..."}',
+    '{"type":"tool","tool":"press","args":{"key":"Enter"},"reason":"..."}',
+    '{"type":"tool","tool":"navigate","args":{"url":"https://example.com"},"reason":"..."}',
+    '{"type":"tool","tool":"waitForLoad","args":{"state":"networkidle"},"reason":"..."}',
+    '{"type":"final","final":"..."}',
+    "",
+    `RULES:\n- Output valid JSON only (a single object).\n- For tool steps, always output {"type":"tool","tool":"...","args":{...},"reason":"..."} (do NOT output only args like {"id":"23"}).\n- tool must be one of: snapshot | click | type | press | navigate | waitForLoad.\n- Use at most ${maxSteps} tool steps.\n- Prefer snapshot before interacting.\n- Use elementId from snapshot.\n- Avoid destructive actions unless clearly required by TASK.`
+  ].join("\n");
+}
+
+async function ensureWebviewHasAgentMarker(webview, marker) {
+  const wv = webview || getActiveWebview();
+  if (!wv) throw new Error(t("error.noActiveTab"));
+  const m = String(marker || "").trim();
+  if (!m) return;
+  try {
+    await wv.executeJavaScript(`window.__stingAgentMarker = ${JSON.stringify(m)}; true;`);
+  } catch {
+  }
+}
+
+async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
+  const shown = String(displayText ?? "").trim();
+  if (!shown) return;
+  if (isSendingChat) return;
+
+  const seq = ++agentRunSeq;
+  setAgentRunning(true);
+
+  const tab = getActiveTab();
+  const tabId = tab?.id || null;
+  const webview = tab?.webview || null;
+
+  const userMsg = createAiChatMessage({ role: "user", meta: t("ai.meta.user"), text: shown });
+  const assistantMsg = createAiChatMessage({
+    role: "assistant",
+    meta: t("ai.meta.assistant"),
+    text: t("ai.chat.sending")
+  });
+  setChatSending(true);
+
+  ensureActiveAiConversation();
+  const conversationId = aiActiveConversationId;
+  const conv = conversationId ? getAiConversationRecord(conversationId) : null;
+  const historyForAi = (Array.isArray(conv?.messages) ? conv.messages : [])
+    .filter((m) => m && !m.skipContext && (m.role === "user" || m.role === "assistant"))
+    .map((m) => ({ role: m.role, content: m.content }))
+    .slice(-12);
+
+  const now = Date.now();
+  const userRecord = {
+    role: "user",
+    meta: t("ai.meta.user"),
+    content: shown,
+    ts: now,
+    skipContext: false
+  };
+  if (conv && Array.isArray(conv.messages)) {
+    conv.messages.push(userRecord);
+    conv.updatedAt = now;
+    persistAiChatStore();
+  }
+
+  const run = {
+    seq,
+    tabId,
+    conversationId,
+    conversationRecord: conv,
+    userMsg,
+    userRecord,
+    assistantMsg,
+    stepsGroup: null,
+    stopped: false,
+    uiStopped: false
+  };
+  activeAgentRun = run;
+
+  let stepsGroup = null;
+  let stepErrors = 0;
+
+  const updateStepsGroupMeta = (attemptedSteps, maxSteps) => {
+    if (!stepsGroup?.metaCountEl) return;
+    const total = Number.isFinite(Number(maxSteps)) ? Number(maxSteps) : null;
+    const done = Number.isFinite(Number(attemptedSteps)) ? Number(attemptedSteps) : 0;
+    const parts = [];
+    if (total != null && total > 0) parts.push(`${Math.min(done, total)}/${total}`);
+    else if (done) parts.push(String(done));
+    if (stepErrors) parts.push(`${stepErrors} ${stepErrors === 1 ? "error" : "errors"}`);
+    stepsGroup.metaCountEl.textContent = parts.length ? parts.join(" · ") : "";
+  };
+
+  const finalizeStepsGroup = () => {
+    if (!stepsGroup) return;
+    try {
+      stepsGroup.root.classList.add("done");
+    } catch {
+    }
+    try {
+      stepsGroup.detailsEl.open = false;
+    } catch {
+    }
+  };
+
+  const markStopped = () => {
+    if (run.uiStopped) return;
+    run.uiStopped = true;
+    assistantMsg.metaEl.textContent = `${t("ai.meta.assistant")} · Agent · ${t("ai.meta.stopped")}`;
+    assistantMsg.contentEl.className = "aiMsgText";
+    assistantMsg.contentEl.textContent = t("ai.agent.stopped");
+    try {
+      assistantMsg.root.dataset.copyText = t("ai.agent.stopped");
+    } catch {
+    }
+    if (assistantMsg.root?.isConnected) {
+      try {
+        aiChatMessages.appendChild(assistantMsg.root);
+      } catch {
+      }
+    }
+    finalizeStepsGroup();
+  };
+
+  try {
+    const status = await window.aiBridge.getAgentStatus();
+    if (!status?.ok) {
+      throw new Error(String(status?.error || "Browser agent is unavailable"));
+    }
+    agentDebugLog("status", status);
+		    if (!status?.cdpEnabled) {
+		      throw new Error("Browser agent is unavailable (CDP disabled). Set STING_CDP_ENABLE=1 and restart.");
+		    }
+
+    if (seq !== agentRunSeq || !isAgentRunning) {
+      markStopped();
+      return;
+    }
+
+    const ctx = await buildAiPageContext(webview);
+    if (seq !== agentRunSeq || !isAgentRunning) {
+      markStopped();
+      return;
+    }
+
+    if (tabId && tabId === activeTabId) {
+      if (ctx.pageTitle) aiContextTitle.textContent = ctx.pageTitle;
+      if (ctx.pageUrl) aiContextUrl.textContent = ctx.pageUrl;
+    }
+
+    const providerValue = String(providerSelect.value || "").trim();
+    const provider = providerValue === "gemini" ? "gemini" : providerValue === "openai" ? "openai" : "local";
+    let model = "";
+    let baseUrl = "";
+    if (provider === "local") {
+      model = String(localModelSelect.value || "").trim();
+      if (!model) throw new Error(t("ai.error.localModelMissing"));
+    } else if (provider === "gemini") {
+      model = String(geminiModelSelect.value || "gemini-2.5-flash");
+    } else {
+      model = String(openAiModelInput.value || "").trim();
+      baseUrl = String(openAiBaseUrlInput.value || "").trim();
+      if (!model) throw new Error("OpenAI-compatible model not set");
+    }
+
+    const built = typeof buildUserMessage === "function" ? buildUserMessage(ctx) : "";
+    const historyText =
+      typeof built === "string" ? built : built && typeof built === "object" ? built.history : "";
+    const aiText = typeof built === "string" ? built : built && typeof built === "object" ? built.ai : "";
+    const userMessage = String(historyText || "").trim();
+    const agentTask = String(aiText || "").trim();
+    if (!agentTask) throw new Error(t("error.emptyPrompt"));
+
+    if (userMessage && userMessage !== shown) {
+      if (userMsg?.root?.isConnected) userMsg.contentEl.textContent = userMessage;
+      try {
+        if (userMsg?.root) userMsg.root.dataset.copyText = userMessage;
+      } catch {
+      }
+    }
+
+    const userMessageForHistory = userMessage || shown;
+    if (userMessageForHistory) userRecord.content = userMessageForHistory;
+
+		    const marker = `agent_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+	    const steps = [];
+	    const maxSteps = clampAgentMaxSteps(agentMaxStepsInput?.value);
+	    let targetUrl = String(ctx.pageUrl || "").trim();
+	    let targetTitle = String(ctx.pageTitle || "").trim();
+
+		    stepsGroup = createAiAgentStepsGroup({
+		      meta: `${t("ai.meta.assistant")} · Agent`,
+		      title: t("ai.agent.steps.title")
+		    });
+		    run.stepsGroup = stepsGroup;
+		    updateStepsGroupMeta(0, maxSteps);
+
+	    for (let step = 1; step <= maxSteps; step++) {
+	      if (seq !== agentRunSeq) {
+	        markStopped();
+	        return;
+	      }
+	      if (!isAgentRunning) {
+	        markStopped();
+	        return;
+	      }
+
+		      await ensureWebviewHasAgentMarker(webview, marker);
+		      const snapRes = await window.aiBridge.agentSnapshot({ url: targetUrl, title: targetTitle, marker });
+	      if (!snapRes?.ok) throw new Error(snapRes?.error || "Failed to snapshot page");
+      const snapshot = snapRes.snapshot || {};
+      agentDebugLog(`snapshot ${step}`, {
+        url: String(snapshot.url || ""),
+        title: String(snapshot.title || ""),
+        scroll: snapshot.scroll || null,
+        elements: Array.isArray(snapshot.elements) ? snapshot.elements.length : 0
+      });
+      targetUrl = String(snapshot.url || targetUrl);
+      targetTitle = String(snapshot.title || targetTitle);
+      const snapshotElementIds = new Set(
+        (Array.isArray(snapshot.elements) ? snapshot.elements : [])
+          .map((e) => String(e?.id || "").trim())
+          .filter(Boolean)
+      );
+
+      const system = buildBrowserAgentSystemPrompt();
+      const prompt = buildBrowserAgentUserPrompt({ task: agentTask, snapshot, steps, maxSteps });
+      const aiRes = await window.aiBridge.generate({
+        provider,
+        model,
+        baseUrl,
+        format: "json",
+        messages: [
+          { role: "system", content: system },
+          ...historyForAi,
+          { role: "user", content: prompt }
+        ],
+        prompt
+      });
+      if (!aiRes?.ok) throw new Error(aiRes?.error || t("error.aiGeneric"));
+      agentDebugLog(`llm ${step}`, truncateText(aiRes.text, 1400));
+      if (seq !== agentRunSeq || !isAgentRunning) {
+        markStopped();
+        return;
+      }
+
+      const rawActionText = String(aiRes.text ?? "");
+	      const parsed = parseJsonObjectFromText(rawActionText);
+	      if (!parsed) {
+	        const error = `Agent returned invalid JSON.\n\nRaw response:\n${truncateText(rawActionText, 900)}`;
+	        agentDebugLog(`action ${step} invalid`, { error });
+	        steps.push({ step, tool: "(invalid)", args: null, reason: "", result: "error", error });
+	        createAiChatMessage({
+	          role: "assistant",
+	          meta: `${t("ai.meta.assistant")} · ${t("ai.meta.error")}`,
+	          text: error,
+	          parentEl: stepsGroup?.listEl
+	        });
+	        stepErrors++;
+	        updateStepsGroupMeta(steps.length, maxSteps);
+	        continue;
+	      }
+	      const normalized = normalizeBrowserAgentAction(parsed, rawActionText);
+	      if (!normalized.ok) {
+	        const error = String(normalized.error || "Agent returned invalid action");
+	        agentDebugLog(`action ${step} invalid`, { parsed, error });
+	        steps.push({ step, tool: "(invalid)", args: parsed, reason: "", result: "error", error });
+	        createAiChatMessage({
+	          role: "assistant",
+	          meta: `${t("ai.meta.assistant")} · ${t("ai.meta.error")}`,
+	          text: error,
+	          parentEl: stepsGroup?.listEl
+	        });
+	        stepErrors++;
+	        updateStepsGroupMeta(steps.length, maxSteps);
+	        continue;
+	      }
+	      agentDebugLog(`action ${step}`, normalized);
+
+		      if (normalized.type === "final") {
+		        const finalText = String(normalized.final || "").trim();
+		        const providerLabel =
+		          provider === "local"
+		            ? t("ai.meta.provider.local")
+		            : provider === "gemini"
+		              ? t("ai.meta.provider.gemini")
+		              : t("ai.meta.provider.openai");
+		        const assistantMeta = `${t("ai.meta.assistant")} · Agent · ${providerLabel} · ${model}`;
+		        if (assistantMsg?.root?.isConnected) {
+		          assistantMsg.metaEl.textContent = assistantMeta;
+		          assistantMsg.contentEl.className = "aiMarkdown";
+		          assistantMsg.contentEl.innerHTML = renderAiMarkdownToSanitizedHtml(finalText || "(no output)");
+		          try {
+		            assistantMsg.root.dataset.copyText = finalText || "";
+		          } catch {
+		          }
+		          try {
+		            aiChatMessages.appendChild(assistantMsg.root);
+		          } catch {
+		          }
+		        }
+		        finalizeStepsGroup();
+		        updateStepsGroupMeta(steps.length, maxSteps);
+
+		        const doneAt = Date.now();
+		        if (conv && Array.isArray(conv.messages)) {
+		          conv.messages.push({
+		            role: "assistant",
+		            meta: assistantMeta,
+		            content: finalText,
+		            ts: doneAt,
+		            skipContext: false
+		          });
+		          conv.updatedAt = doneAt;
+		          persistAiChatStore();
+		        }
+		        if (
+		          !assistantMsg?.root?.isConnected &&
+		          tabId &&
+		          tabId === activeTabId &&
+		          getActiveTab()?.aiConversationId === conversationId
+		        ) {
+		          renderAiConversationMessages(conv?.messages || []);
+		        }
+		        return;
+		      }
+
+	      const tool = normalized.tool;
+	      const args = normalized.args && typeof normalized.args === "object" ? normalized.args : {};
+	      const reason = String(normalized.reason || "").trim();
+
+      const confirmNeeded = Boolean(agentConfirmCheckbox?.checked) && tool !== "snapshot";
+	      if (confirmNeeded) {
+	        const ok = confirm(`Agent step ${step}: ${tool}\n\n${reason || ""}`.trim());
+	        if (!ok) {
+	          stopAgentFlow();
+	          return;
+	        }
+	      }
+
+      const stepRecord = { step, tool, args, reason, result: "planned" };
+      steps.push(stepRecord);
+
+		      const meta = `${t("ai.meta.assistant")} · Agent · step ${step}`;
+		      if (tool === "snapshot") {
+		        createAiChatMessage({
+		          role: "assistant",
+		          meta,
+		          markdown: `**snapshot**\n\n${reason || ""}`.trim(),
+		          parentEl: stepsGroup?.listEl
+		        });
+		        stepRecord.result = "ok";
+		        updateStepsGroupMeta(steps.length, maxSteps);
+		        continue;
+		      }
+
+	      let toolRes = { ok: true };
+	      if (tool === "click") {
+        const id = String(args.id || "").trim();
+        if (id && snapshotElementIds.size && !snapshotElementIds.has(id)) {
+          toolRes = { ok: false, error: `Invalid element id: ${id} (not in current snapshot).` };
+        } else {
+          toolRes = await window.aiBridge.agentClick({ url: targetUrl, title: targetTitle, marker, elementId: id });
+        }
+      } else if (tool === "type") {
+        const id = String(args.id || "").trim();
+        if (id && snapshotElementIds.size && !snapshotElementIds.has(id)) {
+          toolRes = { ok: false, error: `Invalid element id: ${id} (not in current snapshot).` };
+        } else {
+          toolRes = await window.aiBridge.agentType({
+            url: targetUrl,
+            title: targetTitle,
+            marker,
+            elementId: id,
+            text: args.text
+          });
+        }
+      } else if (tool === "press") {
+        toolRes = await window.aiBridge.agentPress({ url: targetUrl, title: targetTitle, marker, key: args.key });
+      } else if (tool === "navigate") {
+        toolRes = await window.aiBridge.agentNavigate({ url: targetUrl, title: targetTitle, marker, toUrl: args.url });
+      } else if (tool === "waitForLoad") {
+        toolRes = await window.aiBridge.agentWaitForLoad({
+          url: targetUrl,
+          title: targetTitle,
+          marker,
+          state: args.state
+        });
+      } else {
+        toolRes = { ok: false, error: `Unknown tool: ${tool || "(missing)"}` };
+      }
+
+	      if (!toolRes?.ok) {
+	        stepRecord.result = "error";
+	        stepRecord.error = String(toolRes?.error || "Tool failed");
+	        agentDebugLog(`tool ${step} failed`, { tool, args, error: toolRes?.error });
+	        createAiChatMessage({
+	          role: "assistant",
+	          meta: `${t("ai.meta.assistant")} · ${t("ai.meta.error")}`,
+	          text: String(toolRes?.error || "Tool failed"),
+	          parentEl: stepsGroup?.listEl
+	        });
+	        stepErrors++;
+	        updateStepsGroupMeta(steps.length, maxSteps);
+	        continue;
+	      }
+	      stepRecord.result = "ok";
+	      if (seq !== agentRunSeq || !isAgentRunning) {
+	        markStopped();
+        return;
+      }
+
+      try {
+        await window.aiBridge.agentWaitForLoad({ url: targetUrl, title: targetTitle, marker, state: "networkidle" });
+      } catch {
+      }
+      if (seq !== agentRunSeq || !isAgentRunning) {
+        markStopped();
+        return;
+      }
+
+		      createAiChatMessage({
+		        role: "assistant",
+		        meta,
+		        markdown: `**${tool}**\n\n\`\`\`json\n${JSON.stringify(args || {}, null, 2)}\n\`\`\`\n\n${reason || ""}`.trim(),
+		        parentEl: stepsGroup?.listEl
+		      });
+		      updateStepsGroupMeta(steps.length, maxSteps);
+		    }
+
+	    throw new Error("Agent reached max steps without finishing.");
+		  } catch (err) {
+		    if (seq !== agentRunSeq) {
+		      markStopped();
+		      return;
+		    }
+		    const message = String(err?.message || err);
+		    const errorMeta = `${t("ai.meta.assistant")} · ${t("ai.meta.error")}`;
+		    if (assistantMsg?.root?.isConnected) {
+		      assistantMsg.metaEl.textContent = errorMeta;
+		      assistantMsg.contentEl.className = "aiMsgText";
+		      assistantMsg.contentEl.textContent = message;
+		      try {
+		        assistantMsg.root.dataset.copyText = message;
+		      } catch {
+		      }
+		      try {
+		        aiChatMessages.appendChild(assistantMsg.root);
+		      } catch {
+		      }
+		    }
+		    finalizeStepsGroup();
+		    if (conv && Array.isArray(conv.messages)) {
+		      const ts = Date.now();
+		      conv.messages.push({ role: "assistant", meta: errorMeta, content: message, ts, skipContext: true });
+		      conv.updatedAt = ts;
+		      persistAiChatStore();
+		    }
+		    if (
+		      !assistantMsg?.root?.isConnected &&
+		      tabId &&
+		      tabId === activeTabId &&
+		      getActiveTab()?.aiConversationId === conversationId
+		    ) {
+		      renderAiConversationMessages(conv?.messages || []);
+		    }
+	    window.aiBridge.showError(message);
+	  } finally {
+	    if (activeAgentRun?.seq === seq) activeAgentRun = null;
+	    if (seq === agentRunSeq) setAgentRunning(false);
+	    if (seq === agentRunSeq) setChatSending(false);
+	    scrollAiChatToBottom({ behavior: "smooth" });
+	  }
+	}
+
+async function dispatchAiRequest({ displayText, buildUserMessage }) {
+  if (isBrowserAgentMode()) return runBrowserAgentRequest({ displayText, buildUserMessage });
+  return sendAiChatMessage({ displayText, buildUserMessage });
 }
 
 function sendChatFromInput() {
   const text = chatInput.value.trim();
   if (!text) return;
   chatInput.value = "";
-  sendAiChatMessage({
+  dispatchAiRequest({
     displayText: text,
     buildUserMessage: (ctx) => {
       const context = buildAiContextBlock(ctx);
@@ -4442,7 +5988,7 @@ promptShortcuts?.addEventListener("click", (e) => {
   const p = prompts.find((x) => x.id === id);
   if (!p) return;
   const name = p.name || p.id;
-  sendAiChatMessage({
+  dispatchAiRequest({
     displayText: name,
     buildUserMessage: (ctx) => ({
       history: buildPromptInstructionFromPrompt(p, ctx),
@@ -4586,7 +6132,8 @@ window.aiBridge.onMenuCommand((msg) => {
     return;
   }
   if (command === "toggleAiAssistant") {
-    setAiPanelOpen(aiPanel.classList.contains("hidden"));
+    const tab = getActiveTab();
+    setAiPanelOpen(!tab?.aiPanelOpen, { focus: true });
     return;
   }
   if (command === "openHistory") {
@@ -4625,18 +6172,15 @@ window.aiBridge.onMenuCommand((msg) => {
     webview.reload();
     return;
   }
-  if (command === "forceReload") {
-    safeCall(() => webview.reloadIgnoringCache(), null);
-    return;
-  }
-  if (command === "findInPage") {
-    const q = prompt(t("findInPage.prompt"), "");
-    const query = String(q || "").trim();
-    if (!query) return;
-    safeCall(() => webview.stopFindInPage("clearSelection"), null);
-    safeCall(() => webview.findInPage(query), null);
-  }
-});
+	  if (command === "forceReload") {
+	    safeCall(() => webview.reloadIgnoringCache(), null);
+	    return;
+	  }
+	  if (command === "findInPage") {
+	    openFindBar({ prefillSelection: true });
+	    return;
+	  }
+	});
 
 async function initAiAssistantOptions() {
   const saved = loadAiAssistantOptionsFromStorage() || {};
@@ -4644,8 +6188,23 @@ async function initAiAssistantOptions() {
   isSyncingAiAssistantOptions = true;
   try {
     const provider = saved.provider;
-    if (provider === "local" || provider === "gemini") {
+    if (provider === "local" || provider === "gemini" || provider === "openai") {
       providerSelect.value = provider;
+    }
+
+    const mode = saved.mode;
+    if (aiModeSelect && (mode === "chat" || mode === "browser")) {
+      aiModeSelect.value = mode;
+    }
+    if (agentConfirmCheckbox && typeof saved.agentConfirm === "boolean") {
+      agentConfirmCheckbox.checked = saved.agentConfirm;
+    }
+    if (agentMaxStepsInput) {
+      if (Number.isFinite(Number(saved.agentMaxSteps))) {
+        agentMaxStepsInput.value = String(clampAgentMaxSteps(saved.agentMaxSteps));
+      } else {
+        agentMaxStepsInput.value = String(clampAgentMaxSteps(agentMaxStepsInput.value));
+      }
     }
 
     const contextMode = saved.contextMode;
@@ -4737,9 +6296,8 @@ async function initApp() {
   const storedChat = loadAiChatStoreFromStorage();
   aiChatConversations = storedChat?.conversations || [];
   aiActiveConversationId = storedChat?.activeConversationId || null;
-  ensureActiveAiConversation();
+  syncAiConversationForActiveTab();
   persistAiChatStore();
-  renderAiConversationMessages(aiConversation);
 
   if (!hasShownChromeImportModal) {
     setChromeImportModalOpen(true);

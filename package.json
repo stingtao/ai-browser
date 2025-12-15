@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "electron": "^34.0.0",
+    "playwright-core": "^1.50.0",
     "ws": "^8.18.3"
   }
 }

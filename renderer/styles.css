@@ -600,6 +600,53 @@ body {
   background: var(--surface);
 }
 
+.findBar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 60;
+}
+
+.findBar.hidden {
+  display: none;
+}
+
+.findBarInner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadowDropdown);
+}
+
+.findBarInner input {
+  width: 220px;
+  max-width: 40vw;
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+}
+
+.findBarInner input:focus {
+  border-color: rgba(var(--accentRgb), 0.55);
+  box-shadow: 0 0 0 3px rgba(var(--accentRgb), 0.12);
+}
+
+.findMatchCount {
+  min-width: 60px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--muted);
+  user-select: none;
+}
+
 .loadErrorOverlay {
   position: absolute;
   inset: 0;
@@ -922,11 +969,27 @@ body.isResizingAiPanel {
 
 .aiMsgBubble {
   max-width: 92%;
+  position: relative;
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 10px 12px;
+  padding: 10px 40px 10px 12px;
   box-sizing: border-box;
   box-shadow: var(--shadow);
+}
+
+.aiMsgCopyBtn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.aiMsgBubble:hover .aiMsgCopyBtn,
+.aiMsgBubble:focus-within .aiMsgCopyBtn {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .aiMsg.user .aiMsgBubble {
@@ -936,6 +999,80 @@ body.isResizingAiPanel {
 
 .aiMsg.assistant .aiMsgBubble {
   background: var(--surface);
+}
+
+.aiAgentStepsMsg .aiAgentStepsBubble {
+  background: var(--surface);
+}
+
+.aiAgentStepsMsg.done .aiAgentStepsBubble {
+  background: var(--surfaceSubtle);
+  border-color: rgba(var(--accentRgb), 0.18);
+  box-shadow: none;
+}
+
+.aiAgentStepsDetails {
+  margin-top: 8px;
+}
+
+.aiAgentStepsSummary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+}
+
+.aiAgentStepsSummary::-webkit-details-marker {
+  display: none;
+}
+
+.aiAgentStepsSummary::before {
+  content: "▸";
+  color: var(--muted);
+  font-size: calc(12px * var(--aiScale));
+}
+
+.aiAgentStepsDetails[open] .aiAgentStepsSummary::before {
+  content: "▾";
+}
+
+.aiAgentStepsSummaryTitle {
+  font-size: calc(13px * var(--aiScale));
+  font-weight: 600;
+  color: var(--text);
+}
+
+.aiAgentStepsSummaryMeta {
+  margin-left: auto;
+  font-size: calc(11px * var(--aiScale));
+  color: var(--muted);
+}
+
+.aiAgentStepsList {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+body.theme-dark .aiAgentStepsList {
+  border-top-color: rgba(255, 255, 255, 0.18);
+}
+
+.aiAgentStepsList .aiMsgBubble {
+  max-width: 100%;
+  padding: 8px 38px 8px 10px;
+  box-shadow: none;
+  background: rgba(var(--accentRgb), 0.04);
+  border-color: rgba(var(--accentRgb), 0.18);
+}
+
+.aiAgentStepsList .aiMsgMeta {
+  margin-bottom: 4px;
 }
 
 .aiMsgMeta {
