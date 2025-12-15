@@ -226,6 +226,7 @@ body {
   border-radius: 8px;
   border: none;
   background: transparent;
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -461,7 +462,135 @@ body {
   flex: 1;
   min-height: 0;
   display: flex;
+  position: relative;
   background: var(--surface);
+}
+
+.toolbarBadge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgba(var(--accentRgb), 0.95);
+  color: white;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+}
+
+.toolbarBadge.hidden {
+  display: none;
+}
+
+.downloadsShelf {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadowDropdown);
+  overflow: hidden;
+  z-index: 70;
+}
+
+.downloadsShelf.hidden {
+  display: none;
+}
+
+.downloadsShelfHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 10px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.downloadsShelfTitle {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.downloadsShelfHeaderActions {
+  display: flex;
+  gap: 6px;
+}
+
+.downloadsList {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.downloadItem {
+  width: min(360px, calc(100vw - 120px));
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--shadow);
+}
+
+.downloadTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.downloadName {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.downloadStatus {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.downloadProgressBar {
+  height: 8px;
+  background: rgba(127, 127, 127, 0.18);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.downloadProgressBarInner {
+  height: 100%;
+  width: 0%;
+  background: rgba(var(--accentRgb), 0.95);
+  border-radius: 999px;
+  transition: width 120ms linear;
+}
+
+.downloadActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.downloadActions button {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 10px;
 }
 
 .webviewArea {
@@ -469,6 +598,59 @@ body {
   min-width: 0;
   position: relative;
   background: var(--surface);
+}
+
+.loadErrorOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--surface);
+  z-index: 40;
+}
+
+.loadErrorOverlay.hidden {
+  display: none;
+}
+
+.loadErrorCard {
+  width: min(560px, 100%);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: 14px;
+  box-shadow: var(--shadowLg);
+  padding: 18px 18px 16px;
+}
+
+.loadErrorTitle {
+  font-size: 18px;
+  font-weight: 650;
+  margin: 0 0 10px;
+}
+
+.loadErrorUrl {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+
+.loadErrorMessage {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: pre-wrap;
+  line-height: 1.45;
+  margin-bottom: 14px;
+}
+
+.loadErrorActions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
 }
 
 .tabWebview {
@@ -1168,6 +1350,35 @@ body.isResizingAiPanel {
   flex-direction: column;
   gap: 3px;
   box-shadow: var(--shadow);
+}
+
+.historyItemHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.historyItemDeleteBtn {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 10px;
+  padding: 2px 6px;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+
+.historyItemDeleteBtn:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.historyItemDeleteBtn:active {
+  background: var(--active);
 }
 
 .historyItem:hover {

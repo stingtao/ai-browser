@@ -117,11 +117,22 @@
             ></div>
           </div>
 
-          <div class="toolbarActions">
-            <button
-              id="aiToggleBtn"
-              class="pillBtn"
-              title="AI Assistant"
+	          <div class="toolbarActions">
+	            <button
+	              id="downloadsFolderBtn"
+	              class="iconBtn"
+	              type="button"
+	              aria-label="Open downloads folder"
+	              title="Downloads"
+	              data-i18n-attrs="aria-label:downloads.openFolder,title:downloads.title"
+	            >
+	              📁
+	              <span id="downloadsBadge" class="toolbarBadge hidden" aria-hidden="true"></span>
+	            </button>
+	            <button
+	              id="aiToggleBtn"
+	              class="pillBtn"
+	              title="AI Assistant"
               aria-expanded="false"
               aria-controls="aiPanel"
               data-i18n-attrs="title:ai.label,aria-label:ai.label"
@@ -147,16 +158,32 @@
         </div>
       </header>
 
-      <div id="contentArea" class="contentArea">
-        <div id="webviewArea" class="webviewArea"></div>
+	      <div id="contentArea" class="contentArea">
+	        <div id="webviewArea" class="webviewArea">
+	          <div id="loadErrorOverlay" class="loadErrorOverlay hidden" aria-hidden="true">
+	            <div class="loadErrorCard" role="status" aria-live="polite">
+	              <div id="loadErrorTitle" class="loadErrorTitle" data-i18n="pageError.title">無法連上這個網站</div>
+	              <div id="loadErrorUrl" class="loadErrorUrl"></div>
+	              <div id="loadErrorMessage" class="loadErrorMessage"></div>
+	              <div class="loadErrorActions">
+	                <button id="loadErrorRetryBtn" class="primaryBtn" type="button" data-i18n="pageError.retry">
+	                  重新載入
+	                </button>
+	                <button id="loadErrorCopyBtn" type="button" class="secondary" data-i18n="pageError.copyUrl">
+	                  複製網址
+	                </button>
+	              </div>
+	            </div>
+	          </div>
+	        </div>
 
-        <aside
-          id="aiPanel"
-          class="aiPanel hidden"
-          aria-hidden="true"
-          aria-label="AI Assistant"
-          data-i18n-attrs="aria-label:ai.label"
-        >
+		        <aside
+		          id="aiPanel"
+		          class="aiPanel hidden"
+	          aria-hidden="true"
+	          aria-label="AI Assistant"
+	          data-i18n-attrs="aria-label:ai.label"
+	        >
           <div
             id="aiResizeHandle"
             class="aiResizeHandle"
@@ -275,13 +302,42 @@
 	                </button>
 	                <button id="chatSendBtn" class="primaryBtn" type="button" data-i18n="ai.chat.send">送出</button>
 	              </div>
-            </div>
-          </div>
-        </aside>
-      </div>
+	            </div>
+	          </div>
+	        </aside>
 
-      <footer id="statusBar" class="statusBar">
-        <div id="statusText" class="statusLeft"></div>
+	        <div id="downloadsShelf" class="downloadsShelf hidden" aria-hidden="true">
+	          <div class="downloadsShelfHeader">
+	            <div class="downloadsShelfTitle" data-i18n="downloads.title">Downloads</div>
+	            <div class="downloadsShelfHeaderActions">
+	              <button
+	                id="downloadsShelfOpenFolderBtn"
+	                class="iconBtn iconBtnSm"
+	                type="button"
+	                aria-label="Open downloads folder"
+	                title="Open downloads folder"
+	                data-i18n-attrs="aria-label:downloads.openFolder,title:downloads.openFolder"
+	              >
+	                📁
+	              </button>
+	              <button
+	                id="downloadsShelfCloseBtn"
+	                class="iconBtn iconBtnSm"
+	                type="button"
+	                aria-label="Close"
+	                title="Close"
+	                data-i18n-attrs="aria-label:downloads.close,title:downloads.close"
+	              >
+	                ×
+	              </button>
+	            </div>
+	          </div>
+	          <div id="downloadsList" class="downloadsList" aria-label="Downloads list" data-i18n-attrs="aria-label:downloads.list"></div>
+	        </div>
+	      </div>
+
+	      <footer id="statusBar" class="statusBar">
+	        <div id="statusText" class="statusLeft"></div>
         <div id="statusMeta" class="statusRight"></div>
       </footer>
     </div>
@@ -389,23 +445,18 @@
 	            </div>
 	          </div>
 
-	          <div class="panelSection">
-	            <div class="panelSectionTitle" data-i18n="aiSettings.section.voice">語音輸入</div>
-	            <div class="row">
-	              <label data-i18n="aiSettings.voice.model">模型</label>
-	              <select id="voiceModelSelect">
-	                <option value="gemini-2.5-flash-lite" selected>gemini-2.5-flash-lite</option>
-	                <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-	                <option value="gemini-2.5-pro">gemini-2.5-pro</option>
-	                <option value="gemini-2.5-flash-lite-preview-09-2025">gemini-2.5-flash-lite-preview-09-2025</option>
-	                <option value="gemini-2.5-flash-preview-09-2025">gemini-2.5-flash-preview-09-2025</option>
-	                <option value="gemini-2.5-flash-native-audio-preview-12-2025">
-	                  gemini-2.5-flash-native-audio-preview-12-2025
-	                </option>
-	              </select>
-	            </div>
-	            <small class="formHint" data-i18n="aiSettings.voice.hint">需要 Gemini API Key；用於語音轉文字。</small>
-	          </div>
+		          <div class="panelSection">
+		            <div class="panelSectionTitle" data-i18n="aiSettings.section.voice">語音輸入</div>
+		            <div class="row">
+		              <label data-i18n="aiSettings.voice.model">模型</label>
+		              <select id="voiceModelSelect">
+		                <option value="gemini-2.5-flash-native-audio-preview-12-2025" selected>
+		                  gemini-2.5-flash-native-audio-preview-12-2025
+		                </option>
+		              </select>
+		            </div>
+		            <small class="formHint" data-i18n="aiSettings.voice.hint">需要 Gemini API Key；即時語音轉文字（Gemini Live）。</small>
+		          </div>
 
 	          <div class="panelSection">
 	            <div class="panelSectionTitle" data-i18n="aiSettings.section.context">上下文</div>

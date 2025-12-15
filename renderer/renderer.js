@@ -10,6 +10,13 @@ const DEFAULT_FAVICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
 
 const SUPPORTED_UI_LANGUAGES = ["en", "es", "zh-TW"];
 
+let launchInitialUrl = "";
+try {
+  launchInitialUrl = new URLSearchParams(window.location.search).get("initialUrl") || "";
+} catch {
+  launchInitialUrl = "";
+}
+
 function resolveUiLanguage(input) {
   const raw = String(input || "").trim();
   if (!raw) return "en";
@@ -40,6 +47,22 @@ const UI_I18N = {
     "address.placeholder": "Search or enter address",
     "address.clear": "Clear",
     "address.suggestions": "Suggestions",
+
+    "pageError.title": "This site can’t be reached",
+    "pageError.retry": "Reload",
+    "pageError.copyUrl": "Copy URL",
+
+    "downloads.title": "Downloads",
+    "downloads.openFolder": "Open downloads folder",
+    "downloads.close": "Close downloads",
+    "downloads.list": "Downloads list",
+    "downloads.status.downloading": "Downloading…",
+    "downloads.status.completed": "Completed",
+    "downloads.status.cancelled": "Cancelled",
+    "downloads.status.interrupted": "Failed",
+    "downloads.action.open": "Open",
+    "downloads.action.show": "Show in folder",
+    "downloads.action.cancel": "Cancel",
 
     "ai.label": "AI Assistant",
     "ai.settings": "AI Assistant settings",
@@ -76,6 +99,7 @@ const UI_I18N = {
     "ai.context.attachedNote": "({{label}} is included in the context)",
     "ai.error.selectionMissing":
       "No selection found: select some text on the page, or switch to \"Full page\" mode.",
+    "ai.error.localModelMissing": "No local model selected. Install one in AI settings (Pull) and select it.",
     "ai.systemPrompt":
       "You are the user's browser AI assistant. Answer using the provided page context. Respond in English.",
 
@@ -129,7 +153,7 @@ const UI_I18N = {
 
     "aiSettings.section.voice": "Voice input",
     "aiSettings.voice.model": "Model",
-    "aiSettings.voice.hint": "Requires Gemini API key; used for speech-to-text.",
+    "aiSettings.voice.hint": "Requires Gemini API key; realtime speech-to-text (Gemini Live).",
 
     "aiSettings.section.prompts": "Prompts",
     "aiSettings.prompt.label": "Prompt",
@@ -195,6 +219,7 @@ const UI_I18N = {
     "history.search.label": "Search",
     "history.search.placeholder": "Search title or URL…",
     "history.clear": "Clear",
+    "history.delete": "Delete",
     "history.empty": "No browsing history yet.",
     "history.empty.filtered": "No matching history entries.",
 
@@ -217,7 +242,9 @@ const UI_I18N = {
     "error.noActiveTab": "No active tab",
 
     "findInPage.prompt": "Find in page",
-    "aiSettings.localModel.missing": "{{model}} (not downloaded or Ollama not installed)"
+    "aiSettings.localModel.missing": "{{model}} (not downloaded or Ollama not installed)",
+    "aiSettings.localModel.unavailable": "Ollama is not available (install/start Ollama, then click Refresh).",
+    "aiSettings.localModel.noneInstalled": "No local models installed (use Pull to download one)."
   },
   es: {
     "tabs.scrollLeft": "Desplazar pestañas a la izquierda",
@@ -237,6 +264,22 @@ const UI_I18N = {
     "address.placeholder": "Buscar o introducir dirección",
     "address.clear": "Borrar",
     "address.suggestions": "Sugerencias",
+
+    "pageError.title": "No se puede acceder a este sitio",
+    "pageError.retry": "Recargar",
+    "pageError.copyUrl": "Copiar URL",
+
+    "downloads.title": "Descargas",
+    "downloads.openFolder": "Abrir carpeta de descargas",
+    "downloads.close": "Cerrar descargas",
+    "downloads.list": "Lista de descargas",
+    "downloads.status.downloading": "Descargando…",
+    "downloads.status.completed": "Completado",
+    "downloads.status.cancelled": "Cancelado",
+    "downloads.status.interrupted": "Falló",
+    "downloads.action.open": "Abrir",
+    "downloads.action.show": "Mostrar en carpeta",
+    "downloads.action.cancel": "Cancelar",
 
     "ai.label": "Asistente de IA",
     "ai.settings": "Ajustes del asistente de IA",
@@ -273,6 +316,7 @@ const UI_I18N = {
     "ai.context.attachedNote": "({{label}} está incluido en el contexto)",
     "ai.error.selectionMissing":
       "No hay texto seleccionado: selecciona texto en la página o cambia al modo \"Página completa\".",
+    "ai.error.localModelMissing": "No hay un modelo local seleccionado. Instala uno en Ajustes de IA (Descargar) y selecciónalo.",
     "ai.systemPrompt":
       "Eres el asistente de IA del navegador del usuario. Responde utilizando el contexto de la página proporcionado. Responde en español.",
 
@@ -326,7 +370,7 @@ const UI_I18N = {
 
     "aiSettings.section.voice": "Entrada de voz",
     "aiSettings.voice.model": "Modelo",
-    "aiSettings.voice.hint": "Requiere una clave de Gemini API; se usa para voz a texto.",
+    "aiSettings.voice.hint": "Requiere una clave de Gemini API; voz a texto en tiempo real (Gemini Live).",
 
     "aiSettings.section.prompts": "Prompts",
     "aiSettings.prompt.label": "Prompt",
@@ -392,6 +436,7 @@ const UI_I18N = {
     "history.search.label": "Buscar",
     "history.search.placeholder": "Buscar título o URL…",
     "history.clear": "Borrar",
+    "history.delete": "Eliminar",
     "history.empty": "Aún no hay historial.",
     "history.empty.filtered": "No hay entradas que coincidan.",
 
@@ -414,7 +459,9 @@ const UI_I18N = {
     "error.noActiveTab": "No hay pestaña activa",
 
     "findInPage.prompt": "Buscar en la página",
-    "aiSettings.localModel.missing": "{{model}} (no descargado o Ollama no instalado)"
+    "aiSettings.localModel.missing": "{{model}} (no descargado o Ollama no instalado)",
+    "aiSettings.localModel.unavailable": "Ollama no está disponible (instala/inicia Ollama y luego pulsa Actualizar).",
+    "aiSettings.localModel.noneInstalled": "No hay modelos locales instalados (usa Descargar para instalar uno)."
   },
   "zh-TW": {
     "tabs.scrollLeft": "向左捲動分頁",
@@ -434,6 +481,22 @@ const UI_I18N = {
     "address.placeholder": "搜尋或輸入網址",
     "address.clear": "清除",
     "address.suggestions": "建議",
+
+    "pageError.title": "無法連上這個網站",
+    "pageError.retry": "重新載入",
+    "pageError.copyUrl": "複製網址",
+
+    "downloads.title": "下載",
+    "downloads.openFolder": "開啟下載資料夾",
+    "downloads.close": "關閉下載列",
+    "downloads.list": "下載列表",
+    "downloads.status.downloading": "下載中…",
+    "downloads.status.completed": "已完成",
+    "downloads.status.cancelled": "已取消",
+    "downloads.status.interrupted": "下載失敗",
+    "downloads.action.open": "開啟",
+    "downloads.action.show": "在資料夾中顯示",
+    "downloads.action.cancel": "取消",
 
     "ai.label": "AI Assistant",
     "ai.settings": "AI Assistant 設定",
@@ -467,9 +530,10 @@ const UI_I18N = {
     "ai.context.selection": "選取文字",
     "ai.context.pageTitle": "頁面標題",
     "ai.context.url": "網址",
-    "ai.context.attachedNote": "（{{label}} 已附在上下文）",
-    "ai.error.selectionMissing": "尚未選取文字：請先在頁面上選取一段文字，或改用「整頁文字」模式。",
-    "ai.systemPrompt": "你是使用者的瀏覽器 AI 助手。請根據使用者提供的網頁上下文回答問題。請使用繁體中文回答。",
+	    "ai.context.attachedNote": "（{{label}} 已附在上下文）",
+	    "ai.error.selectionMissing": "尚未選取文字：請先在頁面上選取一段文字，或改用「整頁文字」模式。",
+	    "ai.error.localModelMissing": "尚未選擇本機模型。請到 AI Assistant 設定下載並選擇一個 Ollama 模型。",
+	    "ai.systemPrompt": "你是使用者的瀏覽器 AI 助手。請根據使用者提供的網頁上下文回答問題。請使用繁體中文回答。",
 
     "status.loading": "載入中…",
 
@@ -519,7 +583,7 @@ const UI_I18N = {
 
     "aiSettings.section.voice": "語音輸入",
     "aiSettings.voice.model": "模型",
-    "aiSettings.voice.hint": "需要 Gemini API Key；用於語音轉文字。",
+    "aiSettings.voice.hint": "需要 Gemini API Key；即時語音轉文字（Gemini Live）。",
 
     "aiSettings.section.prompts": "Prompts",
     "aiSettings.prompt.label": "Prompt",
@@ -582,6 +646,7 @@ const UI_I18N = {
     "history.search.label": "搜尋",
     "history.search.placeholder": "搜尋標題或網址...",
     "history.clear": "清除",
+    "history.delete": "刪除",
     "history.empty": "尚無瀏覽歷史紀錄。",
     "history.empty.filtered": "找不到符合的歷史紀錄。",
 
@@ -603,8 +668,10 @@ const UI_I18N = {
     "error.noActiveTab": "沒有作用中的分頁",
 
     "findInPage.prompt": "在頁面中搜尋",
-    "aiSettings.localModel.missing": "{{model}}（未下載/或未安裝 Ollama）"
-  }
+	    "aiSettings.localModel.missing": "{{model}}（未下載/或未安裝 Ollama）",
+	    "aiSettings.localModel.unavailable": "Ollama 不可用（請安裝/啟動 Ollama 後按重新整理）。",
+	    "aiSettings.localModel.noneInstalled": "尚未安裝本機模型（請使用下載來安裝）。"
+	  }
 };
 
 function interpolateI18n(text, params) {
@@ -677,6 +744,7 @@ function setUiLanguage(nextLanguage) {
   syncAiContext();
   updateLoadingUI();
   updateStatusMeta();
+  renderDownloadsShelf();
   renderHistoryList();
   if (isAiHistoryOpen) renderAiConversationHistoryList();
   setChatSending(isSendingChat);
@@ -693,6 +761,12 @@ const newTabBtn = document.getElementById("newTabBtn");
 const tabsScrollLeftBtn = document.getElementById("tabsScrollLeftBtn");
 const tabsScrollRightBtn = document.getElementById("tabsScrollRightBtn");
 const webviewArea = document.getElementById("webviewArea");
+const loadErrorOverlay = document.getElementById("loadErrorOverlay");
+const loadErrorTitle = document.getElementById("loadErrorTitle");
+const loadErrorUrl = document.getElementById("loadErrorUrl");
+const loadErrorMessage = document.getElementById("loadErrorMessage");
+const loadErrorRetryBtn = document.getElementById("loadErrorRetryBtn");
+const loadErrorCopyBtn = document.getElementById("loadErrorCopyBtn");
 
 const urlInput = document.getElementById("urlInput");
 const clearUrlBtn = document.getElementById("clearUrlBtn");
@@ -702,6 +776,8 @@ const backBtn = document.getElementById("backBtn");
 const forwardBtn = document.getElementById("forwardBtn");
 const reloadBtn = document.getElementById("reloadBtn");
 const homeBtn = document.getElementById("homeBtn");
+const downloadsFolderBtn = document.getElementById("downloadsFolderBtn");
+const downloadsBadge = document.getElementById("downloadsBadge");
 const aiToggleBtn = document.getElementById("aiToggleBtn");
 const aiSettingsBtn = document.getElementById("aiSettingsBtn");
 const aiPanel = document.getElementById("aiPanel");
@@ -754,6 +830,10 @@ const dragShield = document.getElementById("dragShield");
 const loadingBar = document.getElementById("loadingBar");
 const statusTextEl = document.getElementById("statusText");
 const statusMetaEl = document.getElementById("statusMeta");
+const downloadsShelf = document.getElementById("downloadsShelf");
+const downloadsShelfOpenFolderBtn = document.getElementById("downloadsShelfOpenFolderBtn");
+const downloadsShelfCloseBtn = document.getElementById("downloadsShelfCloseBtn");
+const downloadsList = document.getElementById("downloadsList");
 
 const contextModeSelect = document.getElementById("contextModeSelect");
 contextModeSelect.addEventListener("change", () => persistAiAssistantOptions());
@@ -789,7 +869,7 @@ const resetPromptsBtn = document.getElementById("resetPromptsBtn");
 const customPromptInput = document.getElementById("customPromptInput");
 
 const DEFAULT_LOCAL_MODEL = "MaziyarPanahi/calme-3.2-instruct-78b";
-const DEFAULT_VOICE_MODEL = "gemini-2.5-flash-lite";
+const DEFAULT_VOICE_MODEL = "gemini-2.5-flash-native-audio-preview-12-2025";
 pullModelInput.value = DEFAULT_LOCAL_MODEL;
 pullModelInput.addEventListener("input", () => persistAiAssistantOptions());
 
@@ -838,6 +918,9 @@ applyI18nToDom();
 
 let tabs = [];
 let activeTabId = null;
+
+let downloads = [];
+let isDownloadsShelfDismissed = false;
 
 const DEFAULT_PROMPTS_BY_LANGUAGE = {
   en: [
@@ -898,10 +981,22 @@ let isUrlInputComposing = false;
 let isChatInputComposing = false;
 let isVoiceRecording = false;
 let isVoiceTranscribing = false;
-let voiceRecorder = null;
 let voiceStream = null;
-let voiceChunks = [];
 let voiceAutoStopTimer = null;
+let voiceAudioContext = null;
+let voiceSourceNode = null;
+let voiceProcessorNode = null;
+let voiceSilenceGainNode = null;
+let voiceDictationActive = false;
+let voiceDictationBaseText = "";
+let voiceDictationCommittedText = "";
+let voiceDictationCurrentText = "";
+let voiceDictationLastTranscriptionText = "";
+let unsubscribeLiveVoiceEvents = null;
+let voiceSessionSeq = 0;
+
+const LIVE_VOICE_SAMPLE_RATE = 16000;
+const LIVE_VOICE_MIME_TYPE = `audio/pcm;rate=${LIVE_VOICE_SAMPLE_RATE}`;
 
 let prompts = [];
 let hasLoadedPrompts = false;
@@ -1871,6 +1966,17 @@ function clearHistory() {
   if (!historyModal.classList.contains("hidden")) renderHistoryList();
 }
 
+function deleteHistoryEntry(url) {
+  const target = String(url || "").trim();
+  if (!target) return;
+  const idx = historyItems.findIndex((x) => x.url === target);
+  if (idx === -1) return;
+  historyItems.splice(idx, 1);
+  persistHistory();
+  updateSuggestions();
+  if (!historyModal.classList.contains("hidden")) renderHistoryList();
+}
+
 function formatHistoryTime(ts) {
   const t = Number(ts);
   if (!Number.isFinite(t) || t <= 0) return "";
@@ -1908,9 +2014,27 @@ function renderHistoryList() {
     el.className = "historyItem";
     el.dataset.url = item.url;
 
+    const header = document.createElement("div");
+    header.className = "historyItemHeader";
+
     const titleEl = document.createElement("div");
     titleEl.className = "historyItemTitle";
     titleEl.textContent = item.title || item.url;
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "historyItemDeleteBtn";
+    deleteBtn.textContent = "🗑";
+    deleteBtn.title = t("history.delete");
+    deleteBtn.setAttribute("aria-label", t("history.delete"));
+    deleteBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      deleteHistoryEntry(item.url);
+    });
+
+    header.appendChild(titleEl);
+    header.appendChild(deleteBtn);
 
     const urlEl = document.createElement("div");
     urlEl.className = "historyItemUrl";
@@ -1920,7 +2044,7 @@ function renderHistoryList() {
     timeEl.className = "historyItemTime";
     timeEl.textContent = formatHistoryTime(item.lastVisited);
 
-    el.appendChild(titleEl);
+    el.appendChild(header);
     el.appendChild(urlEl);
     el.appendChild(timeEl);
 
@@ -2120,6 +2244,219 @@ function syncStatusBar() {
   updateStatusMeta();
 }
 
+function formatWebviewLoadErrorText(err) {
+  if (!err || typeof err !== "object") return "";
+  const description = String(err.description || err.errorDescription || "").trim();
+  const code = Number(err.code);
+  if (description && Number.isFinite(code)) return `${description} (${code})`;
+  if (description) return description;
+  if (Number.isFinite(code)) return `Error (${code})`;
+  return "";
+}
+
+function applyActiveWebviewVisibility() {
+  for (const t of tabs) {
+    const isActive = t.id === activeTabId;
+    const shouldHide = !isActive || Boolean(isActive && t.loadError);
+    t.webview.classList.toggle("hiddenWebview", shouldHide);
+  }
+}
+
+function updateLoadErrorOverlay() {
+  if (!loadErrorOverlay) return;
+  const tab = getActiveTab();
+  const err = tab?.loadError && typeof tab.loadError === "object" ? tab.loadError : null;
+  const shouldShow = Boolean(tab && err);
+
+  loadErrorOverlay.classList.toggle("hidden", !shouldShow);
+  loadErrorOverlay.setAttribute("aria-hidden", shouldShow ? "false" : "true");
+
+  if (!shouldShow) {
+    if (loadErrorUrl) loadErrorUrl.textContent = "";
+    if (loadErrorMessage) loadErrorMessage.textContent = "";
+    applyActiveWebviewVisibility();
+    return;
+  }
+
+  const url = String(err.url || tab.url || "").trim();
+  if (loadErrorUrl) loadErrorUrl.textContent = url;
+
+  const message = formatWebviewLoadErrorText(err);
+  if (loadErrorMessage) loadErrorMessage.textContent = message;
+
+  applyActiveWebviewVisibility();
+}
+
+function setDownloadsShelfOpen(open) {
+  const isOpen = Boolean(open);
+  downloadsShelf?.classList.toggle("hidden", !isOpen);
+  downloadsShelf?.setAttribute("aria-hidden", isOpen ? "false" : "true");
+}
+
+function isDownloadActive(d) {
+  return Boolean(d && d.state === "progressing" && !d.paused);
+}
+
+function formatBytes(bytes) {
+  const n = Number(bytes);
+  if (!Number.isFinite(n) || n <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let v = n;
+  let i = 0;
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024;
+    i++;
+  }
+  const digits = i === 0 ? 0 : v >= 10 ? 1 : 2;
+  return `${v.toFixed(digits)} ${units[i]}`;
+}
+
+function getDownloadProgressPercent(d) {
+  const received = Number(d?.receivedBytes || 0);
+  const total = Number(d?.totalBytes || 0);
+  if (!Number.isFinite(received) || !Number.isFinite(total) || total <= 0) return null;
+  return Math.max(0, Math.min(100, Math.round((received / total) * 100)));
+}
+
+function getDownloadStatusText(d) {
+  const state = String(d?.state || "").toLowerCase();
+  if (state === "completed") return t("downloads.status.completed");
+  if (state === "cancelled") return t("downloads.status.cancelled");
+  if (state === "interrupted") return t("downloads.status.interrupted");
+  if (Boolean(d?.paused)) return `${t("downloads.status.downloading")} (paused)`;
+  const pct = getDownloadProgressPercent(d);
+  if (pct === null) return t("downloads.status.downloading");
+  const received = formatBytes(d?.receivedBytes);
+  const total = formatBytes(d?.totalBytes);
+  return `${t("downloads.status.downloading")} ${pct}% · ${received} / ${total}`;
+}
+
+function syncDownloadsBadge() {
+  if (!downloadsBadge) return;
+  const activeCount = downloads.filter(isDownloadActive).length;
+  downloadsBadge.classList.toggle("hidden", activeCount <= 0);
+  downloadsBadge.textContent = activeCount > 9 ? "9+" : String(activeCount);
+  downloadsBadge.setAttribute("aria-hidden", activeCount > 0 ? "false" : "true");
+}
+
+function renderDownloadsShelf() {
+  if (!downloadsList) return;
+  const items = downloads
+    .slice()
+    .sort((a, b) => Number(b.startTime || 0) - Number(a.startTime || 0))
+    .slice(0, 8);
+
+  downloadsList.innerHTML = "";
+  for (const d of items) {
+    const id = String(d?.id || "");
+    if (!id) continue;
+
+    const itemEl = document.createElement("div");
+    itemEl.className = "downloadItem";
+    itemEl.dataset.downloadId = id;
+
+    const topRow = document.createElement("div");
+    topRow.className = "downloadTopRow";
+
+    const nameEl = document.createElement("div");
+    nameEl.className = "downloadName";
+    nameEl.textContent = String(d.filename || d.savePath || id);
+
+    const statusEl = document.createElement("div");
+    statusEl.className = "downloadStatus";
+    statusEl.textContent = getDownloadStatusText(d);
+
+    topRow.append(nameEl, statusEl);
+
+    const progressBar = document.createElement("div");
+    progressBar.className = "downloadProgressBar";
+    const progressInner = document.createElement("div");
+    progressInner.className = "downloadProgressBarInner";
+    const pct = getDownloadProgressPercent(d);
+    progressInner.style.width = pct === null ? "0%" : `${pct}%`;
+    progressBar.appendChild(progressInner);
+
+    const actions = document.createElement("div");
+    actions.className = "downloadActions";
+
+    const state = String(d?.state || "").toLowerCase();
+    if (state === "progressing") {
+      const cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "secondary";
+      cancelBtn.textContent = t("downloads.action.cancel");
+      cancelBtn.addEventListener("click", async () => {
+        const res = await window.aiBridge.cancelDownload(id);
+        if (!res?.ok) window.aiBridge.showError(res?.error || t("error.aiGeneric"));
+      });
+      actions.appendChild(cancelBtn);
+    } else if (state === "completed") {
+      const openBtn = document.createElement("button");
+      openBtn.type = "button";
+      openBtn.className = "primaryBtn";
+      openBtn.textContent = t("downloads.action.open");
+      openBtn.addEventListener("click", async () => {
+        const res = await window.aiBridge.openDownloadedFile(id);
+        if (!res?.ok) window.aiBridge.showError(res?.error || t("error.aiGeneric"));
+      });
+
+      const showBtn = document.createElement("button");
+      showBtn.type = "button";
+      showBtn.className = "secondary";
+      showBtn.textContent = t("downloads.action.show");
+      showBtn.addEventListener("click", async () => {
+        const res = await window.aiBridge.showDownloadInFolder(id);
+        if (!res?.ok) window.aiBridge.showError(res?.error || t("error.aiGeneric"));
+      });
+
+      actions.append(showBtn, openBtn);
+    } else {
+      const showBtn = document.createElement("button");
+      showBtn.type = "button";
+      showBtn.className = "secondary";
+      showBtn.textContent = t("downloads.action.show");
+      showBtn.addEventListener("click", async () => {
+        const res = await window.aiBridge.showDownloadInFolder(id);
+        if (!res?.ok) window.aiBridge.showError(res?.error || t("error.aiGeneric"));
+      });
+      actions.append(showBtn);
+    }
+
+    itemEl.append(topRow, progressBar, actions);
+    downloadsList.appendChild(itemEl);
+  }
+
+  syncDownloadsBadge();
+
+  const shouldShow = !isDownloadsShelfDismissed && downloads.length > 0;
+  setDownloadsShelfOpen(shouldShow);
+}
+
+async function initDownloads() {
+  if (!window.aiBridge?.listDownloads || !window.aiBridge?.onDownloadEvent) return;
+  const res = await window.aiBridge.listDownloads();
+  if (res?.ok && Array.isArray(res.downloads)) {
+    downloads = res.downloads;
+  }
+  renderDownloadsShelf();
+  window.aiBridge.onDownloadEvent((evt) => {
+    const type = String(evt?.type || "");
+    const d = evt?.download && typeof evt.download === "object" ? evt.download : null;
+    if (!d?.id) return;
+
+    if (type === "created") {
+      isDownloadsShelfDismissed = false;
+    }
+
+    const id = String(d.id);
+    const idx = downloads.findIndex((x) => x && x.id === id);
+    if (idx >= 0) downloads[idx] = d;
+    else downloads.unshift(d);
+    downloads = downloads.slice(0, 80);
+    renderDownloadsShelf();
+  });
+}
+
 function syncAiContext() {
   const active = getActiveTab();
   if (!active) {
@@ -2221,11 +2558,13 @@ function attachWebviewEvents(tab) {
 
   webview.addEventListener("did-start-loading", () => {
     tab.isLoading = true;
+    tab.loadError = null;
     updateTabElement(tab.id);
     if (tab.id === activeTabId) {
       updateLoadingUI();
       syncStatusBar();
       updateNavButtons();
+      updateLoadErrorOverlay();
     }
   });
 
@@ -2237,6 +2576,11 @@ function attachWebviewEvents(tab) {
       syncStatusBar();
       updateNavButtons();
     }
+  });
+
+  webview.addEventListener("did-finish-load", () => {
+    tab.loadError = null;
+    if (tab.id === activeTabId) updateLoadErrorOverlay();
   });
 
   webview.addEventListener("page-title-updated", (e) => {
@@ -2274,12 +2618,30 @@ function attachWebviewEvents(tab) {
 
   webview.addEventListener("new-window", (e) => {
     if (!e?.url) return;
+    if (typeof e.preventDefault === "function") e.preventDefault();
     createTab(e.url, { makeActive: true });
   });
 
-  webview.addEventListener("did-fail-load", (_e) => {
+  webview.addEventListener("did-fail-load", (e) => {
+    const isMainFrame = typeof e?.isMainFrame === "boolean" ? e.isMainFrame : true;
+    if (!isMainFrame) return;
+
+    const code = Number(e?.errorCode);
+    if (code === -3) return; // ERR_ABORTED
+
+    tab.isLoading = false;
+    tab.loadError = {
+      code,
+      description: String(e?.errorDescription || "").trim() || "LOAD_FAILED",
+      url: String(e?.validatedURL || e?.url || tab.url || "").trim()
+    };
+
+    updateTabElement(tab.id);
     if (tab.id !== activeTabId) return;
+    updateLoadingUI();
     syncStatusBar();
+    updateNavButtons();
+    updateLoadErrorOverlay();
   });
 }
 
@@ -2298,6 +2660,7 @@ function createTab(initialUrl = homeUrl || DEFAULT_HOME_URL, { makeActive = true
     title: t("tabs.newTitle"),
     favicon: null,
     isLoading: false,
+    loadError: null,
     hoverUrl: "",
     webview,
     tabEl: null,
@@ -2320,12 +2683,8 @@ function setActiveTab(tabId) {
   if (!tab) return;
   activeTabId = tabId;
 
-  for (const t of tabs) {
-    t.webview.classList.toggle("hiddenWebview", t.id !== tabId);
-    updateTabElement(t.id);
-  }
-
-  tab.webview.classList.remove("hiddenWebview");
+  applyActiveWebviewVisibility();
+  for (const t of tabs) updateTabElement(t.id);
 
   if (document.activeElement !== urlInput) {
     urlInput.value = tab.url || safeCall(() => tab.webview.getURL(), "") || "";
@@ -2336,6 +2695,7 @@ function setActiveTab(tabId) {
   updateLoadingUI();
   syncStatusBar();
   syncAiContext();
+  updateLoadErrorOverlay();
 
   tab.tabEl?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
 }
@@ -2362,7 +2722,7 @@ function closeTab(tabId) {
 function getNavigationUrl(input) {
   const text = (input || "").trim();
   if (!text) return null;
-  if (/^(about|file|chrome):/i.test(text)) return text;
+  if (/^(about|file|chrome|view-source):/i.test(text)) return text;
   if (/^https?:\/\//i.test(text)) return text;
 
   const hasSpaces = /\s/.test(text);
@@ -2824,6 +3184,55 @@ homeBtn.addEventListener("click", () => {
   webview.loadURL(homeUrl || DEFAULT_HOME_URL);
 });
 
+async function openDownloadsFolder() {
+  if (!window.aiBridge?.openDownloadsFolder) return;
+  const res = await window.aiBridge.openDownloadsFolder();
+  if (!res?.ok) window.aiBridge.showError(res?.error || "Failed to open downloads folder");
+}
+
+downloadsFolderBtn?.addEventListener("click", openDownloadsFolder);
+downloadsShelfOpenFolderBtn?.addEventListener("click", openDownloadsFolder);
+downloadsShelfCloseBtn?.addEventListener("click", () => {
+  isDownloadsShelfDismissed = true;
+  setDownloadsShelfOpen(false);
+  syncDownloadsBadge();
+});
+
+loadErrorRetryBtn?.addEventListener("click", () => {
+  const tab = getActiveTab();
+  if (!tab?.webview) return;
+  tab.loadError = null;
+  updateLoadErrorOverlay();
+  try {
+    tab.webview.reload();
+  } catch {
+    if (tab.url) tab.webview.loadURL(tab.url);
+  }
+});
+
+loadErrorCopyBtn?.addEventListener("click", async () => {
+  const tab = getActiveTab();
+  const url = String(tab?.loadError?.url || tab?.url || "").trim();
+  if (!url) return;
+  try {
+    await navigator.clipboard.writeText(url);
+    return;
+  } catch {
+  }
+  try {
+    const el = document.createElement("textarea");
+    el.value = url;
+    el.style.position = "fixed";
+    el.style.left = "-9999px";
+    el.style.top = "0";
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand("copy");
+    el.remove();
+  } catch {
+  }
+});
+
 function setAiPanelOpen(open) {
   const isOpen = Boolean(open);
   if (!isOpen) setAiHistoryOpen(false);
@@ -3244,25 +3653,37 @@ clearGeminiKeyBtn.addEventListener("click", async () => {
 });
 
 async function refreshLocalModels() {
+  const desired = String(localModelSelect.value || "").trim() || String(loadAiAssistantOptionsFromStorage()?.localModel || "").trim();
   localModelSelect.innerHTML = "";
+  localModelSelect.disabled = true;
   const res = await window.aiBridge.listLocalModels();
   if (!res.ok) {
     const opt = document.createElement("option");
-    opt.value = DEFAULT_LOCAL_MODEL;
-    opt.textContent = t("aiSettings.localModel.missing", { model: DEFAULT_LOCAL_MODEL });
+    opt.value = "";
+    opt.textContent = t("aiSettings.localModel.unavailable");
+    opt.disabled = true;
     localModelSelect.appendChild(opt);
     persistAiAssistantOptions();
     return;
   }
-  const models = res.models;
-  if (!models.length) models.push(DEFAULT_LOCAL_MODEL);
+  const models = Array.isArray(res.models) ? res.models.map((m) => String(m || "").trim()).filter(Boolean) : [];
+  if (!models.length) {
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = t("aiSettings.localModel.noneInstalled");
+    opt.disabled = true;
+    localModelSelect.appendChild(opt);
+    persistAiAssistantOptions();
+    return;
+  }
   for (const m of models) {
     const opt = document.createElement("option");
     opt.value = m;
     opt.textContent = m;
     localModelSelect.appendChild(opt);
   }
-  if (models.includes(DEFAULT_LOCAL_MODEL)) localModelSelect.value = DEFAULT_LOCAL_MODEL;
+  localModelSelect.disabled = false;
+  localModelSelect.value = models.includes(desired) ? desired : models[0];
   persistAiAssistantOptions();
 }
 
@@ -3294,20 +3715,14 @@ function setChatSending(sending) {
 
 function syncChatMicButtonState() {
   if (!chatMicBtn) return;
-  const disabled = (isSendingChat || isVoiceTranscribing) && !isVoiceRecording;
+  const disabled = isSendingChat && !isVoiceRecording && !isVoiceTranscribing;
   chatMicBtn.disabled = disabled;
   chatMicBtn.classList.toggle("recording", isVoiceRecording);
   chatMicBtn.classList.toggle("busy", isVoiceTranscribing);
-  if (isVoiceRecording) {
+  if (isVoiceRecording || isVoiceTranscribing) {
     chatMicBtn.textContent = "⏹";
-    chatMicBtn.title = t("ai.voice.listening");
-    chatMicBtn.setAttribute("aria-label", t("ai.voice.listening"));
-    return;
-  }
-  if (isVoiceTranscribing) {
-    chatMicBtn.textContent = "…";
-    chatMicBtn.title = t("ai.voice.transcribing");
-    chatMicBtn.setAttribute("aria-label", t("ai.voice.transcribing"));
+    chatMicBtn.title = isVoiceRecording ? t("ai.voice.listening") : t("ai.voice.transcribing");
+    chatMicBtn.setAttribute("aria-label", chatMicBtn.title);
     return;
   }
   chatMicBtn.textContent = "🎙";
@@ -3323,6 +3738,134 @@ function stopVoiceStreamTracks(stream) {
     } catch {
     }
   }
+}
+
+const CJK_CHAR_RE = /[\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF]/;
+const CJK_PUNCT_RE = /[，。！？；：、]/;
+const CJK_OPEN_BRACKET_RE = /[（【「『《〈]/;
+const CJK_CLOSE_BRACKET_RE = /[）】」』》〉]/;
+const CJK_SPACE_RE = /[ \t\u00A0]+/g;
+
+function isCjkChar(ch) {
+  return Boolean(ch) && CJK_CHAR_RE.test(ch);
+}
+
+function isCjkPunct(ch) {
+  return Boolean(ch) && CJK_PUNCT_RE.test(ch);
+}
+
+function normalizeCjkSpacing(text) {
+  let out = String(text ?? "");
+  out = out
+    .replace(
+      /([\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF])[ \t\u00A0]+([\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF])/g,
+      "$1$2"
+    )
+    .replace(
+      /([\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF])[ \t\u00A0]+([，。！？；：、])/g,
+      "$1$2"
+    )
+    .replace(
+      /([，。！？；：、])[ \t\u00A0]+([\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF])/g,
+      "$1$2"
+    )
+    .replace(/([（【「『《〈])[ \t\u00A0]+/g, "$1")
+    .replace(/[ \t\u00A0]+([）】」』》〉])/g, "$1");
+  return out;
+}
+
+function joinTextSmart(a, b) {
+  const left = String(a ?? "");
+  const right = String(b ?? "");
+  if (!left) return right;
+  if (!right) return left;
+  if (/\s$/.test(left) || /^\s/.test(right)) return `${left}${right}`;
+
+  const leftChar = left[left.length - 1];
+  const rightChar = right[0];
+
+  if (CJK_OPEN_BRACKET_RE.test(leftChar) || CJK_CLOSE_BRACKET_RE.test(rightChar)) return `${left}${right}`;
+  if ((isCjkChar(leftChar) || isCjkPunct(leftChar)) && (isCjkChar(rightChar) || isCjkPunct(rightChar))) {
+    return `${left}${right}`;
+  }
+  if (isCjkChar(leftChar) && isCjkPunct(rightChar)) return `${left}${right}`;
+  if (isCjkPunct(leftChar) && isCjkChar(rightChar)) return `${left}${right}`;
+
+  return `${left} ${right}`;
+}
+
+function applyVoiceDictationToChatInput() {
+  if (!voiceDictationActive) return;
+  const committed = String(voiceDictationCommittedText || "").trim();
+  const current = String(voiceDictationCurrentText || "").trim();
+  const dictation = joinTextSmart(committed, current).trim();
+  const base = String(voiceDictationBaseText || "");
+  chatInput.value = joinTextSmart(base, dictation).trimStart();
+  chatInput.scrollTop = chatInput.scrollHeight;
+}
+
+function commitVoiceDictationCurrentText() {
+  const current = String(voiceDictationCurrentText || "").trim();
+  if (!current) return;
+  const committed = String(voiceDictationCommittedText || "").trim();
+  voiceDictationCommittedText = joinTextSmart(committed, current).trim();
+  voiceDictationCurrentText = "";
+}
+
+function ensureLiveVoiceEventListener() {
+  if (unsubscribeLiveVoiceEvents || !window.aiBridge?.onLiveVoiceEvent) return;
+  unsubscribeLiveVoiceEvents = window.aiBridge.onLiveVoiceEvent((evt) => {
+	    if (!voiceDictationActive) return;
+	    const type = String(evt?.type || "");
+	    if (type === "inputTranscription") {
+      const text = normalizeCjkSpacing(String(evt?.text ?? "").replace(CJK_SPACE_RE, " ")).trim();
+      if (!text) return;
+
+      const committed = String(voiceDictationCommittedText || "").trim();
+      const current = String(voiceDictationCurrentText || "").trim();
+      const displayed = joinTextSmart(committed, current).trim();
+      const last = String(voiceDictationLastTranscriptionText || "").trim();
+
+      let nextCommitted = committed;
+      let nextCurrent = current;
+
+      if (displayed && text.length >= displayed.length && text.startsWith(displayed)) {
+        nextCommitted = "";
+        nextCurrent = text;
+      } else if (committed && text.length >= committed.length && text.startsWith(committed)) {
+        nextCurrent = text.slice(committed.length).trimStart();
+      } else if (last && text.length >= last.length && text.startsWith(last)) {
+        nextCurrent = text;
+      } else {
+        if (current) nextCommitted = joinTextSmart(committed, current).trim();
+        nextCurrent = text;
+      }
+
+      voiceDictationCommittedText = nextCommitted;
+      voiceDictationCurrentText = nextCurrent;
+      voiceDictationLastTranscriptionText = text;
+      applyVoiceDictationToChatInput();
+      return;
+    }
+    if (type === "turnComplete") {
+      commitVoiceDictationCurrentText();
+      voiceDictationLastTranscriptionText = "";
+      applyVoiceDictationToChatInput();
+      return;
+    }
+    if (type === "error") {
+      const message = String(evt?.error || t("error.aiGeneric"));
+      window.aiBridge.showError(message);
+      stopVoiceRecording();
+      return;
+    }
+    if (type === "closed" && (isVoiceRecording || isVoiceTranscribing)) {
+      const reason = String(evt?.reason || "").trim();
+      const clean = Boolean(evt?.clean);
+      if (reason && !clean) window.aiBridge.showError(reason);
+      stopVoiceRecording();
+    }
+  });
 }
 
 function pickVoiceRecorderMimeType() {
@@ -3471,24 +4014,68 @@ async function transcribeVoiceAudioBlob(blob) {
   return String(res.text || "").trim();
 }
 
-function stopVoiceRecording() {
+async function stopVoiceRecording() {
   clearTimeout(voiceAutoStopTimer);
   voiceAutoStopTimer = null;
 
-  if (!isVoiceRecording) return;
+  if (!isVoiceRecording && !isVoiceTranscribing) return;
+  voiceSessionSeq++;
+
   isVoiceRecording = false;
   isVoiceTranscribing = true;
   syncChatMicButtonState();
+
   try {
-    voiceRecorder?.stop?.();
+    voiceProcessorNode?.disconnect?.();
   } catch {
-    isVoiceTranscribing = false;
-    syncChatMicButtonState();
   }
+  try {
+    voiceSourceNode?.disconnect?.();
+  } catch {
+  }
+  try {
+    voiceSilenceGainNode?.disconnect?.();
+  } catch {
+  }
+  try {
+    voiceProcessorNode && (voiceProcessorNode.onaudioprocess = null);
+  } catch {
+  }
+  voiceProcessorNode = null;
+  voiceSourceNode = null;
+  voiceSilenceGainNode = null;
+
+  const stream = voiceStream;
+  voiceStream = null;
+  stopVoiceStreamTracks(stream);
+
+  try {
+    await voiceAudioContext?.close?.();
+  } catch {
+  }
+  voiceAudioContext = null;
+
+  try {
+    await window.aiBridge?.liveVoiceStop?.();
+  } catch {
+  }
+
+  commitVoiceDictationCurrentText();
+  applyVoiceDictationToChatInput();
+  voiceDictationActive = false;
+  voiceDictationLastTranscriptionText = "";
+
+  isVoiceTranscribing = false;
+  syncChatMicButtonState();
 }
 
 async function startVoiceRecording() {
-  if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+  const AudioContextImpl = window.AudioContext || window.webkitAudioContext;
+  if (!navigator.mediaDevices?.getUserMedia || !AudioContextImpl) {
+    window.aiBridge.showError(t("ai.voice.error.notSupported"));
+    return;
+  }
+  if (!window.aiBridge?.liveVoiceStart || !window.aiBridge?.liveVoiceSendAudio || !window.aiBridge?.liveVoiceStop) {
     window.aiBridge.showError(t("ai.voice.error.notSupported"));
     return;
   }
@@ -3500,78 +4087,125 @@ async function startVoiceRecording() {
     return;
   }
 
+  const seq = ++voiceSessionSeq;
+  ensureLiveVoiceEventListener();
+
+  voiceDictationActive = true;
+  voiceDictationBaseText = String(chatInput.value || "");
+  voiceDictationCommittedText = "";
+  voiceDictationCurrentText = "";
+  voiceDictationLastTranscriptionText = "";
+
+  isVoiceTranscribing = true;
+  syncChatMicButtonState();
+
   stopVoiceStreamTracks(voiceStream);
   voiceStream = null;
-  voiceRecorder = null;
-  voiceChunks = [];
+  try {
+    await voiceAudioContext?.close?.();
+  } catch {
+  }
+  voiceAudioContext = null;
 
   try {
-    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } });
   } catch (err) {
-    window.aiBridge.showError(err?.name === "NotAllowedError" ? t("ai.voice.error.micPermission") : err?.message || err);
+    isVoiceTranscribing = false;
+    voiceDictationActive = false;
+    syncChatMicButtonState();
+    window.aiBridge.showError(
+      err?.name === "NotAllowedError" ? t("ai.voice.error.micPermission") : err?.message || err
+    );
     return;
   }
-
-  const mimeType = pickVoiceRecorderMimeType();
-  try {
-    voiceRecorder = mimeType ? new MediaRecorder(voiceStream, { mimeType }) : new MediaRecorder(voiceStream);
-  } catch {
-    try {
-      voiceRecorder = new MediaRecorder(voiceStream);
-    } catch (err) {
-      stopVoiceStreamTracks(voiceStream);
-      voiceStream = null;
-      window.aiBridge.showError(err?.message || err);
-      return;
-    }
-  }
-
-  voiceRecorder.addEventListener("dataavailable", (e) => {
-    if (e.data && e.data.size) voiceChunks.push(e.data);
-  });
-
-  voiceRecorder.addEventListener("stop", async () => {
-    const chunks = voiceChunks;
-    voiceChunks = [];
-    const stream = voiceStream;
-    voiceStream = null;
-    stopVoiceStreamTracks(stream);
-
-    const blob = new Blob(chunks, { type: voiceRecorder?.mimeType || chunks[0]?.type || "audio/webm" });
-    voiceRecorder = null;
-
-    if (!blob.size) {
-      isVoiceTranscribing = false;
-      syncChatMicButtonState();
-      return;
-    }
-
-    try {
-      const text = await transcribeVoiceAudioBlob(blob);
-      if (!text) return;
-      const prev = String(chatInput.value || "").trim();
-      chatInput.value = prev ? `${prev}\n${text}` : text;
-      chatInput.focus();
-      chatInput.scrollTop = chatInput.scrollHeight;
-    } catch (err) {
-      window.aiBridge.showError(err?.message || err);
-    } finally {
-      isVoiceTranscribing = false;
-      syncChatMicButtonState();
-    }
-  });
-
-  try {
-    voiceRecorder.start();
-  } catch (err) {
+  if (seq !== voiceSessionSeq) {
     stopVoiceStreamTracks(voiceStream);
     voiceStream = null;
-    voiceRecorder = null;
-    window.aiBridge.showError(err?.message || err);
+    isVoiceTranscribing = false;
+    voiceDictationActive = false;
+    syncChatMicButtonState();
     return;
+  }
+
+  const model = String(voiceModelSelect?.value || DEFAULT_VOICE_MODEL).trim() || DEFAULT_VOICE_MODEL;
+  const startRes = await window.aiBridge.liveVoiceStart({ model });
+  if (seq !== voiceSessionSeq) {
+    try {
+      await window.aiBridge.liveVoiceStop();
+    } catch {
+    }
+    stopVoiceStreamTracks(voiceStream);
+    voiceStream = null;
+    isVoiceTranscribing = false;
+    voiceDictationActive = false;
+    syncChatMicButtonState();
+    return;
+  }
+  if (!startRes?.ok) {
+    isVoiceTranscribing = false;
+    syncChatMicButtonState();
+    stopVoiceStreamTracks(voiceStream);
+    voiceStream = null;
+    voiceDictationActive = false;
+    window.aiBridge.showError(startRes?.error || t("error.aiGeneric"));
+    return;
+  }
+
+  let audioContext;
+  try {
+    audioContext = new AudioContextImpl({ sampleRate: LIVE_VOICE_SAMPLE_RATE });
+  } catch {
+    audioContext = new AudioContextImpl();
+  }
+  voiceAudioContext = audioContext;
+
+  if (seq !== voiceSessionSeq) {
+    stopVoiceStreamTracks(voiceStream);
+    voiceStream = null;
+    try {
+      await audioContext.close?.();
+    } catch {
+    }
+    voiceAudioContext = null;
+    isVoiceTranscribing = false;
+    voiceDictationActive = false;
+    syncChatMicButtonState();
+    return;
+  }
+
+  const sourceNode = audioContext.createMediaStreamSource(voiceStream);
+  const processor = audioContext.createScriptProcessor(2048, 1, 1);
+  const gain = audioContext.createGain();
+  gain.gain.value = 0;
+
+  processor.onaudioprocess = (evt) => {
+    if (!isVoiceRecording || !voiceDictationActive) return;
+    const input = evt?.inputBuffer?.getChannelData?.(0);
+    if (!input || !input.length) return;
+
+    const inRate = Number(audioContext.sampleRate) || LIVE_VOICE_SAMPLE_RATE;
+    const mono = inRate > LIVE_VOICE_SAMPLE_RATE ? downsampleFloat32Buffer(input, inRate, LIVE_VOICE_SAMPLE_RATE) : input;
+    const pcmBuffer = new ArrayBuffer(mono.length * 2);
+    const view = new DataView(pcmBuffer);
+    floatTo16BitPCM(view, 0, mono);
+    window.aiBridge.liveVoiceSendAudio({ audio: { mimeType: LIVE_VOICE_MIME_TYPE, bytes: pcmBuffer } });
+  };
+
+  sourceNode.connect(processor);
+  processor.connect(gain);
+  gain.connect(audioContext.destination);
+
+  voiceSourceNode = sourceNode;
+  voiceProcessorNode = processor;
+  voiceSilenceGainNode = gain;
+
+  try {
+    await audioContext.resume?.();
+  } catch {
   }
 
   isVoiceRecording = true;
+  isVoiceTranscribing = false;
   syncChatMicButtonState();
   voiceAutoStopTimer = setTimeout(() => stopVoiceRecording(), 30_000);
 }
@@ -3678,10 +4312,8 @@ async function sendAiChatMessage({ displayText, buildUserMessage }) {
     if (ctx.pageUrl) aiContextUrl.textContent = ctx.pageUrl;
 
     const provider = providerSelect.value === "gemini" ? "gemini" : "local";
-    const model =
-      provider === "local"
-        ? localModelSelect.value || DEFAULT_LOCAL_MODEL
-        : geminiModelSelect.value || "gemini-2.5-flash";
+    const model = provider === "local" ? String(localModelSelect.value || "").trim() : geminiModelSelect.value || "gemini-2.5-flash";
+    if (provider === "local" && !model) throw new Error(t("ai.error.localModelMissing"));
 
     const built = typeof buildUserMessage === "function" ? buildUserMessage(ctx) : "";
     const historyText =
@@ -3777,7 +4409,7 @@ function sendChatFromInput() {
 
 chatSendBtn.addEventListener("click", sendChatFromInput);
 chatMicBtn?.addEventListener("click", async () => {
-  if (isVoiceRecording) {
+  if (isVoiceRecording || isVoiceTranscribing) {
     stopVoiceRecording();
     return;
   }
@@ -3914,6 +4546,14 @@ function openStartupTabs() {
 window.aiBridge.onMenuCommand((msg) => {
   const command = msg?.command;
   if (!command) return;
+
+  if (command === "openUrlInNewTab") {
+    const raw = String(msg?.payload?.url || "").trim();
+    const url = getNavigationUrl(raw);
+    if (!url) return;
+    createTab(url, { makeActive: true });
+    return;
+  }
 
   if (command === "zoomReset") {
     setPageZoomFactor(1);
@@ -4073,13 +4713,25 @@ async function initAiAssistantOptions() {
 
 async function initApp() {
   await loadAppSettings();
-  openStartupTabs();
+  const initial = String(launchInitialUrl || "").trim();
+  const initialNav = initial ? getNavigationUrl(initial) : null;
+  if (initialNav) {
+    createTab(initialNav, { makeActive: true });
+    try {
+      history.replaceState(null, "", window.location.pathname);
+    } catch {
+    }
+    launchInitialUrl = "";
+  } else {
+    openStartupTabs();
+  }
   persistLastSessionTabs();
   syncClearButton();
   updateTabScrollButtons();
   updateNavButtons();
   updateLoadingUI();
   syncStatusBar();
+  await initDownloads();
 
   await initAiAssistantOptions();
   const storedChat = loadAiChatStoreFromStorage();

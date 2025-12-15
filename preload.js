@@ -12,12 +12,32 @@ contextBridge.exposeInMainWorld("aiBridge", {
   clearGeminiApiKey: () => ipcRenderer.invoke("settings:clearGeminiApiKey"),
   generate: (payload) => ipcRenderer.invoke("ai:generate", payload),
   transcribeAudio: (payload) => ipcRenderer.invoke("ai:transcribeAudio", payload),
+  liveVoiceStart: (payload) => ipcRenderer.invoke("ai:liveVoiceStart", payload),
+  liveVoiceStop: () => ipcRenderer.invoke("ai:liveVoiceStop"),
+  liveVoiceSendAudio: (payload) => ipcRenderer.send("ai:liveVoiceAudio", payload),
+  onLiveVoiceEvent: (handler) => {
+    if (typeof handler !== "function") return () => {};
+    const listener = (_event, payload) => handler(payload);
+    ipcRenderer.on("ai:liveVoiceEvent", listener);
+    return () => ipcRenderer.removeListener("ai:liveVoiceEvent", listener);
+  },
   getAppSettings: () => ipcRenderer.invoke("appSettings:get"),
   setBrowserSettings: (browserPatch) => ipcRenderer.invoke("appSettings:setBrowser", browserPatch),
   markChromeImportModalShown: () => ipcRenderer.invoke("appSettings:markChromeImportModalShown"),
   importChromePreferences: () => ipcRenderer.invoke("chrome:importPreferences"),
   openExternal: (url) => ipcRenderer.invoke("app:openExternal", url),
   showError: (message) => ipcRenderer.invoke("app:showError", message),
+  listDownloads: () => ipcRenderer.invoke("downloads:list"),
+  openDownloadsFolder: () => ipcRenderer.invoke("downloads:openFolder"),
+  openDownloadedFile: (id) => ipcRenderer.invoke("downloads:openFile", id),
+  showDownloadInFolder: (id) => ipcRenderer.invoke("downloads:showInFolder", id),
+  cancelDownload: (id) => ipcRenderer.invoke("downloads:cancel", id),
+  onDownloadEvent: (handler) => {
+    if (typeof handler !== "function") return () => {};
+    const listener = (_event, payload) => handler(payload);
+    ipcRenderer.on("downloads:event", listener);
+    return () => ipcRenderer.removeListener("downloads:event", listener);
+  },
   onMenuCommand: (handler) => {
     if (typeof handler !== "function") return () => {};
     const listener = (_event, payload) => handler(payload);

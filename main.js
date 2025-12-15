@@ -20,6 +20,11 @@ let mainWindow;
 let currentUiLanguage = "en";
 
 const SUPPORTED_UI_LANGUAGES = ["en", "es", "zh-TW"];
+const DOWNLOADS_LIST_LIMIT = 80;
+const downloadsById = new Map();
+const downloadItemsById = new Map();
+const reservedDownloadPaths = new Set();
+const sessionsWithDownloadHandler = new WeakSet();
 
 function getOsLocale() {
   try {
@@ -40,8 +45,8 @@ function resolveUiLanguage(input) {
   return "en";
 }
 
-function createWindow() {
-  mainWindow = new BrowserWindow({
+function createWindow({ initialUrl } = {}) {
+  const win = new BrowserWindow({
     width: 1280,
     height: 820,
     webPreferences: {
@@ -52,9 +57,73 @@ function createWindow() {
       webviewTag: true
     }
   });
+  if (!mainWindow || mainWindow.isDestroyed()) mainWindow = win;
 
   try {
-    const ses = mainWindow.webContents.session;
+    const ses = win.webContents.session;
+    if (ses && !sessionsWithDownloadHandler.has(ses) && typeof ses.on === "function") {
+      sessionsWithDownloadHandler.add(ses);
+      ses.on("will-download", (_event, item, webContents) => {
+        try {
+          const win = BrowserWindow.fromWebContents(webContents) || getActiveWindow() || mainWindow;
+          const id = `dl_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+          const downloadsDir = app.getPath("downloads");
+          const filename = String(item.getFilename() || "download");
+          const savePath = pickUniqueDownloadPath(downloadsDir, filename);
+          reservedDownloadPaths.add(savePath);
+          try {
+            item.setSavePath(savePath);
+          } catch {
+          }
+
+          const record = {
+            id,
+            filename,
+            url: String(item.getURL() || ""),
+            mimeType: String(item.getMimeType?.() || ""),
+            savePath,
+            startTime: Date.now(),
+            endTime: null,
+            state: "progressing",
+            paused: false,
+            receivedBytes: Number(item.getReceivedBytes?.() || 0),
+            totalBytes: Number(item.getTotalBytes?.() || 0)
+          };
+          downloadsById.set(id, record);
+          downloadItemsById.set(id, item);
+          trimDownloadsList();
+          sendDownloadEvent(win, { type: "created", download: record });
+          syncWindowDownloadProgress(win);
+
+          item.on("updated", () => {
+            const rec = downloadsById.get(id);
+            if (!rec) return;
+            rec.state = "progressing";
+            rec.paused = Boolean(item.isPaused?.());
+            rec.receivedBytes = Number(item.getReceivedBytes?.() || 0);
+            rec.totalBytes = Number(item.getTotalBytes?.() || 0);
+            sendDownloadEvent(win, { type: "updated", download: rec });
+            syncWindowDownloadProgress(win);
+          });
+
+          item.once("done", (_evt, state) => {
+            const rec = downloadsById.get(id);
+            if (!rec) return;
+            rec.state = String(state || "done");
+            rec.paused = Boolean(item.isPaused?.());
+            rec.receivedBytes = Number(item.getReceivedBytes?.() || 0);
+            rec.totalBytes = Number(item.getTotalBytes?.() || 0);
+            rec.endTime = Date.now();
+            reservedDownloadPaths.delete(savePath);
+            downloadItemsById.delete(id);
+            sendDownloadEvent(win, { type: "done", download: rec });
+            syncWindowDownloadProgress(win);
+          });
+        } catch (err) {
+          log("will-download error", err?.message || err);
+        }
+      });
+    }
     if (ses && typeof ses.setPermissionRequestHandler === "function") {
       ses.setPermissionRequestHandler((webContents, permission, callback, details) => {
         try {
@@ -72,7 +141,7 @@ function createWindow() {
       ses.setPermissionCheckHandler((webContents, permission, _origin, details) => {
         try {
           if (permission !== "media") return false;
-          const isMainUi = webContents === mainWindow.webContents;
+          const isMainUi = webContents?.getType?.() === "window";
           const mediaTypes = Array.isArray(details?.mediaTypes) ? details.mediaTypes : [];
           const wantsAudio = mediaTypes.includes("audio");
           return Boolean(isMainUi && wantsAudio);
@@ -84,17 +153,87 @@ function createWindow() {
   } catch {
   }
 
-  mainWindow.loadFile(path.join(__dirname, "renderer", "index.html"));
+  const filePath = path.join(__dirname, "renderer", "index.html");
+  const url = String(initialUrl || "").trim();
+  if (url) {
+    win.loadFile(filePath, { query: { initialUrl: url } });
+  } else {
+    win.loadFile(filePath);
+  }
+  return win;
 }
 
 function getActiveWindow() {
-  return BrowserWindow.getFocusedWindow() || mainWindow || BrowserWindow.getAllWindows()[0] || null;
+  const focused = BrowserWindow.getFocusedWindow();
+  if (focused && !focused.isDestroyed()) return focused;
+  if (mainWindow && mainWindow.isDestroyed()) mainWindow = null;
+  const existing = BrowserWindow.getAllWindows().filter((w) => w && !w.isDestroyed());
+  return mainWindow || existing[0] || null;
+}
+
+function trimDownloadsList() {
+  if (downloadsById.size <= DOWNLOADS_LIST_LIMIT) return;
+  const items = Array.from(downloadsById.values()).sort((a, b) => Number(b.startTime) - Number(a.startTime));
+  const keep = new Set(items.slice(0, DOWNLOADS_LIST_LIMIT).map((x) => x.id));
+  for (const id of Array.from(downloadsById.keys())) {
+    if (!keep.has(id)) downloadsById.delete(id);
+  }
+}
+
+function pickUniqueDownloadPath(dir, filename) {
+  const cleanDir = String(dir || "").trim() || app.getPath("downloads");
+  const name = String(filename || "download").trim() || "download";
+  const parsed = path.parse(name);
+  const base = parsed.name || "download";
+  const ext = parsed.ext || "";
+
+  const candidate0 = path.join(cleanDir, `${base}${ext}`);
+  if (!existsSync(candidate0) && !reservedDownloadPaths.has(candidate0)) return candidate0;
+
+  for (let i = 1; i <= 999; i++) {
+    const candidate = path.join(cleanDir, `${base} (${i})${ext}`);
+    if (!existsSync(candidate) && !reservedDownloadPaths.has(candidate)) return candidate;
+  }
+  return path.join(cleanDir, `${base}-${Date.now()}${ext}`);
+}
+
+function sendDownloadEvent(win, payload) {
+  try {
+    const target = win || getActiveWindow() || mainWindow;
+    if (!target || target.isDestroyed()) return;
+    target.webContents.send("downloads:event", payload);
+  } catch {
+  }
+}
+
+function syncWindowDownloadProgress(win) {
+  const target = win || getActiveWindow() || mainWindow;
+  if (!target || target.isDestroyed()) return;
+  const active = Array.from(downloadsById.values()).filter(
+    (d) => d && d.state === "progressing" && !d.paused && Number(d.totalBytes) > 0
+  );
+  if (!active.length) {
+    target.setProgressBar(-1);
+    return;
+  }
+  const received = active.reduce((sum, d) => sum + Number(d.receivedBytes || 0), 0);
+  const total = active.reduce((sum, d) => sum + Number(d.totalBytes || 0), 0);
+  const ratio = total > 0 ? Math.min(1, Math.max(0, received / total)) : 0;
+  target.setProgressBar(ratio);
 }
 
 function dispatchMenuCommand(command, payload) {
   const win = getActiveWindow();
   if (!win) return;
   win.webContents.send("menu:command", { command, payload });
+}
+
+function dispatchMenuCommandToWindow(win, command, payload) {
+  try {
+    if (!win || win.isDestroyed()) return;
+    win.webContents.send("menu:command", { command, payload });
+  } catch {
+  }
 }
 
 const MENU_I18N = {
@@ -135,7 +274,14 @@ const MENU_I18N = {
     toggleAiAssistant: "Toggle AI Assistant",
     showHistory: "Show History",
     clearBrowsingDataEllipsis: "Clear Browsing Data…",
-    learnMore: "Learn More"
+    learnMore: "Learn More",
+    openLinkInNewTab: "Open Link in New Tab",
+    openInNewTab: "Open in New Tab",
+    savePageAsEllipsis: "Save Page As…",
+    viewPageSource: "View Page Source",
+    inspect: "Inspect",
+    openLinkInNewWindow: "Open Link in New Window",
+    openInNewWindow: "Open in New Window"
   },
   "zh-TW": {
     file: "檔案",
@@ -174,7 +320,14 @@ const MENU_I18N = {
     toggleAiAssistant: "切換 AI Assistant",
     showHistory: "顯示歷史紀錄",
     clearBrowsingDataEllipsis: "清除瀏覽資料…",
-    learnMore: "了解更多"
+    learnMore: "了解更多",
+    openLinkInNewTab: "在新分頁開啟連結",
+    openInNewTab: "在新分頁開啟",
+    savePageAsEllipsis: "另存網頁…",
+    viewPageSource: "檢視網頁原始碼",
+    inspect: "檢查",
+    openLinkInNewWindow: "在新視窗開啟連結",
+    openInNewWindow: "在新視窗開啟"
   },
   es: {
     file: "Archivo",
@@ -213,7 +366,14 @@ const MENU_I18N = {
     toggleAiAssistant: "Alternar asistente de IA",
     showHistory: "Mostrar historial",
     clearBrowsingDataEllipsis: "Borrar datos de navegación…",
-    learnMore: "Más información"
+    learnMore: "Más información",
+    openLinkInNewTab: "Abrir enlace en una pestaña nueva",
+    openInNewTab: "Abrir en una pestaña nueva",
+    savePageAsEllipsis: "Guardar página como…",
+    viewPageSource: "Ver código fuente de la página",
+    inspect: "Inspeccionar",
+    openLinkInNewWindow: "Abrir enlace en una ventana nueva",
+    openInNewWindow: "Abrir en una ventana nueva"
   }
 };
 
@@ -449,6 +609,178 @@ function buildAppMenu() {
   Menu.setApplicationMenu(menu);
 }
 
+function sanitizeFilename(input) {
+  const text = String(input || "").trim();
+  if (!text) return "page";
+  const cleaned = text.replace(/[\\/:*?"<>|]/g, "_").replace(/\s+/g, " ").trim();
+  return cleaned.slice(0, 80) || "page";
+}
+
+function getHostWindowForContents(contents) {
+  try {
+    const host = contents?.hostWebContents || contents;
+    return BrowserWindow.fromWebContents(host) || BrowserWindow.fromWebContents(contents) || getActiveWindow() || mainWindow;
+  } catch {
+    return getActiveWindow() || mainWindow;
+  }
+}
+
+async function saveWebContentsPageAs(contents) {
+  const win = getHostWindowForContents(contents);
+  try {
+    const pageUrl = String(contents?.getURL?.() || "").trim();
+    const title = String(contents?.getTitle?.() || "").trim();
+    let baseName = title;
+    if (!baseName && pageUrl) {
+      try {
+        const u = new URL(pageUrl);
+        baseName = u.hostname || "page";
+      } catch {
+        baseName = "page";
+      }
+    }
+    const defaultName = `${sanitizeFilename(baseName)}.html`;
+    const defaultPath = path.join(app.getPath("downloads"), defaultName);
+    const saveOptions = {
+      title: tMenu("savePageAsEllipsis"),
+      defaultPath,
+      filters: [{ name: "Webpage", extensions: ["html", "htm"] }]
+    };
+    const res = win ? await dialog.showSaveDialog(win, saveOptions) : await dialog.showSaveDialog(saveOptions);
+    if (res.canceled || !res.filePath) return;
+    const ext = path.extname(res.filePath);
+    const filePath = ext ? res.filePath : `${res.filePath}.html`;
+
+    if (contents.savePage.length >= 3) {
+      await new Promise((resolve, reject) => {
+        contents.savePage(filePath, "HTMLComplete", (err) => (err ? reject(err) : resolve()));
+      });
+    } else {
+      await contents.savePage(filePath, "HTMLComplete");
+    }
+  } catch (err) {
+    try {
+      const opts = {
+        type: "error",
+        title: APP_DISPLAY_NAME,
+        message: tApp("errorOccurred"),
+        detail: String(err?.message || err)
+      };
+      if (win) await dialog.showMessageBox(win, opts);
+      else await dialog.showMessageBox(opts);
+    } catch {
+    }
+  }
+}
+
+function attachWebviewContextMenu(contents) {
+  try {
+    contents.on("context-menu", (event, params) => {
+      if (typeof event?.preventDefault === "function") event.preventDefault();
+
+      const win = getHostWindowForContents(contents);
+      const linkUrl = String(params?.linkURL || "").trim();
+      const pageUrl = String(params?.pageURL || contents.getURL?.() || "").trim();
+      const canCopy = Boolean(params?.editFlags?.canCopy);
+
+      const template = [];
+      if (linkUrl) {
+        template.push({
+          label: tMenu("openLinkInNewTab"),
+          click: () => dispatchMenuCommandToWindow(win, "openUrlInNewTab", { url: linkUrl })
+        });
+        template.push({
+          label: tMenu("openLinkInNewWindow"),
+          click: () => createWindow({ initialUrl: linkUrl })
+        });
+      } else {
+        template.push({ label: tMenu("newTab"), click: () => dispatchMenuCommandToWindow(win, "newTab") });
+        if (pageUrl) {
+          template.push({
+            label: tMenu("openInNewWindow"),
+            click: () => createWindow({ initialUrl: pageUrl })
+          });
+        } else {
+          template.push({ label: tMenu("openInNewWindow"), click: () => createWindow() });
+        }
+      }
+      template.push({ type: "separator" });
+
+      template.push({
+        label: tMenu("savePageAsEllipsis"),
+        click: () => saveWebContentsPageAs(contents)
+      });
+      template.push({
+        label: tMenu("copy"),
+        enabled: canCopy,
+        click: () => {
+          try {
+            contents.copy();
+          } catch {
+          }
+        }
+      });
+      template.push({
+        label: tMenu("viewPageSource"),
+        enabled: Boolean(pageUrl),
+        click: () => {
+          if (!pageUrl) return;
+          dispatchMenuCommandToWindow(win, "openUrlInNewTab", { url: `view-source:${pageUrl}` });
+        }
+      });
+      template.push({ type: "separator" });
+      template.push({
+        label: tMenu("inspect"),
+        click: () => {
+          try {
+            contents.openDevTools({ mode: "detach" });
+          } catch {
+          }
+          try {
+            contents.inspectElement(Number(params?.x) || 0, Number(params?.y) || 0);
+          } catch {
+          }
+        }
+      });
+
+      const menu = Menu.buildFromTemplate(template);
+      if (win) menu.popup({ window: win });
+      else menu.popup();
+    });
+  } catch {
+  }
+}
+
+function attachWebviewWindowOpenToTabs(contents) {
+  if (!contents || typeof contents.setWindowOpenHandler !== "function") return;
+  try {
+    contents.setWindowOpenHandler((details) => {
+      try {
+        const url = String(details?.url || "").trim();
+        if (!url) return { action: "deny" };
+        const win = getHostWindowForContents(contents);
+        if (/^https?:\/\//i.test(url) || /^(about|file|chrome|view-source):/i.test(url)) {
+          dispatchMenuCommandToWindow(win, "openUrlInNewTab", { url });
+        } else {
+          shell.openExternal(url).catch(() => {});
+        }
+      } catch {
+      }
+      return { action: "deny" };
+    });
+  } catch {
+  }
+}
+
+app.on("web-contents-created", (_event, contents) => {
+  try {
+    if (contents?.getType?.() !== "webview") return;
+    attachWebviewContextMenu(contents);
+    attachWebviewWindowOpenToTabs(contents);
+  } catch {
+  }
+});
+
 app.whenReady().then(async () => {
   const settings = await loadSettings();
   currentUiLanguage = resolveUiLanguage(settings?.browser?.language || getOsLocale());
@@ -469,6 +801,11 @@ const DEFAULT_SEARCH_TEMPLATE = "https://www.google.com/search?q={query}";
 const DEFAULT_USER_AGENT_NAME = "stingtaoAI";
 const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
 const DEFAULT_GEMINI_VOICE_MODEL = "gemini-2.5-flash-lite";
+const DEFAULT_GEMINI_LIVE_VOICE_MODEL = "gemini-2.5-flash-native-audio-preview-12-2025";
+const GEMINI_LIVE_VOICE_MODELS = [DEFAULT_GEMINI_LIVE_VOICE_MODEL];
+const GEMINI_LIVE_AUDIO_MIME_TYPE = "audio/pcm;rate=16000";
+const GEMINI_LIVE_WS_ENDPOINT =
+  "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
 const GEMINI_MODELS = [
   "gemini-2.5-pro",
   "gemini-2.5-flash",
@@ -1048,6 +1385,256 @@ async function geminiTranscribeAudio({ model, mimeType, dataBase64 }) {
   return parts.map((p) => p.text).join("").trim();
 }
 
+function safeWsMessageToString(data) {
+  try {
+    if (typeof data === "string") return data;
+    if (data instanceof ArrayBuffer) return Buffer.from(data).toString("utf8");
+    if (ArrayBuffer.isView(data)) return Buffer.from(data.buffer, data.byteOffset, data.byteLength).toString("utf8");
+    if (data && typeof data.text === "function") return String(data.text());
+    return Buffer.from(data).toString("utf8");
+  } catch {
+    try {
+      return String(data);
+    } catch {
+      return "";
+    }
+  }
+}
+
+function normalizeGeminiLiveModel(raw) {
+  const model = String(raw || "").trim();
+  if (!model) return DEFAULT_GEMINI_LIVE_VOICE_MODEL;
+  if (model.startsWith("models/")) return model.slice("models/".length);
+  return model;
+}
+
+function toGeminiModelResourceName(model) {
+  const key = String(model || "").trim();
+  if (!key) return `models/${DEFAULT_GEMINI_LIVE_VOICE_MODEL}`;
+  return key.startsWith("models/") ? key : `models/${key}`;
+}
+
+function isPcm16MimeType(mimeType) {
+  const key = String(mimeType || "").trim().toLowerCase();
+  return key === GEMINI_LIVE_AUDIO_MIME_TYPE;
+}
+
+const liveVoiceSessionsByWebContents = new Map();
+
+class GeminiLiveVoiceSession {
+  constructor({ webContents, apiKey, model }) {
+    this.webContents = webContents;
+    this.apiKey = apiKey;
+    this.model = model;
+    this.ws = null;
+    this.ready = false;
+    this.closed = false;
+    this.setupPromise = null;
+    this.setupPromiseResolve = null;
+    this.setupPromiseReject = null;
+    this.setupTimer = null;
+  }
+
+  async start() {
+    if (this.setupPromise) return this.setupPromise;
+
+    this.setupPromise = new Promise((resolve, reject) => {
+      this.setupPromiseResolve = resolve;
+      this.setupPromiseReject = reject;
+    });
+
+    const url = `${GEMINI_LIVE_WS_ENDPOINT}?key=${encodeURIComponent(this.apiKey)}`;
+    const useDomWebSocket = typeof WebSocket !== "undefined";
+    let ws;
+    if (useDomWebSocket) {
+      ws = new WebSocket(url);
+    } else {
+      let NodeWs;
+      try {
+        NodeWs = require("ws");
+      } catch {
+        throw new Error("WebSocket is not available in this runtime (missing dependency: ws).");
+      }
+      ws = new NodeWs(url);
+    }
+    this.ws = ws;
+    this.closed = false;
+    this.ready = false;
+
+    const failSetup = (err) => {
+      if (this.ready) return;
+      const msg = String(err?.message || err || "Live session setup failed");
+      try {
+        this.setupPromiseReject?.(new Error(msg));
+      } catch {
+      }
+      this._emit({ type: "error", error: msg });
+      this.stop();
+    };
+
+    this.setupTimer = setTimeout(() => failSetup(new Error("Live session setup timed out")), 12_000);
+
+	    const handleOpen = () => {
+	      try {
+	        const setupMsg = {
+	          setup: {
+	            model: toGeminiModelResourceName(this.model),
+	            generationConfig: { responseModalities: ["AUDIO"] },
+	            inputAudioTranscription: {}
+	          }
+	        };
+	        ws.send(JSON.stringify(setupMsg));
+	      } catch (err) {
+        failSetup(err);
+      }
+    };
+
+    const handleMessage = (data) => {
+      const raw = safeWsMessageToString(data);
+      if (!raw) return;
+      let msg;
+      try {
+        msg = JSON.parse(raw);
+      } catch {
+        return;
+      }
+
+      if (msg?.setupComplete) {
+        clearTimeout(this.setupTimer);
+        this.setupTimer = null;
+        this.ready = true;
+        try {
+          this.setupPromiseResolve?.({ ok: true });
+        } catch {
+        }
+        this._emit({ type: "ready" });
+        return;
+      }
+
+      const inputText = msg?.serverContent?.inputTranscription?.text;
+      if (typeof inputText === "string") {
+        this._emit({ type: "inputTranscription", text: inputText });
+      }
+
+      if (msg?.serverContent?.turnComplete) {
+        this._emit({ type: "turnComplete" });
+      }
+
+      if (msg?.goAway) {
+        this._emit({ type: "goAway" });
+      }
+    };
+
+    const handleError = (err) => {
+      failSetup(err);
+    };
+
+    const handleClose = (evt) => {
+      clearTimeout(this.setupTimer);
+      this.setupTimer = null;
+
+      const reason = String(evt?.reason || "");
+      const code = Number(evt?.code);
+      const clean = Boolean(evt?.wasClean);
+      this._emit({ type: "closed", code, reason, clean });
+
+      if (!this.ready) {
+        try {
+          this.setupPromiseReject?.(new Error(reason || "Live session closed before setup completed"));
+        } catch {
+        }
+      }
+
+      this.stop();
+    };
+
+    if (useDomWebSocket) {
+      ws.onopen = handleOpen;
+      ws.onmessage = (evt) => handleMessage(evt?.data);
+      ws.onerror = (evt) => handleError(evt?.error || evt);
+      ws.onclose = handleClose;
+    } else if (typeof ws.on === "function") {
+      ws.on("open", handleOpen);
+      ws.on("message", (data) => handleMessage(data));
+      ws.on("error", (err) => handleError(err));
+      ws.on("close", (code, reason) => {
+        handleClose({ code, reason: reason ? reason.toString() : "", wasClean: code === 1000 });
+      });
+    }
+
+    return this.setupPromise;
+  }
+
+  sendAudioChunk({ dataBase64, mimeType }) {
+    if (this.closed) return;
+    if (!this.ws || this.ws.readyState !== 1) return;
+    if (!this.ready) return;
+    if (!isPcm16MimeType(mimeType)) return;
+    const data = String(dataBase64 || "");
+    if (!data) return;
+    if (data.length > 250_000) return;
+    try {
+      this.ws.send(
+        JSON.stringify({
+          realtimeInput: {
+            audio: { data, mimeType }
+          }
+        })
+      );
+    } catch {
+    }
+  }
+
+  sendAudioStreamEnd() {
+    if (this.closed) return;
+    if (!this.ws || this.ws.readyState !== 1) return;
+    if (!this.ready) return;
+    try {
+      this.ws.send(JSON.stringify({ realtimeInput: { audioStreamEnd: true } }));
+    } catch {
+    }
+  }
+
+  stop() {
+    if (this.closed) return;
+    this.closed = true;
+    clearTimeout(this.setupTimer);
+    this.setupTimer = null;
+
+    try {
+      this.ws?.close?.(1000, "client stop");
+    } catch {
+    }
+    try {
+      this.ws = null;
+    } catch {
+    }
+    this.ready = false;
+
+    const wcId = this.webContents?.id;
+    if (typeof wcId === "number") {
+      const existing = liveVoiceSessionsByWebContents.get(wcId);
+      if (existing === this) liveVoiceSessionsByWebContents.delete(wcId);
+    }
+  }
+
+  _emit(payload) {
+    try {
+      if (!this.webContents || this.webContents.isDestroyed()) return;
+      this.webContents.send("ai:liveVoiceEvent", payload);
+    } catch {
+    }
+  }
+}
+
+function stopLiveVoiceSessionForWebContents(webContents) {
+  const wcId = webContents?.id;
+  if (typeof wcId !== "number") return;
+  const session = liveVoiceSessionsByWebContents.get(wcId);
+  if (!session) return;
+  session.stop();
+}
+
 ipcMain.handle("local:listModels", async () => {
   return ollamaListModels();
 });
@@ -1099,6 +1686,61 @@ ipcMain.handle("ai:transcribeAudio", async (_e, payload) => {
     return { ok: true, text };
   } catch (err) {
     log("ai:transcribeAudio error", err?.message || err);
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("ai:liveVoiceStart", async (e, payload) => {
+  const start = Date.now();
+  try {
+    const apiKey = await getGeminiApiKey();
+    if (!apiKey) throw new Error("Gemini API Key not set. Please add it in Settings or set GEMINI_API_KEY.");
+
+    const requestedModel = normalizeGeminiLiveModel(payload?.model);
+    const model = GEMINI_LIVE_VOICE_MODELS.includes(requestedModel)
+      ? requestedModel
+      : DEFAULT_GEMINI_LIVE_VOICE_MODEL;
+    stopLiveVoiceSessionForWebContents(e.sender);
+    const session = new GeminiLiveVoiceSession({ webContents: e.sender, apiKey, model });
+    liveVoiceSessionsByWebContents.set(e.sender.id, session);
+    await session.start();
+    log("ai:liveVoiceStart ok", Date.now() - start, "ms", { model });
+    return { ok: true, model };
+  } catch (err) {
+    log("ai:liveVoiceStart error", err?.message || err);
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.on("ai:liveVoiceAudio", (e, payload) => {
+  try {
+    const wcId = e.sender?.id;
+    const session = typeof wcId === "number" ? liveVoiceSessionsByWebContents.get(wcId) : null;
+    if (!session) return;
+    const audio = payload?.audio && typeof payload.audio === "object" ? payload.audio : {};
+    let dataBase64 = "";
+    if (typeof audio.data === "string" && audio.data.trim()) {
+      dataBase64 = audio.data.trim();
+    } else if (audio.bytes instanceof ArrayBuffer) {
+      dataBase64 = Buffer.from(audio.bytes).toString("base64");
+    } else if (ArrayBuffer.isView(audio.bytes)) {
+      dataBase64 = Buffer.from(audio.bytes.buffer, audio.bytes.byteOffset, audio.bytes.byteLength).toString("base64");
+    }
+    const mimeType = String(audio.mimeType || audio.mime_type || "").trim();
+    session.sendAudioChunk({ dataBase64, mimeType: mimeType || GEMINI_LIVE_AUDIO_MIME_TYPE });
+  } catch {
+  }
+});
+
+ipcMain.handle("ai:liveVoiceStop", async (e) => {
+  try {
+    const wcId = e.sender?.id;
+    const session = typeof wcId === "number" ? liveVoiceSessionsByWebContents.get(wcId) : null;
+    if (!session) return { ok: true };
+    session.sendAudioStreamEnd();
+    session.stop();
+    return { ok: true };
+  } catch (err) {
     return { ok: false, error: String(err?.message || err) };
   }
 });
@@ -1291,6 +1933,61 @@ ipcMain.handle("app:showError", async (_e, message) => {
     return { ok: true };
   } catch (err) {
     log("app:showError error", err?.message || err);
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("downloads:list", async () => {
+  try {
+    const downloads = Array.from(downloadsById.values()).sort((a, b) => Number(b.startTime) - Number(a.startTime));
+    return { ok: true, downloads };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("downloads:openFolder", async () => {
+  try {
+    const downloadsDir = app.getPath("downloads");
+    await shell.openPath(downloadsDir);
+    return { ok: true, path: downloadsDir };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("downloads:openFile", async (_e, id) => {
+  try {
+    const key = String(id || "").trim();
+    const rec = downloadsById.get(key);
+    if (!rec?.savePath) throw new Error("Download not found");
+    await shell.openPath(rec.savePath);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("downloads:showInFolder", async (_e, id) => {
+  try {
+    const key = String(id || "").trim();
+    const rec = downloadsById.get(key);
+    if (!rec?.savePath) throw new Error("Download not found");
+    shell.showItemInFolder(rec.savePath);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("downloads:cancel", async (_e, id) => {
+  try {
+    const key = String(id || "").trim();
+    const item = downloadItemsById.get(key);
+    if (!item) return { ok: true };
+    item.cancel();
+    return { ok: true };
+  } catch (err) {
     return { ok: false, error: String(err?.message || err) };
   }
 });
