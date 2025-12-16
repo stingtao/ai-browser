@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld("aiBridge", {
   getAgentStatus: () => ipcRenderer.invoke("agent:status"),
   agentSnapshot: (payload) => ipcRenderer.invoke("agent:snapshot", payload),
   agentClick: (payload) => ipcRenderer.invoke("agent:click", payload),
+  agentHover: (payload) => ipcRenderer.invoke("agent:hover", payload),
+  agentScroll: (payload) => ipcRenderer.invoke("agent:scroll", payload),
   agentType: (payload) => ipcRenderer.invoke("agent:type", payload),
   agentPress: (payload) => ipcRenderer.invoke("agent:press", payload),
   agentNavigate: (payload) => ipcRenderer.invoke("agent:navigate", payload),

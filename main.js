@@ -1152,7 +1152,7 @@ const CDP_SNAPSHOT_EXPRESSION = `(() => {
       if (!style) return false;
       if (style.visibility === "hidden" || style.display === "none") return false;
       const rect = el.getBoundingClientRect();
-      if (!rect || rect.width < 4 || rect.height < 4) return false;
+      if (!rect || rect.width < 2 || rect.height < 2) return false;
       if (rect.bottom < 0 || rect.right < 0) return false;
       if (rect.top > (window.innerHeight || 0) || rect.left > (window.innerWidth || 0)) return false;
       return true;
@@ -1166,22 +1166,118 @@ const CDP_SNAPSHOT_EXPRESSION = `(() => {
   } catch {
   }
 
-  const candidates = Array.from(
-    document.querySelectorAll(
-      "a,button,input,textarea,select,[role=\\"button\\"],[role=\\"link\\"],[onclick],[contenteditable=\\"true\\"]"
-    )
-  );
+  const vw = Number(window.innerWidth) || 0;
+  const vh = Number(window.innerHeight) || 0;
+  const cx0 = vw / 2;
+  const cy0 = vh / 2;
 
-  const elements = [];
-  let nextId = 1;
-  for (const el of candidates) {
-    if (!isVisible(el)) continue;
-    const id = String(nextId++);
+  const candidateSet = new Set();
+  const addEl = (el) => {
     try {
-      el.setAttribute("data-sting-agent-id", id);
+      if (el && el.nodeType === 1) candidateSet.add(el);
     } catch {
-      continue;
     }
+  };
+  const addAncestors = (el) => {
+    let cur = el;
+    let depth = 0;
+    while (cur && depth < 22) {
+      addEl(cur);
+      try {
+        cur = cur.parentElement;
+      } catch {
+        cur = null;
+      }
+      depth++;
+    }
+  };
+
+  const addQuery = (sel, limit) => {
+    try {
+      const nodes = document.querySelectorAll(sel);
+      let count = 0;
+      for (const el of nodes) {
+        addEl(el);
+        count++;
+        if (limit && count >= limit) break;
+      }
+    } catch {
+    }
+  };
+
+  // Sample elements that are actually on top in the viewport (helps with canvas-heavy apps like Google Slides).
+  try {
+    const cols = 6;
+    const rows = 6;
+    for (let xi = 1; xi < cols; xi++) {
+      for (let yi = 1; yi < rows; yi++) {
+        const x = Math.floor((xi / cols) * vw);
+        const y = Math.floor((yi / rows) * vh);
+        let hit = null;
+        try {
+          hit = document.elementFromPoint(x, y);
+        } catch {
+          hit = null;
+        }
+        addAncestors(hit);
+      }
+    }
+  } catch {
+  }
+
+  try {
+    addAncestors(document.activeElement);
+  } catch {
+  }
+
+  addQuery('input,textarea,select,button,a,canvas,iframe,[onclick],[contenteditable="true"],[role="button"],[role="link"],[role="textbox"],[role="menuitem"],[role="option"],[role="listitem"]', 1800);
+
+  const candidates = Array.from(candidateSet);
+
+  const scoreFor = (el, rect, tag, role, ariaLabel, placeholder, text, value) => {
+    let score = 0;
+    const area = Math.max(0, (Number(rect?.w) || 0) * (Number(rect?.h) || 0));
+    const cx = (Number(rect?.x) || 0) + (Number(rect?.w) || 0) / 2;
+    const cy = (Number(rect?.y) || 0) + (Number(rect?.h) || 0) / 2;
+    const dx = vw ? Math.abs(cx - cx0) / vw : 1;
+    const dy = vh ? Math.abs(cy - cy0) / vh : 1;
+    const dist = dx + dy;
+    score += Math.max(0, 1 - dist) * 35;
+    score += Math.min(70, Math.log(area + 1) * 9);
+
+    if (tag === "input" || tag === "textarea") score += 220;
+    if (tag === "select") score += 90;
+    if (tag === "canvas") score += 140;
+    if (tag === "iframe") score += 80;
+    if (tag === "button" || role === "button") score += 40;
+    if (tag === "a" || role === "link") score += 18;
+
+    try {
+      if (el && el.isContentEditable) score += 260;
+    } catch {
+    }
+    if (role === "textbox") score += 300;
+    if (value) score += 120;
+
+    const hint = clean(String(ariaLabel || "") + " " + String(placeholder || "") + " " + String(text || "")).toLowerCase();
+    if (/(click to add|add title|add subtitle|add text|title|subtitle|textbox)/i.test(hint)) score += 140;
+    if (/(標題|副標題|內文|內容|輸入|點一下|點擊|新增)/.test(hint)) score += 140;
+    if (/(标题|副标题|内容|输入|点击|新增)/.test(hint)) score += 140;
+
+    return score;
+  };
+
+  const scored = [];
+  for (const el of candidates) {
+    try {
+      const ti = el && el.getAttribute ? el.getAttribute("tabindex") : null;
+      if (ti != null && String(ti).trim() === "-1") continue;
+    } catch {
+    }
+    if (!isVisible(el)) continue;
+
+    const rect = toRect(el);
+    if (!rect) continue;
 
     const tag = String(el.tagName || "").toLowerCase();
     const role = clean(el.getAttribute && el.getAttribute("role"));
@@ -1192,20 +1288,47 @@ const CDP_SNAPSHOT_EXPRESSION = `(() => {
     const type = clean(el.getAttribute && el.getAttribute("type"));
     const href = tag === "a" ? clean(el.getAttribute && el.getAttribute("href")) : "";
     const value = tag === "input" || tag === "textarea" ? clean(el.value) : "";
-    elements.push({
-      id,
+
+    scored.push({
+      el,
       tag,
       role,
-      text: text.slice(0, 120),
-      ariaLabel: ariaLabel.slice(0, 120),
-      placeholder: placeholder.slice(0, 120),
-      name: name.slice(0, 80),
-      type: type.slice(0, 40),
-      href: href.slice(0, 300),
-      value: value.slice(0, 120),
-      rect: toRect(el)
+      text,
+      ariaLabel,
+      placeholder,
+      name,
+      type,
+      href,
+      value,
+      rect,
+      score: scoreFor(el, rect, tag, role, ariaLabel, placeholder, text, value)
     });
-    if (elements.length >= 120) break;
+  }
+
+  scored.sort((a, b) => Number(b.score) - Number(a.score));
+
+  const elements = [];
+  let nextId = 1;
+  for (const item of scored.slice(0, 180)) {
+    const id = String(nextId++);
+    try {
+      item.el.setAttribute("data-sting-agent-id", id);
+    } catch {
+      continue;
+    }
+    elements.push({
+      id,
+      tag: item.tag,
+      role: item.role,
+      text: String(item.text || "").slice(0, 120),
+      ariaLabel: String(item.ariaLabel || "").slice(0, 120),
+      placeholder: String(item.placeholder || "").slice(0, 120),
+      name: String(item.name || "").slice(0, 80),
+      type: String(item.type || "").slice(0, 40),
+      href: String(item.href || "").slice(0, 300),
+      value: String(item.value || "").slice(0, 120),
+      rect: item.rect
+    });
   }
 
   let visibleText = "";
@@ -1227,73 +1350,1047 @@ const CDP_SNAPSHOT_EXPRESSION = `(() => {
 
 async function agentSnapshot({ url, title, marker } = {}) {
   return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
-    return cdpEvalValue(sendToTarget, sessionId, CDP_SNAPSHOT_EXPRESSION, { timeoutMs: 15_000 });
+    const snapshot = await cdpEvalValue(sendToTarget, sessionId, CDP_SNAPSHOT_EXPRESSION, { timeoutMs: 15_000 });
+    if (snapshot && typeof snapshot === "object") {
+      try {
+        const href = String(snapshot.url || "");
+        const host = href && href.includes("://") ? new URL(href).hostname : "";
+        if (host && host.endsWith("docs.google.com")) {
+          snapshot.axText = await cdpAxTextSnippet(sendToTarget, sessionId, { timeoutMs: 10_000, maxNodes: 1400, maxLen: 2600 });
+        }
+      } catch {
+      }
+    }
+    return snapshot;
   });
 }
 
-async function agentClick({ url, title, marker, elementId } = {}) {
+async function agentClick({ url, title, marker, elementId, x, y, clickCount } = {}) {
   const id = String(elementId || "").trim();
-  if (!id) throw new Error("Missing elementId");
+  const countRaw = Number(clickCount);
+  const count = Number.isFinite(countRaw) ? Math.max(1, Math.min(3, Math.floor(countRaw))) : 1;
+  const hasCoords = Number.isFinite(Number(x)) && Number.isFinite(Number(y));
+  if (!id && !hasCoords) throw new Error("Missing elementId (or x/y)");
   return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
-    const expr = `(() => {
-      const id = ${JSON.stringify(id)};
-      const sel = '[data-sting-agent-id=\"' + id + '\"]';
-      const el = document.querySelector(sel);
-      if (!el) return { ok: false, error: 'Element not found: ' + id };
-      try { el.scrollIntoView({ block: 'center', inline: 'center' }); } catch {}
-      try { el.focus && el.focus(); } catch {}
-      try { el.click(); return { ok: true }; } catch (err) { return { ok: false, error: String(err && err.message ? err.message : err) }; }
+    try {
+      await sendToTarget(sessionId, "Page.bringToFront", {}, { timeoutMs: 4_000 });
+    } catch {
+    }
+
+    const clickLogInitExpr = `(() => {
+      try {
+        if (!window.__stingAgentClickLog || typeof window.__stingAgentClickLog !== 'object') {
+          window.__stingAgentClickLog = { ts: 0, isTrusted: false, x: 0, y: 0, target: '', type: '' };
+        }
+        if (!window.__stingAgentClickListenerInstalled) {
+          window.__stingAgentClickListenerInstalled = true;
+          const record = (type, e) => {
+            try {
+              window.__stingAgentClickLog = {
+                ts: Date.now(),
+                isTrusted: Boolean(e && e.isTrusted),
+                x: Number(e && e.clientX) || 0,
+                y: Number(e && e.clientY) || 0,
+                target: String(e && e.target && e.target.tagName ? e.target.tagName : ''),
+                type: String(type || '')
+              };
+            } catch {}
+          };
+          document.addEventListener('mousedown', (e) => record('mousedown', e), true);
+          document.addEventListener('click', (e) => record('click', e), true);
+        }
+      } catch {}
+      try { return Number(window.__stingAgentClickLog && window.__stingAgentClickLog.ts ? window.__stingAgentClickLog.ts : 0) || 0; } catch { return 0; }
     })()`;
-    const res = await cdpEvalValue(sendToTarget, sessionId, expr, { timeoutMs: 15_000 });
-    if (!res || res.ok !== true) throw new Error(String(res?.error || "Click failed"));
+    let beforeClickTs = 0;
+    try {
+      beforeClickTs = Number(await cdpEvalValue(sendToTarget, sessionId, clickLogInitExpr, { timeoutMs: 4_000 })) || 0;
+    } catch {
+      beforeClickTs = 0;
+    }
+
+    let clickX = null;
+    let clickY = null;
+    if (id) {
+      const locateExpr = `(() => {
+        const id = ${JSON.stringify(id)};
+        const sel = '[data-sting-agent-id=\"' + id + '\"]';
+        const el = document.querySelector(sel);
+        if (!el) return { ok: false, error: 'Element not found: ' + id };
+        try { el.scrollIntoView({ block: 'center', inline: 'center' }); } catch {}
+        try { el.focus && el.focus(); } catch {}
+        let rect = null;
+        try { rect = el.getBoundingClientRect(); } catch { rect = null; }
+        if (!rect) return { ok: false, error: 'Element has no bounding rect: ' + id };
+        const vw = Number(window.innerWidth) || 0;
+        const vh = Number(window.innerHeight) || 0;
+        const left = Math.max(0, Number(rect.left) || 0);
+        const right = Math.min(vw, Number(rect.right) || 0);
+        const top = Math.max(0, Number(rect.top) || 0);
+        const bottom = Math.min(vh, Number(rect.bottom) || 0);
+        if (right - left < 2 || bottom - top < 2) {
+          return { ok: false, error: 'Element not interactable in viewport: ' + id, vw, vh };
+        }
+        const x = Math.floor((left + right) / 2);
+        const y = Math.floor((top + bottom) / 2);
+        return { ok: true, x, y };
+      })()`;
+
+      const loc = await cdpEvalValue(sendToTarget, sessionId, locateExpr, { timeoutMs: 15_000 });
+      if (!loc || loc.ok !== true) throw new Error(String(loc?.error || "Click failed"));
+      clickX = Number(loc.x);
+      clickY = Number(loc.y);
+    } else {
+      clickX = Number(x);
+      clickY = Number(y);
+    }
+    if (!Number.isFinite(clickX) || !Number.isFinite(clickY)) throw new Error("Click failed (invalid coordinates)");
+
+    const readClickLogExpr = "(() => (window.__stingAgentClickLog && typeof window.__stingAgentClickLog === 'object' ? window.__stingAgentClickLog : null))()";
+    const getHostExpr = "(() => String(location && location.hostname ? location.hostname : ''))()";
+
+    const clickProducedEvent = async () => {
+      try {
+        const log = await cdpEvalValue(sendToTarget, sessionId, readClickLogExpr, { timeoutMs: 4_000 });
+        const ts = Number(log?.ts) || 0;
+        return { ts, isTrusted: Boolean(log?.isTrusted), type: String(log?.type || "") };
+      } catch {
+        return { ts: 0, isTrusted: false, type: "" };
+      }
+    };
+
+    const isGoogleDocsHost = async () => {
+      try {
+        const host = String(await cdpEvalValue(sendToTarget, sessionId, getHostExpr, { timeoutMs: 3_000 }) || "");
+        return host.endsWith("docs.google.com");
+      } catch {
+        return false;
+      }
+    };
+
+    let usedTrustedInput = true;
+    try {
+      await sendToTarget(
+        sessionId,
+        "Input.dispatchMouseEvent",
+        { type: "mouseMoved", x: clickX, y: clickY, button: "left", buttons: 0, clickCount: count },
+        { timeoutMs: 8_000 }
+      );
+      for (let i = 1; i <= count; i++) {
+        await sendToTarget(
+          sessionId,
+          "Input.dispatchMouseEvent",
+          { type: "mousePressed", x: clickX, y: clickY, button: "left", buttons: 1, clickCount: i },
+          { timeoutMs: 8_000 }
+        );
+        await sendToTarget(
+          sessionId,
+          "Input.dispatchMouseEvent",
+          { type: "mouseReleased", x: clickX, y: clickY, button: "left", buttons: 0, clickCount: i },
+          { timeoutMs: 8_000 }
+        );
+        if (i < count) await delay(55);
+      }
+      await delay(80);
+      const after = await clickProducedEvent();
+      if (after.ts <= beforeClickTs) throw new Error("Click event did not fire");
+      if (!after.isTrusted) usedTrustedInput = false;
+    } catch (err) {
+      usedTrustedInput = false;
+      if (id) {
+        const fallbackExpr = `(() => {
+          const id = ${JSON.stringify(id)};
+          const sel = '[data-sting-agent-id=\"' + id + '\"]';
+          const el = document.querySelector(sel);
+          if (!el) return { ok: false, error: 'Element not found: ' + id };
+          try { el.scrollIntoView({ block: 'center', inline: 'center' }); } catch {}
+          try { el.focus && el.focus(); } catch {}
+          try { el.click(); return { ok: true }; } catch (e) { return { ok: false, error: String(e && e.message ? e.message : e) }; }
+        })()`;
+        const res = await cdpEvalValue(sendToTarget, sessionId, fallbackExpr, { timeoutMs: 15_000 });
+        if (!res || res.ok !== true) throw new Error(String(res?.error || err?.message || err || "Click failed"));
+        await delay(60);
+        const after = await clickProducedEvent();
+        if (after.ts <= beforeClickTs) throw new Error("Click failed (no click event observed)");
+      } else {
+        throw err;
+      }
+    }
+
+    if (!usedTrustedInput && (await isGoogleDocsHost())) {
+      throw new Error("Untrusted click event; Google Docs/Slides often ignores programmatic clicks (CDP input may be blocked).");
+    }
     return { ok: true };
   });
 }
 
+async function agentHover({ url, title, marker, elementId, x, y } = {}) {
+  const id = String(elementId || "").trim();
+  const hasCoords = Number.isFinite(Number(x)) && Number.isFinite(Number(y));
+  if (!id && !hasCoords) throw new Error("Missing elementId (or x/y)");
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    try {
+      await sendToTarget(sessionId, "Page.bringToFront", {}, { timeoutMs: 4_000 });
+    } catch {
+    }
+
+    let hoverX = null;
+    let hoverY = null;
+    if (id) {
+      const locateExpr = `(() => {
+        const id = ${JSON.stringify(id)};
+        const sel = '[data-sting-agent-id=\"' + id + '\"]';
+        const el = document.querySelector(sel);
+        if (!el) return { ok: false, error: 'Element not found: ' + id };
+        try { el.scrollIntoView({ block: 'center', inline: 'center' }); } catch {}
+        try { el.focus && el.focus(); } catch {}
+        let rect = null;
+        try { rect = el.getBoundingClientRect(); } catch { rect = null; }
+        if (!rect) return { ok: false, error: 'Element has no bounding rect: ' + id };
+        const vw = Number(window.innerWidth) || 0;
+        const vh = Number(window.innerHeight) || 0;
+        const left = Math.max(0, Number(rect.left) || 0);
+        const right = Math.min(vw, Number(rect.right) || 0);
+        const top = Math.max(0, Number(rect.top) || 0);
+        const bottom = Math.min(vh, Number(rect.bottom) || 0);
+        if (right - left < 2 || bottom - top < 2) {
+          return { ok: false, error: 'Element not interactable in viewport: ' + id, vw, vh };
+        }
+        const x = Math.floor((left + right) / 2);
+        const y = Math.floor((top + bottom) / 2);
+        return { ok: true, x, y };
+      })()`;
+
+      const loc = await cdpEvalValue(sendToTarget, sessionId, locateExpr, { timeoutMs: 15_000 });
+      if (!loc || loc.ok !== true) throw new Error(String(loc?.error || "Hover failed"));
+      hoverX = Number(loc.x);
+      hoverY = Number(loc.y);
+    } else {
+      hoverX = Number(x);
+      hoverY = Number(y);
+    }
+    if (!Number.isFinite(hoverX) || !Number.isFinite(hoverY)) throw new Error("Hover failed (invalid coordinates)");
+
+    await sendToTarget(
+      sessionId,
+      "Input.dispatchMouseEvent",
+      { type: "mouseMoved", x: hoverX, y: hoverY, button: "none", buttons: 0, pointerType: "mouse" },
+      { timeoutMs: 8_000 }
+    );
+    return { ok: true };
+  });
+}
+
+async function agentScroll({ url, title, marker, deltaX, deltaY, x, y } = {}) {
+  const dx = Number(deltaX);
+  const dy = Number(deltaY);
+  const hasDx = Number.isFinite(dx) && dx !== 0;
+  const hasDy = Number.isFinite(dy) && dy !== 0;
+  if (!hasDx && !hasDy) throw new Error("Missing deltaX/deltaY");
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    try {
+      await sendToTarget(sessionId, "Page.bringToFront", {}, { timeoutMs: 4_000 });
+    } catch {
+    }
+
+    const scrollStateExpr = `(() => {
+      const se = document.scrollingElement || document.documentElement || document.body;
+      return {
+        x: Number(se && se.scrollLeft ? se.scrollLeft : 0) || 0,
+        y: Number(se && se.scrollTop ? se.scrollTop : 0) || 0,
+        vw: Number(window.innerWidth) || 0,
+        vh: Number(window.innerHeight) || 0
+      };
+    })()`;
+
+    let before = null;
+    try {
+      before = await cdpEvalValue(sendToTarget, sessionId, scrollStateExpr, { timeoutMs: 3_000 });
+    } catch {
+      before = null;
+    }
+
+    const vw = Math.max(0, Math.floor(Number(before?.vw) || 0));
+    const vh = Math.max(0, Math.floor(Number(before?.vh) || 0));
+    const pointX = Number.isFinite(Number(x)) ? Number(x) : Math.floor((vw || 1) / 2);
+    const pointY = Number.isFinite(Number(y)) ? Number(y) : Math.floor((vh || 1) / 2);
+
+    try {
+      await sendToTarget(
+        sessionId,
+        "Input.dispatchMouseEvent",
+        {
+          type: "mouseWheel",
+          x: pointX,
+          y: pointY,
+          deltaX: hasDx ? dx : 0,
+          deltaY: hasDy ? dy : 0,
+          pointerType: "mouse"
+        },
+        { timeoutMs: 8_000 }
+      );
+    } catch {
+      // fallthrough to JS fallback
+    }
+
+    await delay(60);
+    let after = null;
+    try {
+      after = await cdpEvalValue(sendToTarget, sessionId, scrollStateExpr, { timeoutMs: 3_000 });
+    } catch {
+      after = null;
+    }
+
+    const changed =
+      before && after && (Number(before.x) !== Number(after.x) || Number(before.y) !== Number(after.y));
+
+    if (!changed) {
+      const fallbackExpr = `(() => {
+        const dx = Number(${JSON.stringify(hasDx ? dx : 0)}) || 0;
+        const dy = Number(${JSON.stringify(hasDy ? dy : 0)}) || 0;
+        const px = Number(${JSON.stringify(pointX)}) || 0;
+        const py = Number(${JSON.stringify(pointY)}) || 0;
+
+        const isScrollable = (el) => {
+          if (!el) return false;
+          const ch = Number(el.clientHeight) || 0;
+          const sh = Number(el.scrollHeight) || 0;
+          const cw = Number(el.clientWidth) || 0;
+          const sw = Number(el.scrollWidth) || 0;
+          const canY = sh > ch + 4;
+          const canX = sw > cw + 4;
+          if (!canX && !canY) return false;
+          try {
+            const style = window.getComputedStyle(el);
+            const oy = String(style && style.overflowY ? style.overflowY : "");
+            const ox = String(style && style.overflowX ? style.overflowX : "");
+            if (canY && (oy === "auto" || oy === "scroll")) return true;
+            if (canX && (ox === "auto" || ox === "scroll")) return true;
+          } catch {
+          }
+          return el === document.scrollingElement || el === document.documentElement || el === document.body;
+        };
+
+        const pickScrollable = () => {
+          const root = document.scrollingElement || document.documentElement || document.body;
+          let el = null;
+          try { el = document.elementFromPoint(px, py); } catch { el = null; }
+          while (el) {
+            if (isScrollable(el)) return el;
+            el = el.parentElement;
+          }
+          return root;
+        };
+
+        const se = pickScrollable();
+        const beforeX = Number(se && se.scrollLeft ? se.scrollLeft : 0) || 0;
+        const beforeY = Number(se && se.scrollTop ? se.scrollTop : 0) || 0;
+        try { if (dx) se.scrollLeft = beforeX + dx; } catch {}
+        try { if (dy) se.scrollTop = beforeY + dy; } catch {}
+        const afterX = Number(se && se.scrollLeft ? se.scrollLeft : 0) || 0;
+        const afterY = Number(se && se.scrollTop ? se.scrollTop : 0) || 0;
+        return { ok: true, beforeX, beforeY, afterX, afterY };
+      })()`;
+      try {
+        await cdpEvalValue(sendToTarget, sessionId, fallbackExpr, { timeoutMs: 6_000 });
+      } catch {
+      }
+    }
+
+    return { ok: true };
+  });
+}
+
+const CDP_KEY_MODIFIER_ALT = 1;
+const CDP_KEY_MODIFIER_CTRL = 2;
+const CDP_KEY_MODIFIER_META = 4;
+const CDP_KEY_MODIFIER_SHIFT = 8;
+
+const CDP_SHIFTED_DIGIT_KEYS = {
+  ")": "0",
+  "!": "1",
+  "@": "2",
+  "#": "3",
+  "$": "4",
+  "%": "5",
+  "^": "6",
+  "&": "7",
+  "*": "8",
+  "(": "9"
+};
+
+const CDP_PUNCTUATION_KEYS = {
+  "-": { code: "Minus", vk: 189, shift: false, unmodified: "-" },
+  "_": { code: "Minus", vk: 189, shift: true, unmodified: "-" },
+  "=": { code: "Equal", vk: 187, shift: false, unmodified: "=" },
+  "+": { code: "Equal", vk: 187, shift: true, unmodified: "=" },
+  "[": { code: "BracketLeft", vk: 219, shift: false, unmodified: "[" },
+  "{": { code: "BracketLeft", vk: 219, shift: true, unmodified: "[" },
+  "]": { code: "BracketRight", vk: 221, shift: false, unmodified: "]" },
+  "}": { code: "BracketRight", vk: 221, shift: true, unmodified: "]" },
+  "\\": { code: "Backslash", vk: 220, shift: false, unmodified: "\\" },
+  "|": { code: "Backslash", vk: 220, shift: true, unmodified: "\\" },
+  ";": { code: "Semicolon", vk: 186, shift: false, unmodified: ";" },
+  ":": { code: "Semicolon", vk: 186, shift: true, unmodified: ";" },
+  "'": { code: "Quote", vk: 222, shift: false, unmodified: "'" },
+  "\"": { code: "Quote", vk: 222, shift: true, unmodified: "'" },
+  ",": { code: "Comma", vk: 188, shift: false, unmodified: "," },
+  "<": { code: "Comma", vk: 188, shift: true, unmodified: "," },
+  ".": { code: "Period", vk: 190, shift: false, unmodified: "." },
+  ">": { code: "Period", vk: 190, shift: true, unmodified: "." },
+  "/": { code: "Slash", vk: 191, shift: false, unmodified: "/" },
+  "?": { code: "Slash", vk: 191, shift: true, unmodified: "/" },
+  "`": { code: "Backquote", vk: 192, shift: false, unmodified: "`" },
+  "~": { code: "Backquote", vk: 192, shift: true, unmodified: "`" }
+};
+
+function getCdpKeyDefForChar(ch) {
+  const char = String(ch || "");
+  if (!char || char.length !== 1) return null;
+  if (char === " ") return { key: " ", code: "Space", vk: 32, modifiers: 0, text: " ", unmodifiedText: " " };
+
+  const cc = char.charCodeAt(0);
+  if (cc >= 97 && cc <= 122) {
+    const upper = String.fromCharCode(cc - 32);
+    return { key: char, code: `Key${upper}`, vk: upper.charCodeAt(0), modifiers: 0, text: char, unmodifiedText: char };
+  }
+  if (cc >= 65 && cc <= 90) {
+    const lower = String.fromCharCode(cc + 32);
+    return {
+      key: char,
+      code: `Key${char}`,
+      vk: char.charCodeAt(0),
+      modifiers: CDP_KEY_MODIFIER_SHIFT,
+      text: char,
+      unmodifiedText: lower
+    };
+  }
+  if (cc >= 48 && cc <= 57) {
+    return { key: char, code: `Digit${char}`, vk: cc, modifiers: 0, text: char, unmodifiedText: char };
+  }
+
+  const shiftedDigit = CDP_SHIFTED_DIGIT_KEYS[char];
+  if (shiftedDigit) {
+    const vk = shiftedDigit.charCodeAt(0);
+    return {
+      key: char,
+      code: `Digit${shiftedDigit}`,
+      vk,
+      modifiers: CDP_KEY_MODIFIER_SHIFT,
+      text: char,
+      unmodifiedText: shiftedDigit
+    };
+  }
+
+  const punct = CDP_PUNCTUATION_KEYS[char];
+  if (punct) {
+    return {
+      key: char,
+      code: punct.code,
+      vk: punct.vk,
+      modifiers: punct.shift ? CDP_KEY_MODIFIER_SHIFT : 0,
+      text: char,
+      unmodifiedText: punct.unmodified
+    };
+  }
+
+  return null;
+}
+
+async function cdpTypeText(sendToTarget, sessionId, text, { delayMs = 0, timeoutMs = 8_000 } = {}) {
+  const value = String(text ?? "");
+  const chars = Array.from(value);
+  let usedKeyEvents = false;
+  let usedInsertText = false;
+
+  const dispatchKey = (payload) => sendToTarget(sessionId, "Input.dispatchKeyEvent", payload, { timeoutMs });
+
+  for (const ch of chars) {
+    if (ch === "\r") continue;
+    if (ch === "\n") {
+      usedKeyEvents = true;
+      const base = { key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13, modifiers: 0 };
+      await dispatchKey({ type: "rawKeyDown", ...base });
+      await dispatchKey({ type: "keyUp", ...base });
+    } else if (ch === "\t") {
+      usedKeyEvents = true;
+      const base = { key: "Tab", code: "Tab", windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9, modifiers: 0 };
+      await dispatchKey({ type: "rawKeyDown", ...base });
+      await dispatchKey({ type: "keyUp", ...base });
+    } else {
+      const def = getCdpKeyDefForChar(ch);
+      if (def) {
+        usedKeyEvents = true;
+        const base = {
+          key: def.key,
+          code: def.code,
+          windowsVirtualKeyCode: def.vk,
+          nativeVirtualKeyCode: def.vk,
+          modifiers: def.modifiers || 0
+        };
+        await dispatchKey({ type: "rawKeyDown", ...base });
+        await dispatchKey({ type: "char", ...base, text: def.text, unmodifiedText: def.unmodifiedText });
+        await dispatchKey({ type: "keyUp", ...base });
+      } else {
+        usedInsertText = true;
+        await sendToTarget(sessionId, "Input.insertText", { text: ch }, { timeoutMs: Math.max(2_000, timeoutMs) });
+      }
+    }
+    if (delayMs > 0) await delay(delayMs);
+  }
+
+  return { usedKeyEvents, usedInsertText };
+}
+
+function pickAgentTypeVerificationNeedle(text) {
+  const raw = String(text ?? "");
+  const trimmed = raw.replace(/\s+/g, " ").trim();
+  if (!trimmed) return "";
+
+  const longToken = trimmed.match(/[\p{L}\p{N}]{5,}/u);
+  if (longToken && longToken[0]) return longToken[0].slice(0, 80);
+
+  const token = trimmed.match(/[\p{L}\p{N}]{3,}/u);
+  if (token && token[0]) return token[0].slice(0, 80);
+
+  return trimmed.slice(0, 80);
+}
+
+function buildAgentTypeVerifyExpression({ needle, elementId } = {}) {
+  const query = String(needle || "").trim();
+  const id = String(elementId || "").trim();
+  return `(() => {
+    const needleRaw = ${JSON.stringify(query)};
+    const id = ${JSON.stringify(id)};
+
+    const normalize = (s) => {
+      try {
+        return String(s || "")
+          .replace(/[\\u200B\\u200C\\u200D\\uFEFF]/g, "")
+          .replace(/\\s+/g, " ")
+          .trim()
+          .toLowerCase();
+      } catch {
+        return "";
+      }
+    };
+    const needle = normalize(needleRaw);
+    if (!needle) return true;
+    const contains = (s) => normalize(s).includes(needle);
+
+    const checkNode = (el) => {
+      if (!el) return false;
+      try {
+        if (contains(el.innerText)) return true;
+      } catch {}
+      try {
+        if (contains(el.textContent)) return true;
+      } catch {}
+      try {
+        if ("value" in el && contains(el.value)) return true;
+      } catch {}
+      try {
+        const aria = el.getAttribute && el.getAttribute("aria-label");
+        if (contains(aria)) return true;
+      } catch {}
+      try {
+        const title = el.getAttribute && el.getAttribute("title");
+        if (contains(title)) return true;
+      } catch {}
+      return false;
+    };
+
+    if (id) {
+      try {
+        const el = document.querySelector('[data-sting-agent-id=\"' + id + '\"]');
+        if (checkNode(el)) return true;
+      } catch {}
+    }
+
+    try {
+      if (checkNode(document.activeElement)) return true;
+    } catch {}
+
+    try {
+      const iframe = document.querySelector('iframe.docs-texteventtarget-iframe');
+      if (iframe && iframe.contentDocument) {
+        const doc = iframe.contentDocument;
+        try {
+          if (contains(doc.body && doc.body.innerText ? doc.body.innerText : "")) return true;
+        } catch {}
+        try {
+          if (contains(doc.body && doc.body.textContent ? doc.body.textContent : "")) return true;
+        } catch {}
+        try {
+          if (checkNode(doc.activeElement)) return true;
+        } catch {}
+        try {
+          const t = doc.querySelector && doc.querySelector("textarea, input, [contenteditable=\"true\"]");
+          if (checkNode(t)) return true;
+        } catch {}
+      }
+    } catch {}
+
+    try {
+      if (contains(document.body && document.body.innerText ? document.body.innerText : "")) return true;
+    } catch {}
+    try {
+      if (contains(document.body && document.body.textContent ? document.body.textContent : "")) return true;
+    } catch {}
+
+    try {
+      const nodes = document.querySelectorAll("[aria-label], [title]");
+      const limit = Math.min(nodes.length, 500);
+      for (let i = 0; i < limit; i++) {
+        const el = nodes[i];
+        try {
+          const aria = el.getAttribute("aria-label");
+          const title = el.getAttribute("title");
+          if (contains(aria) || contains(title)) return true;
+        } catch {}
+      }
+    } catch {}
+
+    return false;
+  })()`;
+}
+
+function normalizeAgentSearchText(value) {
+  try {
+    return String(value || "")
+      .replace(/[\u200B\u200C\u200D\uFEFF]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+function cdpAxValueToString(value) {
+  if (value == null) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (typeof value !== "object") return "";
+  if (typeof value.value === "string") return value.value;
+  if (typeof value.value === "number" || typeof value.value === "boolean") return String(value.value);
+  return "";
+}
+
+function cdpAxNodeCandidateTexts(node) {
+  const out = [];
+  if (!node || typeof node !== "object") return out;
+  try {
+    const name = cdpAxValueToString(node.name);
+    if (name) out.push(name);
+  } catch {
+  }
+  try {
+    const value = cdpAxValueToString(node.value);
+    if (value) out.push(value);
+  } catch {
+  }
+  try {
+    const desc = cdpAxValueToString(node.description);
+    if (desc) out.push(desc);
+  } catch {
+  }
+  try {
+    const props = Array.isArray(node.properties) ? node.properties : [];
+    for (const prop of props) {
+      const v = cdpAxValueToString(prop?.value);
+      if (v) out.push(v);
+    }
+  } catch {
+  }
+  return out;
+}
+
+async function cdpAxContainsText(sendToTarget, sessionId, needle, { timeoutMs = 8_000, maxNodes = 2500 } = {}) {
+  const query = normalizeAgentSearchText(needle);
+  if (!query) return true;
+  try {
+    await sendToTarget(sessionId, "Accessibility.enable", {}, { timeoutMs: 4_000 });
+  } catch {
+  }
+
+  let res = null;
+  try {
+    res = await sendToTarget(sessionId, "Accessibility.getFullAXTree", {}, { timeoutMs });
+  } catch {
+    res = null;
+  }
+  const nodes = Array.isArray(res?.nodes) ? res.nodes : [];
+  const limit = Math.max(0, Math.min(Number(maxNodes) || 0, 50_000));
+  let checked = 0;
+
+  for (const node of nodes) {
+    checked++;
+    if (limit && checked > limit) break;
+    const texts = cdpAxNodeCandidateTexts(node);
+    for (const text of texts) {
+      if (!text) continue;
+      if (normalizeAgentSearchText(text).includes(query)) return true;
+    }
+  }
+  return false;
+}
+
+async function cdpAxTextSnippet(sendToTarget, sessionId, { timeoutMs = 8_000, maxNodes = 1600, maxLen = 2800 } = {}) {
+  try {
+    await sendToTarget(sessionId, "Accessibility.enable", {}, { timeoutMs: 4_000 });
+  } catch {
+  }
+
+  let res = null;
+  try {
+    res = await sendToTarget(sessionId, "Accessibility.getFullAXTree", {}, { timeoutMs });
+  } catch {
+    res = null;
+  }
+  const nodes = Array.isArray(res?.nodes) ? res.nodes : [];
+  const limit = Math.max(0, Math.min(Number(maxNodes) || 0, 50_000));
+  const seen = new Set();
+  let out = "";
+  let checked = 0;
+
+  for (const node of nodes) {
+    checked++;
+    if (limit && checked > limit) break;
+    const texts = cdpAxNodeCandidateTexts(node);
+    for (const text of texts) {
+      const clean = String(text || "").replace(/\s+/g, " ").trim();
+      if (!clean) continue;
+      const key = normalizeAgentSearchText(clean);
+      if (!key) continue;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out += (out ? "\n" : "") + clean;
+      if (out.length >= maxLen) return out.slice(0, maxLen);
+    }
+  }
+  return out;
+}
+
+async function waitForAgentTypeVerification(sendToTarget, sessionId, { needle, elementId, timeoutMs = 2_500 } = {}) {
+  const query = String(needle || "").trim();
+  if (!query) return true;
+  const expr = buildAgentTypeVerifyExpression({ needle: query, elementId });
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const ok = await cdpEvalValue(sendToTarget, sessionId, expr, { timeoutMs: 4_000 });
+      if (ok === true) return true;
+    } catch {
+    }
+    await delay(220);
+  }
+  return false;
+}
+
+async function cdpPressEnter(sendToTarget, sessionId, { timeoutMs = 8_000 } = {}) {
+  const base = { key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13, modifiers: 0 };
+  await sendToTarget(sessionId, "Input.dispatchKeyEvent", { type: "rawKeyDown", ...base }, { timeoutMs });
+  await sendToTarget(sessionId, "Input.dispatchKeyEvent", { type: "keyUp", ...base }, { timeoutMs });
+}
+
 async function agentType({ url, title, marker, elementId, text } = {}) {
   const id = String(elementId || "").trim();
-  if (!id) throw new Error("Missing elementId");
   const value = String(text ?? "");
   return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
-    const expr = `(() => {
-      const id = ${JSON.stringify(id)};
-      const text = ${JSON.stringify(value)};
-      const sel = '[data-sting-agent-id=\"' + id + '\"]';
-      const el = document.querySelector(sel);
-      if (!el) return { ok: false, error: 'Element not found: ' + id };
-      try { el.scrollIntoView({ block: 'center', inline: 'center' }); } catch {}
-      try { el.focus && el.focus(); } catch {}
+    try {
+      await sendToTarget(sessionId, "Page.bringToFront", {}, { timeoutMs: 4_000 });
+    } catch {
+    }
 
-      const setValue = (node, v) => {
+    const getHostExpr = "(() => String(location && location.hostname ? location.hostname : ''))()";
+    let isGoogleDocs = false;
+    try {
+      const host = String(await cdpEvalValue(sendToTarget, sessionId, getHostExpr, { timeoutMs: 3_000 }) || "");
+      isGoogleDocs = host.endsWith("docs.google.com");
+    } catch {
+      isGoogleDocs = false;
+    }
+
+    const verifyNeedle = isGoogleDocs ? pickAgentTypeVerificationNeedle(value) : "";
+    let verifyWasAlreadyPresent = false;
+    if (isGoogleDocs && verifyNeedle) {
+      try {
+        const before = await cdpEvalValue(
+          sendToTarget,
+          sessionId,
+          buildAgentTypeVerifyExpression({ needle: verifyNeedle, elementId: id }),
+          { timeoutMs: 4_000 }
+        );
+        verifyWasAlreadyPresent = before === true;
+      } catch {
+        verifyWasAlreadyPresent = false;
+      }
+      if (!verifyWasAlreadyPresent) {
         try {
-          const proto = Object.getPrototypeOf(node);
-          const desc = proto ? Object.getOwnPropertyDescriptor(proto, 'value') : null;
-          if (desc && typeof desc.set === 'function') { desc.set.call(node, v); return true; }
-        } catch {}
-        try { node.value = v; return true; } catch {}
-        return false;
-      };
+          verifyWasAlreadyPresent = await cdpAxContainsText(sendToTarget, sessionId, verifyNeedle, { timeoutMs: 8_000, maxNodes: 2200 });
+        } catch {
+          verifyWasAlreadyPresent = false;
+        }
+      }
+    }
+
+    let needsInsertText = true;
+    if (id) {
+      const expr = `(() => {
+        const id = ${JSON.stringify(id)};
+        const text = ${JSON.stringify(value)};
+        const sel = '[data-sting-agent-id=\"' + id + '\"]';
+        const el = document.querySelector(sel);
+        if (!el) return { ok: false, error: 'Element not found: ' + id };
+        try { el.scrollIntoView({ block: 'center', inline: 'center' }); } catch {}
+        try { el.focus && el.focus(); } catch {}
+
+        const setValue = (node, v) => {
+          try {
+            const proto = Object.getPrototypeOf(node);
+            const desc = proto ? Object.getOwnPropertyDescriptor(proto, 'value') : null;
+            if (desc && typeof desc.set === 'function') { desc.set.call(node, v); return true; }
+          } catch {}
+          try { node.value = v; return true; } catch {}
+          return false;
+        };
+
+        try {
+          if (el.isContentEditable) {
+            el.textContent = text;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+            return { ok: true, usedDom: true };
+          }
+          if ('value' in el) {
+            if (!setValue(el, text)) return { ok: false, error: 'Failed to set value' };
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+            return { ok: true, usedDom: true };
+          }
+          return { ok: true, usedDom: false };
+        } catch (err) {
+          return { ok: false, error: String(err && err.message ? err.message : err) };
+        }
+      })()`;
+      const res = await cdpEvalValue(sendToTarget, sessionId, expr, { timeoutMs: 15_000 });
+      if (!res || res.ok !== true) throw new Error(String(res?.error || "Type failed"));
+      needsInsertText = res.usedDom !== true;
+    }
+
+    if (needsInsertText) {
+      const activeInfoExpr = `(() => {
+        try {
+          const el = document.activeElement;
+          if (!el) return { has: false };
+          const tag = String(el.tagName || "").toLowerCase();
+          const isBody = el === document.body;
+          const editable = Boolean(el.isContentEditable) || tag === "input" || tag === "textarea";
+          return { has: true, tag, isBody, editable };
+        } catch {
+          return { has: false };
+        }
+      })()`;
+
+      let shouldFocusBody = true;
+      try {
+        const info = await cdpEvalValue(sendToTarget, sessionId, activeInfoExpr, { timeoutMs: 2_000 });
+        if (info && info.has && info.isBody !== true) shouldFocusBody = false;
+      } catch {
+        shouldFocusBody = true;
+      }
 
       try {
-        if (el.isContentEditable) {
-          el.textContent = text;
-          el.dispatchEvent(new Event('input', { bubbles: true }));
-          el.dispatchEvent(new Event('change', { bubbles: true }));
-          return { ok: true };
-        }
-        if ('value' in el) {
-          if (!setValue(el, text)) return { ok: false, error: 'Failed to set value' };
-          el.dispatchEvent(new Event('input', { bubbles: true }));
-          el.dispatchEvent(new Event('change', { bubbles: true }));
-          return { ok: true };
-        }
-        return { ok: false, error: 'Element is not writable' };
-      } catch (err) {
-        return { ok: false, error: String(err && err.message ? err.message : err) };
+        await cdpEvalValue(
+          sendToTarget,
+          sessionId,
+          isGoogleDocs
+            ? "(() => { try { window.focus(); } catch {} return true; })()"
+            : shouldFocusBody
+              ? "(() => { try { window.focus(); } catch {} try { document.body && document.body.focus && document.body.focus(); } catch {} return true; })()"
+              : "(() => { try { window.focus(); } catch {} return true; })()",
+          { timeoutMs: 2_000 }
+        );
+      } catch {
       }
-    })()`;
-    const res = await cdpEvalValue(sendToTarget, sessionId, expr, { timeoutMs: 15_000 });
-    if (!res || res.ok !== true) throw new Error(String(res?.error || "Type failed"));
+
+      if (isGoogleDocs) {
+        const focusIframeExpr = `(() => {
+          try {
+            const iframe = document.querySelector('iframe.docs-texteventtarget-iframe');
+            if (!iframe) return { ok: false, error: 'Missing docs-texteventtarget-iframe' };
+            try { iframe.focus && iframe.focus(); } catch {}
+            try { iframe.contentWindow && iframe.contentWindow.focus && iframe.contentWindow.focus(); } catch {}
+            try {
+              const doc = iframe.contentDocument;
+              if (doc) {
+                let ae = null;
+                try { ae = doc.activeElement; } catch { ae = null; }
+                if (!ae || ae === doc.body) {
+                  let t = null;
+                  try { t = doc.querySelector('textarea, input, [contenteditable="true"]'); } catch { t = null; }
+                  if (t) { try { t.focus && t.focus(); } catch {} }
+                }
+              }
+            } catch {}
+            return { ok: true };
+          } catch (e) {
+            return { ok: false, error: String(e && e.message ? e.message : e) };
+          }
+        })()`;
+        try {
+          await cdpEvalValue(sendToTarget, sessionId, focusIframeExpr, { timeoutMs: 3_000 });
+        } catch {
+        }
+      }
+
+      try {
+        if (isGoogleDocs) {
+          const keyLogInitExpr = `(() => {
+            const getTop = () => { try { return window.top || window; } catch { return window; } };
+            const topWin = getTop();
+            try {
+              if (!topWin.__stingAgentKeyLog || typeof topWin.__stingAgentKeyLog !== 'object') {
+                topWin.__stingAgentKeyLog = { ts: 0, isTrusted: false, key: '', code: '' };
+              }
+            } catch {}
+
+            const install = (w) => {
+              try {
+                const doc = w && w.document ? w.document : null;
+                if (!doc) return;
+                if (doc.__stingAgentKeyListenerInstalled) return;
+                doc.__stingAgentKeyListenerInstalled = true;
+                doc.addEventListener('keydown', (e) => {
+                  try {
+                    topWin.__stingAgentKeyLog = {
+                      ts: Date.now(),
+                      isTrusted: Boolean(e && e.isTrusted),
+                      key: String(e && e.key ? e.key : ''),
+                      code: String(e && e.code ? e.code : '')
+                    };
+                  } catch {}
+                }, true);
+              } catch {}
+            };
+
+            try {
+              const seen = new Set();
+              const queue = [window];
+              while (queue.length && seen.size < 32) {
+                const w = queue.shift();
+                if (!w || seen.has(w)) continue;
+                seen.add(w);
+                install(w);
+                let frames = null;
+                try { frames = w.frames; } catch { frames = null; }
+                if (!frames) continue;
+                let len = 0;
+                try { len = Math.min(frames.length, 32); } catch { len = 0; }
+                for (let i = 0; i < len; i++) {
+                  try { queue.push(frames[i]); } catch {}
+                }
+              }
+            } catch {}
+
+            try { return Number(topWin.__stingAgentKeyLog && topWin.__stingAgentKeyLog.ts ? topWin.__stingAgentKeyLog.ts : 0) || 0; } catch { return 0; }
+          })()`;
+          const readKeyLogExpr = `(() => {
+            try {
+              const topWin = window.top || window;
+              const log = topWin && topWin.__stingAgentKeyLog;
+              return log && typeof log === 'object' ? log : null;
+            } catch {
+              const log = window.__stingAgentKeyLog;
+              return log && typeof log === 'object' ? log : null;
+            }
+          })()`;
+
+          let beforeKeyTs = 0;
+          try {
+            beforeKeyTs = Number(await cdpEvalValue(sendToTarget, sessionId, keyLogInitExpr, { timeoutMs: 4_000 })) || 0;
+          } catch {
+            beforeKeyTs = 0;
+          }
+
+          const typed = await cdpTypeText(sendToTarget, sessionId, value, { delayMs: 0, timeoutMs: 8_000 });
+          if (typed.usedKeyEvents) {
+            await delay(60);
+            const after = await cdpEvalValue(sendToTarget, sessionId, readKeyLogExpr, { timeoutMs: 4_000 });
+            const afterTs = Number(after?.ts) || 0;
+            const trusted = Boolean(after?.isTrusted);
+            if (afterTs <= beforeKeyTs || !trusted) {
+              throw new Error(
+                "Typing did not produce trusted key events. On Google Docs/Slides, click the exact editable canvas area first, then try again."
+              );
+            }
+          }
+        } else {
+          await sendToTarget(sessionId, "Input.insertText", { text: value }, { timeoutMs: 15_000 });
+        }
+      } catch (err) {
+        const fallbackExpr = `(() => {
+          const text = ${JSON.stringify(value)};
+          const el = document.activeElement;
+          if (!el) return { ok: false, error: 'No active element to type into' };
+          try {
+            if (el.isContentEditable) {
+              el.textContent = String(el.textContent || '') + text;
+              el.dispatchEvent(new Event('input', { bubbles: true }));
+              return { ok: true };
+            }
+            if ('value' in el) {
+              el.value = String(el.value || '') + text;
+              el.dispatchEvent(new Event('input', { bubbles: true }));
+              el.dispatchEvent(new Event('change', { bubbles: true }));
+              return { ok: true };
+            }
+          } catch {}
+          return { ok: false, error: 'Active element is not writable' };
+        })()`;
+        const res = await cdpEvalValue(sendToTarget, sessionId, fallbackExpr, { timeoutMs: 15_000 });
+        if (!res || res.ok !== true) throw new Error(String(res?.error || err?.message || err || "Type failed"));
+      }
+
+      if (isGoogleDocs && verifyNeedle && !verifyWasAlreadyPresent) {
+        await delay(120);
+        let ok = await waitForAgentTypeVerification(sendToTarget, sessionId, { needle: verifyNeedle, elementId: id, timeoutMs: 2_500 });
+        if (!ok) {
+          try {
+            ok = await cdpAxContainsText(sendToTarget, sessionId, verifyNeedle, { timeoutMs: 8_000, maxNodes: 2400 });
+          } catch {
+            ok = false;
+          }
+        }
+        if (!ok) {
+          try {
+            await cdpPressEnter(sendToTarget, sessionId, { timeoutMs: 8_000 });
+          } catch {
+          }
+          await delay(140);
+          try {
+            await cdpTypeText(sendToTarget, sessionId, value, { delayMs: 0, timeoutMs: 8_000 });
+          } catch {
+          }
+          await delay(140);
+          let retryOk = await waitForAgentTypeVerification(sendToTarget, sessionId, { needle: verifyNeedle, elementId: id, timeoutMs: 2_500 });
+          if (!retryOk) {
+            try {
+              retryOk = await cdpAxContainsText(sendToTarget, sessionId, verifyNeedle, { timeoutMs: 8_000, maxNodes: 2600 });
+            } catch {
+              retryOk = false;
+            }
+          }
+          if (!retryOk) {
+            throw new Error(
+              "Text was not detected after typing. On Google Docs/Slides, you may need to click the exact editable canvas/text box (sometimes double-click or press Enter) before typing."
+            );
+          }
+        }
+      }
+    }
+
     return { ok: true };
   });
 }
@@ -1342,6 +2439,11 @@ async function agentPress({ url, title, marker, key } = {}) {
     );
   }
   return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    try {
+      await sendToTarget(sessionId, "Page.bringToFront", {}, { timeoutMs: 4_000 });
+    } catch {
+    }
+
     const scrollStateExpr = `(() => {
       const se = document.scrollingElement || document.documentElement || document.body;
       return {
@@ -1361,21 +2463,195 @@ async function agentPress({ url, title, marker, key } = {}) {
     const isScrollKey = ["PageDown", "PageUp", "Home", "End", "Space"].includes(info.code);
     const beforeScroll = isScrollKey ? await cdpEvalValue(sendToTarget, sessionId, scrollStateExpr, { timeoutMs: 3_000 }) : null;
 
+    const keyLogInitExpr = `(() => {
+      const getTop = () => { try { return window.top || window; } catch { return window; } };
+      const topWin = getTop();
+      try {
+        if (!topWin.__stingAgentKeyLog || typeof topWin.__stingAgentKeyLog !== 'object') {
+          topWin.__stingAgentKeyLog = { ts: 0, isTrusted: false, key: '', code: '' };
+        }
+      } catch {}
+
+      const install = (w) => {
+        try {
+          const doc = w && w.document ? w.document : null;
+          if (!doc) return;
+          if (doc.__stingAgentKeyListenerInstalled) return;
+          doc.__stingAgentKeyListenerInstalled = true;
+          doc.addEventListener('keydown', (e) => {
+            try {
+              topWin.__stingAgentKeyLog = {
+                ts: Date.now(),
+                isTrusted: Boolean(e && e.isTrusted),
+                key: String(e && e.key ? e.key : ''),
+                code: String(e && e.code ? e.code : '')
+              };
+            } catch {}
+          }, true);
+        } catch {}
+      };
+
+      try {
+        const seen = new Set();
+        const queue = [window];
+        while (queue.length && seen.size < 32) {
+          const w = queue.shift();
+          if (!w || seen.has(w)) continue;
+          seen.add(w);
+          install(w);
+          let frames = null;
+          try { frames = w.frames; } catch { frames = null; }
+          if (!frames) continue;
+          let len = 0;
+          try { len = Math.min(frames.length, 32); } catch { len = 0; }
+          for (let i = 0; i < len; i++) {
+            try { queue.push(frames[i]); } catch {}
+          }
+        }
+      } catch {}
+
+      try { return Number(topWin.__stingAgentKeyLog && topWin.__stingAgentKeyLog.ts ? topWin.__stingAgentKeyLog.ts : 0) || 0; } catch { return 0; }
+    })()`;
+    const readKeyLogExpr = `(() => {
+      try {
+        const topWin = window.top || window;
+        const log = topWin && topWin.__stingAgentKeyLog;
+        return log && typeof log === 'object' ? log : null;
+      } catch {
+        const log = window.__stingAgentKeyLog;
+        return log && typeof log === 'object' ? log : null;
+      }
+    })()`;
+    const getHostExpr = "(() => String(location && location.hostname ? location.hostname : ''))()";
+
+    const keyProducedEvent = async () => {
+      try {
+        const log = await cdpEvalValue(sendToTarget, sessionId, readKeyLogExpr, { timeoutMs: 4_000 });
+        const ts = Number(log?.ts) || 0;
+        return { ts, isTrusted: Boolean(log?.isTrusted), key: String(log?.key || ""), code: String(log?.code || "") };
+      } catch {
+        return { ts: 0, isTrusted: false, key: "", code: "" };
+      }
+    };
+
+    const isGoogleDocsHost = async () => {
+      try {
+        const host = String(await cdpEvalValue(sendToTarget, sessionId, getHostExpr, { timeoutMs: 3_000 }) || "");
+        return host.endsWith("docs.google.com");
+      } catch {
+        return false;
+      }
+    };
+
+    let beforeKeyTs = 0;
+    try {
+      beforeKeyTs = Number(await cdpEvalValue(sendToTarget, sessionId, keyLogInitExpr, { timeoutMs: 4_000 })) || 0;
+    } catch {
+      beforeKeyTs = 0;
+    }
+
+    const isDocs = await isGoogleDocsHost();
+
     try {
       await cdpEvalValue(
         sendToTarget,
         sessionId,
-        "(() => { try { window.focus(); } catch {} try { document.body && document.body.focus && document.body.focus(); } catch {} return true; })()",
+        isDocs
+          ? "(() => { try { window.focus(); } catch {} return true; })()"
+          : "(() => { try { window.focus(); } catch {} try { document.body && document.body.focus && document.body.focus(); } catch {} return true; })()",
         { timeoutMs: 2_000 }
       );
     } catch {
     }
 
+    if (isDocs) {
+      try {
+        await cdpEvalValue(
+          sendToTarget,
+          sessionId,
+          "(() => { try { const f = document.querySelector('iframe.docs-texteventtarget-iframe'); if (f) { try { f.focus && f.focus(); } catch {} try { f.contentWindow && f.contentWindow.focus && f.contentWindow.focus(); } catch {} } } catch {} return true; })()",
+          { timeoutMs: 2_000 }
+        );
+      } catch {
+      }
+    }
+
+    let usedTrustedInput = true;
     try {
       await sendToTarget(sessionId, "Input.dispatchKeyEvent", { type: "rawKeyDown", ...base }, { timeoutMs: 8_000 });
       await sendToTarget(sessionId, "Input.dispatchKeyEvent", { type: "keyUp", ...base }, { timeoutMs: 8_000 });
-    } catch {
-      // Some CDP targets (e.g. webview) may ignore Input events; scroll fallback below.
+    } catch (err) {
+      usedTrustedInput = false;
+      const fallbackExpr = `(() => {
+        const key = ${JSON.stringify(info.key)};
+        const code = ${JSON.stringify(info.code)};
+        try {
+          const target = document.activeElement || document;
+          target.dispatchEvent(new KeyboardEvent('keydown', { key, code, bubbles: true, cancelable: true }));
+          target.dispatchEvent(new KeyboardEvent('keyup', { key, code, bubbles: true, cancelable: true }));
+          return { ok: true };
+        } catch (e) {
+          return { ok: false, error: String(e && e.message ? e.message : e) };
+        }
+      })()`;
+      try {
+        const res = await cdpEvalValue(sendToTarget, sessionId, fallbackExpr, { timeoutMs: 8_000 });
+        if (!res || res.ok !== true) throw new Error(String(res?.error || "Key event failed"));
+      } catch {
+      }
+      await delay(60);
+      const after = await keyProducedEvent();
+      if (after.ts <= beforeKeyTs && !isScrollKey) throw new Error(String(err?.message || err || "Key press failed"));
+    }
+
+    if (isDocs && !isScrollKey) {
+      await delay(60);
+      const after = await keyProducedEvent();
+      const observed = after.ts > beforeKeyTs;
+      const matchesKey = String(after.key || "") === info.key && String(after.code || "") === info.code;
+      const isTrusted = Boolean(after.isTrusted);
+
+      if (!observed || !matchesKey) {
+        try {
+          const focusIframeExpr = `(() => {
+            try {
+              const iframe = document.querySelector('iframe.docs-texteventtarget-iframe');
+              if (iframe) {
+                try { iframe.focus && iframe.focus(); } catch {}
+                try { iframe.contentWindow && iframe.contentWindow.focus && iframe.contentWindow.focus(); } catch {}
+              }
+            } catch {}
+            return true;
+          })()`;
+          await cdpEvalValue(sendToTarget, sessionId, focusIframeExpr, { timeoutMs: 2_000 });
+        } catch {
+        }
+
+        const retryBeforeTs = Math.max(beforeKeyTs, Number(after.ts) || 0);
+        try {
+          await sendToTarget(sessionId, "Input.dispatchKeyEvent", { type: "rawKeyDown", ...base }, { timeoutMs: 8_000 });
+          await sendToTarget(sessionId, "Input.dispatchKeyEvent", { type: "keyUp", ...base }, { timeoutMs: 8_000 });
+        } catch (err) {
+          usedTrustedInput = false;
+          if (!isScrollKey) throw err;
+        }
+
+        await delay(80);
+        const afterRetry = await keyProducedEvent();
+        const observedRetry = afterRetry.ts > retryBeforeTs;
+        const matchesRetry = String(afterRetry.key || "") === info.key && String(afterRetry.code || "") === info.code;
+        const trustedRetry = Boolean(afterRetry.isTrusted);
+
+        if (observedRetry && matchesRetry && trustedRetry) {
+          // ok
+        } else if (!usedTrustedInput) {
+          throw new Error("Untrusted key event; Google Docs/Slides often ignores synthetic keypresses (CDP input may be blocked).");
+        } else if (observedRetry && matchesRetry && !trustedRetry) {
+          throw new Error("Untrusted key event; Google Docs/Slides often ignores synthetic keypresses (CDP input may be blocked).");
+        }
+      } else if (!usedTrustedInput || !isTrusted) {
+        throw new Error("Untrusted key event; Google Docs/Slides often ignores synthetic keypresses (CDP input may be blocked).");
+      }
     }
 
     if (isScrollKey) {
@@ -2572,6 +3848,24 @@ ipcMain.handle("agent:snapshot", async (_e, payload) => {
 ipcMain.handle("agent:click", async (_e, payload) => {
   try {
     await agentClick(payload || {});
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:hover", async (_e, payload) => {
+  try {
+    await agentHover(payload || {});
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:scroll", async (_e, payload) => {
+  try {
+    await agentScroll(payload || {});
     return { ok: true };
   } catch (err) {
     return { ok: false, error: String(err?.message || err) };

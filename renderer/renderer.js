@@ -5214,17 +5214,70 @@ function isBrowserAgentMode() {
 function parseJsonObjectFromText(text) {
   const raw = String(text ?? "").trim();
   if (!raw) return null;
+  const coerce = (value) => {
+    if (!value || typeof value !== "object") return null;
+    if (Array.isArray(value)) {
+      const first = value[0];
+      if (first && typeof first === "object" && !Array.isArray(first)) return first;
+      return null;
+    }
+    return value;
+  };
+
+  const extractFirstJsonValue = (source) => {
+    const s = String(source ?? "");
+    const start = s.search(/[{[]/);
+    if (start < 0) return null;
+    const stack = [];
+    let inString = false;
+    let escaped = false;
+    for (let i = start; i < s.length; i++) {
+      const ch = s[i];
+      if (inString) {
+        if (escaped) {
+          escaped = false;
+        } else if (ch === "\\") {
+          escaped = true;
+        } else if (ch === "\"") {
+          inString = false;
+        }
+        continue;
+      }
+      if (ch === "\"") {
+        inString = true;
+        continue;
+      }
+      if (ch === "{" || ch === "[") {
+        stack.push(ch);
+        continue;
+      }
+      if (ch === "}" || ch === "]") {
+        const open = stack.pop();
+        const ok = (open === "{" && ch === "}") || (open === "[" && ch === "]");
+        if (!ok) return null;
+        if (stack.length === 0) return s.slice(start, i + 1);
+      }
+    }
+    return null;
+  };
+
   try {
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? parsed : null;
+    return coerce(JSON.parse(raw));
   } catch {
   }
 
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
   if (fenced && fenced[1]) {
     try {
-      const parsed = JSON.parse(fenced[1]);
-      return parsed && typeof parsed === "object" ? parsed : null;
+      return coerce(JSON.parse(fenced[1]));
+    } catch {
+    }
+  }
+
+  const extracted = extractFirstJsonValue(raw);
+  if (extracted) {
+    try {
+      return coerce(JSON.parse(extracted));
     } catch {
     }
   }
@@ -5234,8 +5287,7 @@ function parseJsonObjectFromText(text) {
   if (first >= 0 && last > first) {
     const slice = raw.slice(first, last + 1);
     try {
-      const parsed = JSON.parse(slice);
-      return parsed && typeof parsed === "object" ? parsed : null;
+      return coerce(JSON.parse(slice));
     } catch {
     }
   }
@@ -5280,6 +5332,8 @@ function normalizeBrowserAgentToolName(tool) {
   if (!compact) return null;
   if (["snapshot", "observe", "inspect", "scan"].includes(compact)) return "snapshot";
   if (["click", "tap"].includes(compact)) return "click";
+  if (["hover", "mouseover", "mousemove", "move"].includes(compact)) return "hover";
+  if (["scroll", "wheel", "mousewheel", "scrollby", "scrollto"].includes(compact)) return "scroll";
   if (["type", "fill", "input", "setvalue"].includes(compact)) return "type";
   if (["press", "keypress", "key"].includes(compact)) return "press";
   if (["navigate", "goto", "open", "visit"].includes(compact)) return "navigate";
@@ -5305,14 +5359,21 @@ function inferBrowserAgentToolNameFromArgsObject(obj, rawText) {
   if (hasAny(["url", "toUrl", "href"])) return "navigate";
   if (hasAny(["state", "waitUntil", "wait_until"])) return "waitForLoad";
   if (hasAny(["key", "keys"])) return "press";
+  if (hasAny(["deltaY", "deltaX", "dy", "dx"])) return "scroll";
+  if ((get("x") && get("y")) || (get("clientX") && get("clientY"))) {
+    const raw = String(rawText || "");
+    if (/(hover|mouseover|mousemove|悬停|移到|停留)/i.test(raw)) return "hover";
+    return "click";
+  }
 
   const hasId = hasAny(["id", "elementId", "element_id", "selectorId"]);
   const hasText = hasAny(["text", "value"]);
-  if (hasId && hasText) return "type";
+  if (hasText) return "type";
 
   const raw = String(rawText || "");
   if (hasId) {
     if (/(type|fill|input|enter|paste|輸入|填入)/i.test(raw)) return "type";
+    if (/(hover|mouseover|mousemove|悬停|移到|停留)/i.test(raw)) return "hover";
     if (/(click|tap|點擊|點選|按一下|選擇)/i.test(raw)) return "click";
     return "click";
   }
@@ -5320,6 +5381,7 @@ function inferBrowserAgentToolNameFromArgsObject(obj, rawText) {
   if (keyCount === 0) return "snapshot";
 
   if (/(navigate|goto|go to|open|visit|前往|打開|開啟|進入)/i.test(raw)) return "navigate";
+  if (/(scroll|wheel|mousewheel|滾動|捲動|滑動)/i.test(raw)) return "scroll";
   if (/(wait|loading|networkidle|等待|載入)/i.test(raw)) return "waitForLoad";
   if (/(press|pagedown|page down|pgdn|enter|tab|按下|按鍵)/i.test(raw)) return "press";
   if (/(type|fill|input|輸入|填入)/i.test(raw)) return "type";
@@ -5332,11 +5394,57 @@ function normalizeBrowserAgentArgs(tool, args) {
   const raw = args && typeof args === "object" ? args : {};
   const out = { ...raw };
 
-  if (tool === "click" || tool === "type") {
+  if (tool === "click" || tool === "hover" || tool === "type") {
     if (out.id == null && out.elementId != null) out.id = out.elementId;
     if (out.id == null && out.element_id != null) out.id = out.element_id;
     if (out.id == null && out.selectorId != null) out.id = out.selectorId;
     out.id = String(out.id ?? "").trim();
+  }
+
+  if (tool === "click" || tool === "hover") {
+    if (out.x == null && out.clientX != null) out.x = out.clientX;
+    if (out.y == null && out.clientY != null) out.y = out.clientY;
+    const nx = out.x == null ? NaN : Number(out.x);
+    const ny = out.y == null ? NaN : Number(out.y);
+    if (Number.isFinite(nx) && Number.isFinite(ny)) {
+      out.x = nx;
+      out.y = ny;
+    } else {
+      delete out.x;
+      delete out.y;
+    }
+  }
+
+  if (tool === "click") {
+    if (out.count == null && out.clickCount != null) out.count = out.clickCount;
+    const n = out.count == null ? NaN : Number(out.count);
+    const c = Math.floor(n);
+    if (Number.isFinite(c) && c >= 1 && c <= 3) out.count = c;
+    else delete out.count;
+  }
+
+  if (tool === "scroll") {
+    if (out.deltaY == null && out.dy != null) out.deltaY = out.dy;
+    if (out.deltaX == null && out.dx != null) out.deltaX = out.dx;
+
+    const ndx = out.deltaX == null ? NaN : Number(out.deltaX);
+    const ndy = out.deltaY == null ? NaN : Number(out.deltaY);
+    if (Number.isFinite(ndx)) out.deltaX = ndx;
+    else delete out.deltaX;
+    if (Number.isFinite(ndy)) out.deltaY = ndy;
+    else delete out.deltaY;
+
+    if (out.x == null && out.clientX != null) out.x = out.clientX;
+    if (out.y == null && out.clientY != null) out.y = out.clientY;
+    const nx = out.x == null ? NaN : Number(out.x);
+    const ny = out.y == null ? NaN : Number(out.y);
+    if (Number.isFinite(nx) && Number.isFinite(ny)) {
+      out.x = nx;
+      out.y = ny;
+    } else {
+      delete out.x;
+      delete out.y;
+    }
   }
 
   if (tool === "type") {
@@ -5429,7 +5537,7 @@ function normalizeBrowserAgentAction(parsed, rawText) {
       ok: false,
       error:
         `Unknown tool: ${String(toolName || "").trim() || "(missing)"}.\n` +
-        `Expected one of: snapshot, click, type, press, navigate, waitForLoad.\n\n` +
+        `Expected one of: snapshot, click, hover, scroll, type, press, navigate, waitForLoad.\n\n` +
         `Raw response:\n${printable}`
     };
   }
@@ -5447,10 +5555,17 @@ function normalizeBrowserAgentAction(parsed, rawText) {
   }
 
   const normalizedArgs = normalizeBrowserAgentArgs(tool, args);
-  if (tool === "click" || tool === "type") {
-    if (!normalizedArgs.id) {
-      return { ok: false, error: `Missing element id for tool: ${tool}.` };
-    }
+  if (tool === "click" || tool === "hover") {
+    const hasId = Boolean(normalizedArgs.id);
+    const hasXY = Number.isFinite(normalizedArgs.x) && Number.isFinite(normalizedArgs.y);
+    if (!hasId && !hasXY) return { ok: false, error: `Missing element id (or x/y) for tool: ${tool}.` };
+  }
+  if (tool === "scroll") {
+    const dx = Number(normalizedArgs.deltaX);
+    const dy = Number(normalizedArgs.deltaY);
+    const hasDx = Number.isFinite(dx) && dx !== 0;
+    const hasDy = Number.isFinite(dy) && dy !== 0;
+    if (!hasDx && !hasDy) return { ok: false, error: "Missing deltaX/deltaY for tool: scroll." };
   }
   if (tool === "press") {
     if (!normalizedArgs.key) {
@@ -5479,6 +5594,9 @@ function buildBrowserAgentSystemPrompt() {
     "You are a browser automation agent running inside an Electron browser.",
     "You can control the currently active tab using tools (Playwright over CDP).",
     "Always respond with a single JSON object and nothing else (no Markdown).",
+    "On Google Docs/Slides (docs.google.com), entering edit mode can require a precise click; if typing doesn't apply, try click with count=2 (double-click) or click then press Enter before typing.",
+    "After performing an action, verify via the next snapshot that it actually worked before moving on (especially after type: confirm the intended text appears in snapshot.visibleText or snapshot.axText or in element text/value/aria-label).",
+    "Only return a final answer after verifying the task is complete in the latest snapshot; if something is missing, keep using tools to fix it.",
     `For the final answer, respond in ${lang}.`
   ].join("\n");
 }
@@ -5487,7 +5605,7 @@ function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
   const safeTask = String(task || "").trim();
   const snap = snapshot && typeof snapshot === "object" ? snapshot : {};
   const elements = Array.isArray(snap.elements) ? snap.elements : [];
-  const compactElements = elements.slice(0, 80).map((e) => ({
+  const compactElements = elements.slice(0, 120).map((e) => ({
     id: String(e?.id || ""),
     tag: String(e?.tag || ""),
     role: String(e?.role || ""),
@@ -5496,7 +5614,9 @@ function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
     placeholder: String(e?.placeholder || ""),
     name: String(e?.name || ""),
     type: String(e?.type || ""),
-    href: String(e?.href || "")
+    href: String(e?.href || ""),
+    value: String(e?.value || ""),
+    rect: e?.rect || null
   }));
 
   const history = Array.isArray(steps) ? steps.slice(-12) : [];
@@ -5512,6 +5632,7 @@ function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
         scroll: snap.scroll || null,
         viewport: snap.viewport || null,
         visibleText: String(snap.visibleText || ""),
+        axText: String(snap.axText || ""),
         elements: compactElements
       },
       null,
@@ -5524,6 +5645,13 @@ function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
     "TOOLS:",
     '- snapshot: {}',
     '- click: {"id":"<elementId>"}',
+    '- click: {"x":123,"y":456}',
+    '- click: {"x":123,"y":456,"count":2}',
+    '- hover: {"id":"<elementId>"}',
+    '- hover: {"x":123,"y":456}',
+    '- scroll: {"deltaY":600}',
+    '- scroll: {"deltaY":600,"x":123,"y":456}',
+    '- type: {"text":"..."}',
     '- type: {"id":"<elementId>","text":"..."}',
     '- press: {"key":"Enter|Tab|Escape|Backspace|Delete|PageUp|PageDown|Home|End|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|Space"}',
     '- navigate: {"url":"https://..."}',
@@ -5532,13 +5660,19 @@ function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
     "RESPONSE_SCHEMA (choose one):",
     '{"type":"tool","tool":"snapshot","args":{},"reason":"..."}',
     '{"type":"tool","tool":"click","args":{"id":"12"},"reason":"..."}',
+    '{"type":"tool","tool":"click","args":{"x":123,"y":456},"reason":"..."}',
+    '{"type":"tool","tool":"click","args":{"x":123,"y":456,"count":2},"reason":"..."}',
+    '{"type":"tool","tool":"hover","args":{"id":"12"},"reason":"..."}',
+    '{"type":"tool","tool":"hover","args":{"x":123,"y":456},"reason":"..."}',
+    '{"type":"tool","tool":"scroll","args":{"deltaY":600},"reason":"..."}',
+    '{"type":"tool","tool":"type","args":{"text":"hello"},"reason":"..."}',
     '{"type":"tool","tool":"type","args":{"id":"5","text":"hello"},"reason":"..."}',
     '{"type":"tool","tool":"press","args":{"key":"Enter"},"reason":"..."}',
     '{"type":"tool","tool":"navigate","args":{"url":"https://example.com"},"reason":"..."}',
     '{"type":"tool","tool":"waitForLoad","args":{"state":"networkidle"},"reason":"..."}',
     '{"type":"final","final":"..."}',
     "",
-    `RULES:\n- Output valid JSON only (a single object).\n- For tool steps, always output {"type":"tool","tool":"...","args":{...},"reason":"..."} (do NOT output only args like {"id":"23"}).\n- tool must be one of: snapshot | click | type | press | navigate | waitForLoad.\n- Use at most ${maxSteps} tool steps.\n- Prefer snapshot before interacting.\n- Use elementId from snapshot.\n- Avoid destructive actions unless clearly required by TASK.`
+    `RULES:\n- Output valid JSON only (a single object).\n- For tool steps, always output {"type":"tool","tool":"...","args":{...},"reason":"..."} (do NOT output only args like {"id":"23"}).\n- tool must be one of: snapshot | click | hover | scroll | type | press | navigate | waitForLoad.\n- Use at most ${maxSteps} tool steps.\n- Prefer snapshot before interacting.\n- click/hover can use elementId from snapshot OR viewport coordinates (x,y). click supports optional count (2 = double-click).\n- scroll uses deltaY (positive = down, negative = up); optional x/y sets the wheel point.\n- type can omit id to type into the currently focused element.\n- When verifying typed text, check snapshot.visibleText first; if it's missing (common on Google Slides), also check snapshot.axText and element ariaLabel/value.\n- On Google Docs/Slides (docs.google.com), prefer clicking the exact editable area (textbox/contenteditable or canvas coordinates) before typing; Tab/Enter focus may not work.\n- Avoid destructive actions unless clearly required by TASK.`
   ].join("\n");
 }
 
@@ -5781,8 +5915,78 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
         return;
       }
 
-      const rawActionText = String(aiRes.text ?? "");
-	      const parsed = parseJsonObjectFromText(rawActionText);
+	      let rawActionText = String(aiRes.text ?? "");
+	      let parsed = parseJsonObjectFromText(rawActionText);
+	      let normalized = null;
+
+	      const repairAgentJsonOnce = async (why) => {
+	        const reason = String(why || "invalid JSON").trim() || "invalid JSON";
+	        const assistantBad = truncateText(rawActionText, 1800);
+	        const fixInstruction = [
+	          "Your previous response was rejected because it was not a single valid JSON object.",
+	          `Reason: ${reason}`,
+	          "",
+	          "Return ONLY one JSON object (no extra text, no Markdown).",
+	          "If you intended multiple steps, return only the next immediate step as a tool call.",
+	          "Use one of:",
+	          '{"type":"tool","tool":"snapshot","args":{},"reason":"..."}',
+	          '{"type":"tool","tool":"click","args":{"id":"12"},"reason":"..."}',
+	          '{"type":"tool","tool":"click","args":{"x":123,"y":456,"count":2},"reason":"..."}',
+	          '{"type":"tool","tool":"hover","args":{"x":123,"y":456},"reason":"..."}',
+	          '{"type":"tool","tool":"scroll","args":{"deltaY":600},"reason":"..."}',
+	          '{"type":"tool","tool":"type","args":{"text":"..."},"reason":"..."}',
+	          '{"type":"tool","tool":"press","args":{"key":"Enter"},"reason":"..."}',
+	          '{"type":"tool","tool":"navigate","args":{"url":"https://..."},"reason":"..."}',
+	          '{"type":"tool","tool":"waitForLoad","args":{"state":"networkidle"},"reason":"..."}',
+	          '{"type":"final","final":"..."}',
+	          "",
+	          "PREVIOUS_INVALID_RESPONSE:",
+	          assistantBad
+	        ].join("\n");
+
+	        const repairRes = await window.aiBridge.generate({
+	          provider,
+	          model,
+	          baseUrl,
+	          format: "json",
+	          messages: [
+	            { role: "system", content: system },
+	            ...historyForAi,
+	            { role: "user", content: prompt },
+	            { role: "assistant", content: assistantBad },
+	            { role: "user", content: fixInstruction }
+	          ],
+	          prompt: fixInstruction
+	        });
+	        if (!repairRes?.ok) return null;
+	        agentDebugLog(`llm ${step} repair`, truncateText(repairRes.text, 1400));
+	        const nextText = String(repairRes.text ?? "");
+	        const nextParsed = parseJsonObjectFromText(nextText);
+	        if (!nextParsed) return null;
+	        return { text: nextText, parsed: nextParsed };
+	      };
+
+	      let repaired = false;
+	      if (!parsed) {
+	        const fixed = await repairAgentJsonOnce("invalid JSON");
+	        if (fixed) {
+	          repaired = true;
+	          rawActionText = fixed.text;
+	          parsed = fixed.parsed;
+	        }
+	      }
+	      if (parsed) {
+	        normalized = normalizeBrowserAgentAction(parsed, rawActionText);
+	        if (!normalized.ok && !repaired) {
+	          const fixed = await repairAgentJsonOnce(String(normalized.error || "invalid action"));
+	          if (fixed) {
+	            rawActionText = fixed.text;
+	            parsed = fixed.parsed;
+	            normalized = normalizeBrowserAgentAction(parsed, rawActionText);
+	          }
+	        }
+	      }
+
 	      if (!parsed) {
 	        const error = `Agent returned invalid JSON.\n\nRaw response:\n${truncateText(rawActionText, 900)}`;
 	        agentDebugLog(`action ${step} invalid`, { error });
@@ -5797,9 +6001,9 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
 	        updateStepsGroupMeta(steps.length, maxSteps);
 	        continue;
 	      }
-	      const normalized = normalizeBrowserAgentAction(parsed, rawActionText);
-	      if (!normalized.ok) {
-	        const error = String(normalized.error || "Agent returned invalid action");
+
+	      if (!normalized?.ok) {
+	        const error = String(normalized?.error || "Agent returned invalid action");
 	        agentDebugLog(`action ${step} invalid`, { parsed, error });
 	        steps.push({ step, tool: "(invalid)", args: parsed, reason: "", result: "error", error });
 	        createAiChatMessage({
@@ -5812,7 +6016,7 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
 	        updateStepsGroupMeta(steps.length, maxSteps);
 	        continue;
 	      }
-	      agentDebugLog(`action ${step}`, normalized);
+		      agentDebugLog(`action ${step}`, normalized);
 
 		      if (normalized.type === "final") {
 		        const finalText = String(normalized.final || "").trim();
@@ -5895,14 +6099,58 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
 		        continue;
 		      }
 
-	      let toolRes = { ok: true };
-	      if (tool === "click") {
+      let toolRes = { ok: true };
+      if (tool === "click") {
         const id = String(args.id || "").trim();
+        const x = Number.isFinite(args.x) ? args.x : null;
+        const y = Number.isFinite(args.y) ? args.y : null;
+        const hasXY = Number.isFinite(x) && Number.isFinite(y);
+        const count = Number.isFinite(args.count) ? args.count : undefined;
         if (id && snapshotElementIds.size && !snapshotElementIds.has(id)) {
           toolRes = { ok: false, error: `Invalid element id: ${id} (not in current snapshot).` };
         } else {
-          toolRes = await window.aiBridge.agentClick({ url: targetUrl, title: targetTitle, marker, elementId: id });
+          toolRes = await window.aiBridge.agentClick({
+            url: targetUrl,
+            title: targetTitle,
+            marker,
+            elementId: id,
+            clickCount: count,
+            x: hasXY ? x : undefined,
+            y: hasXY ? y : undefined
+          });
         }
+      } else if (tool === "hover") {
+        const id = String(args.id || "").trim();
+        const x = Number.isFinite(args.x) ? args.x : null;
+        const y = Number.isFinite(args.y) ? args.y : null;
+        const hasXY = Number.isFinite(x) && Number.isFinite(y);
+        if (id && snapshotElementIds.size && !snapshotElementIds.has(id)) {
+          toolRes = { ok: false, error: `Invalid element id: ${id} (not in current snapshot).` };
+        } else {
+          toolRes = await window.aiBridge.agentHover({
+            url: targetUrl,
+            title: targetTitle,
+            marker,
+            elementId: id,
+            x: hasXY ? x : undefined,
+            y: hasXY ? y : undefined
+          });
+        }
+      } else if (tool === "scroll") {
+        const deltaX = Number.isFinite(args.deltaX) && args.deltaX !== 0 ? args.deltaX : undefined;
+        const deltaY = Number.isFinite(args.deltaY) && args.deltaY !== 0 ? args.deltaY : undefined;
+        const x = Number.isFinite(args.x) ? args.x : null;
+        const y = Number.isFinite(args.y) ? args.y : null;
+        const hasXY = Number.isFinite(x) && Number.isFinite(y);
+        toolRes = await window.aiBridge.agentScroll({
+          url: targetUrl,
+          title: targetTitle,
+          marker,
+          deltaX,
+          deltaY,
+          x: hasXY ? x : undefined,
+          y: hasXY ? y : undefined
+        });
       } else if (tool === "type") {
         const id = String(args.id || "").trim();
         if (id && snapshotElementIds.size && !snapshotElementIds.has(id)) {

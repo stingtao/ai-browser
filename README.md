@@ -34,7 +34,7 @@ GitHub: https://github.com/stingtao/ai-browser
   - Safe Markdown rendering (sanitized HTML)
   - AI settings modal (provider/model/context mode)
   - Support for local Ollama models, Gemini API, and OpenAI-compatible APIs
-  - Experimental Browser Agent mode (Playwright): can navigate/click/type in the active tab (reuses your login session)
+  - Experimental Browser Agent mode (Playwright): can snapshot/navigate/click (incl. double-click)/hover/scroll/type/press in the active tab (reuses your login session)
   - Agent step trace UI (auto-collapses on completion; toggle to expand)
   - Agent max steps limit (configurable in AI settings)
   - Gemini API key manager with encryption support (save/update/clear) with validation
@@ -48,6 +48,7 @@ GitHub: https://github.com/stingtao/ai-browser
 - 🔎 **Find in Page**: Real-time highlight + match count refresh as you type
 - 🛑 **AI Stop UX**: Send button becomes Stop (in place) + in-chat “Generating…” indicator
 - 🎨 **App Icon**: New `assets/app-icon.svg` used for favicon + macOS Dock icon in dev
+- 🧭 **Browser Agent**: Hover/scroll tools + double-click support, auto-repair for invalid JSON tool outputs, and improved Google Docs/Slides typing verification (includes `snapshot.axText`)
 
 ### v0.1.0 - December 15, 2025
 - 🎙️ **Real-time Voice Input**: Added Gemini Live API integration for real-time speech-to-text
@@ -135,6 +136,11 @@ In AI settings → Agent → Mode, switch to `Browser agent (Playwright)`.
 - Runs a tool-using agent loop that can operate the current tab (so it can reuse your login state)
 - Uses Chromium CDP on `127.0.0.1` by default
 - Shows intermediate tool steps in a collapsible “Agent steps” trace (auto-collapses when finished)
+- Uses trusted CDP mouse/key input (better compatibility with apps like Google Docs/Slides than `element.click()`)
+- Tools: `snapshot`, `click` (id or x/y, optional `count=2` for double-click), `hover` (id or x/y), `scroll` (deltaY/deltaX), `type`, `press`, `navigate`, `waitForLoad`
+- `type` supports both element targeting and typing into the currently focused element (useful for canvas-style editors); on `docs.google.com` it uses trusted key events + post-typing verification (click the editable canvas area first; sometimes double-click or press Enter)
+- On `docs.google.com`, `snapshot` also includes `axText` (Accessibility tree excerpt) to help verify text in canvas-style editors like Google Slides.
+- If the model returns non-JSON (or extra text), the agent will ask once for a JSON-only retry instead of immediately failing with “Agent returned invalid JSON”.
 - `Max steps` is configurable in AI settings (prevents runaway loops)
 - Use the Stop button (Send → Stop) to cancel an in-flight agent run
 
@@ -208,6 +214,8 @@ Security note: CDP grants powerful control of the browser; keep it bound to loca
 
 ### Known Issues
 - Browser Agent mode is experimental and may have stability issues
+- On Google Slides/Docs, entering text-edit mode can still be finicky; try precise clicks, `click` with `count=2`, or `press` → `Enter` before `type`
+- Some models may output non-JSON in Agent mode; the app retries once, but persistent formatting issues can still interrupt runs
 - Voice input requires stable internet connection
 - Large page content may impact AI response performance
 
