@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, safeStorage, shell, Menu, nativeTheme } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, safeStorage, shell, Menu, nativeTheme, nativeImage } = require("electron");
 const os = require("os");
 const path = require("path");
 const fs = require("fs/promises");
@@ -185,6 +185,66 @@ function createWindow({ initialUrl } = {}) {
     win.loadFile(filePath);
   }
   return win;
+}
+
+const APP_ICON_SVG_PATH = path.join(__dirname, "assets", "app-icon.svg");
+
+async function renderSvgIconToNativeImage(svgPath, { size = 512 } = {}) {
+  try {
+    const targetPath = String(svgPath || "").trim();
+    if (!targetPath || !existsSync(targetPath)) return null;
+
+    const requestedSize = Math.max(16, Math.min(2048, Math.floor(Number(size) || 512)));
+    const svg = await fs.readFile(targetPath, "utf8");
+    const html = `<!doctype html><html><head><meta charset="utf-8" /><style>
+html,body{margin:0;padding:0;width:${requestedSize}px;height:${requestedSize}px;background:transparent;overflow:hidden;}
+svg{width:${requestedSize}px;height:${requestedSize}px;display:block;}
+</style></head><body>${svg}</body></html>`;
+
+    const win = new BrowserWindow({
+      width: requestedSize,
+      height: requestedSize,
+      show: false,
+      frame: false,
+      transparent: true,
+      backgroundColor: "#00000000",
+      paintWhenInitiallyHidden: true,
+      webPreferences: {
+        offscreen: true,
+        sandbox: false,
+        contextIsolation: true,
+        nodeIntegration: false
+      }
+    });
+
+    try {
+      await win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+      try {
+        await win.webContents.executeJavaScript("new Promise(requestAnimationFrame)", true);
+      } catch {
+      }
+      const img = await win.webContents.capturePage({ x: 0, y: 0, width: requestedSize, height: requestedSize });
+      if (!img || img.isEmpty()) return null;
+      return nativeImage.createFromBuffer(img.toPNG());
+    } finally {
+      try {
+        win.destroy();
+      } catch {
+      }
+    }
+  } catch {
+    return null;
+  }
+}
+
+async function trySetAppDockIcon() {
+  if (process.platform !== "darwin") return;
+  const img = await renderSvgIconToNativeImage(APP_ICON_SVG_PATH, { size: 512 });
+  if (!img || img.isEmpty()) return;
+  try {
+    app.dock.setIcon(img);
+  } catch {
+  }
 }
 
 function getActiveWindow() {
@@ -808,6 +868,7 @@ app.on("web-contents-created", (_event, contents) => {
 app.whenReady().then(async () => {
   const settings = await loadSettings();
   currentUiLanguage = resolveUiLanguage(settings?.browser?.language || getOsLocale());
+  await trySetAppDockIcon();
   createWindow();
   buildAppMenu();
   app.on("activate", () => {

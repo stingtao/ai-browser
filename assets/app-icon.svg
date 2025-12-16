@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="64" y1="64" x2="448" y2="448" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1220" />
+      <stop offset="1" stop-color="#312E81" />
+    </linearGradient>
+    <linearGradient id="accent" x1="168" y1="160" x2="360" y2="392" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FDE68A" />
+      <stop offset="1" stop-color="#F59E0B" />
+    </linearGradient>
+  </defs>
+
+  <rect x="40" y="40" width="432" height="432" rx="104" fill="url(#bg)" />
+
+  <rect
+    x="110"
+    y="136"
+    width="292"
+    height="260"
+    rx="44"
+    fill="#FFFFFF"
+    fill-opacity="0.06"
+    stroke="#FFFFFF"
+    stroke-opacity="0.14"
+    stroke-width="10"
+  />
+  <path d="M110 192H402" stroke="#FFFFFF" stroke-opacity="0.14" stroke-width="10" />
+
+  <circle cx="140" cy="164" r="8" fill="#F87171" />
+  <circle cx="164" cy="164" r="8" fill="#FBBF24" />
+  <circle cx="188" cy="164" r="8" fill="#34D399" />
+
+  <path
+    d="M196 246C196 216 223 196 256 196C294 196 316 214 316 238C316 266 292 276 260 284C226 292 200 306 200 336C200 366 226 386 262 386C296 386 322 366 322 338"
+    stroke="url(#accent)"
+    stroke-width="52"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path d="M346 318L382 302L364 338Z" fill="#F59E0B" />
+
+  <path d="M332 118V92M319 105H345" stroke="#22D3EE" stroke-width="18" stroke-linecap="round" />
+  <circle cx="356" cy="92" r="6" fill="#22D3EE" />
+</svg>

@@ -84,6 +84,7 @@ const UI_I18N = {
     "ai.prompts.shortcuts": "Prompt shortcuts",
     "ai.chat.placeholder": "Type a message…",
     "ai.chat.send": "Send",
+    "ai.chat.stop": "Stop",
     "ai.chat.sending": "Generating…",
     "ai.chat.copy": "Copy",
     "ai.chat.copied": "Copied",
@@ -343,6 +344,7 @@ const UI_I18N = {
     "ai.prompts.shortcuts": "Atajos de prompts",
     "ai.chat.placeholder": "Escribe un mensaje…",
     "ai.chat.send": "Enviar",
+    "ai.chat.stop": "Detener",
     "ai.chat.sending": "Generando…",
     "ai.chat.copy": "Copiar",
     "ai.chat.copied": "Copiado",
@@ -602,6 +604,7 @@ const UI_I18N = {
     "ai.prompts.shortcuts": "Prompt 快捷鍵",
 	    "ai.chat.placeholder": "輸入訊息…",
 	    "ai.chat.send": "送出",
+	    "ai.chat.stop": "停止",
 	    "ai.chat.sending": "生成中...",
 	    "ai.chat.copy": "複製",
 	    "ai.chat.copied": "已複製",
@@ -2167,6 +2170,42 @@ function createAiAgentStepsGroup({ meta, title }) {
   return { root, bubble, metaEl, detailsEl, summaryEl, titleEl, metaCountEl, listEl };
 }
 
+function normalizeAiPendingText(text) {
+  const raw = String(text ?? "").trim();
+  if (!raw) return raw;
+  return raw.replace(/[.…]+$/g, "").trim() || raw;
+}
+
+function setAiAssistantMessagePending(msg) {
+  if (!msg?.contentEl) return;
+  const base = normalizeAiPendingText(t("ai.chat.sending")) || t("ai.chat.sending");
+  msg.contentEl.className = "aiMsgText aiPending";
+  msg.contentEl.innerHTML = "";
+
+  const wrap = document.createElement("span");
+  wrap.className = "aiPendingInline";
+
+  const textEl = document.createElement("span");
+  textEl.className = "aiPendingText";
+  textEl.textContent = base;
+
+  const dots = document.createElement("span");
+  dots.className = "aiPendingDots";
+  dots.setAttribute("aria-hidden", "true");
+  for (let i = 0; i < 3; i++) {
+    const dot = document.createElement("span");
+    dot.textContent = ".";
+    dots.appendChild(dot);
+  }
+
+  wrap.append(textEl, dots);
+  msg.contentEl.appendChild(wrap);
+  try {
+    msg.root?.setAttribute?.("aria-busy", "true");
+  } catch {
+  }
+}
+
 function getTab(tabId) {
   return tabs.find((t) => t.id === tabId) ?? null;
 }
@@ -2205,7 +2244,9 @@ function requestFindInPage({ findNext = false, forward = true } = {}) {
   const webview = getActiveWebview();
   if (!tab || !webview || !findInput) return;
 
+  const prevQuery = String(tab.findQuery || "");
   const query = String(findInput.value || "").trim();
+  const queryChanged = query !== prevQuery;
   tab.findQuery = query;
 
   if (!query) {
@@ -2213,6 +2254,11 @@ function requestFindInPage({ findNext = false, forward = true } = {}) {
     resetFindInPageState(tab, { clearQuery: true });
     if (tab.id === activeTabId) updateFindMatchCountUi(tab);
     return;
+  }
+
+  if (!findNext && queryChanged) {
+    safeCall(() => webview.stopFindInPage("clearSelection"), null);
+    resetFindInPageState(tab, { clearQuery: false });
   }
 
   const requestId = safeCall(() => webview.findInPage(query, { forward, findNext }), null);
@@ -2988,7 +3034,8 @@ function attachWebviewEvents(tab) {
 	    const result = e?.result && typeof e.result === "object" ? e.result : e;
 	    const requestId = Number(result?.requestId);
 	    if (!Number.isFinite(requestId) || requestId <= 0) return;
-	    if (tab.findRequestId && requestId !== tab.findRequestId) return;
+	    if (tab.findRequestId && requestId < tab.findRequestId) return;
+	    if (requestId > tab.findRequestId) tab.findRequestId = requestId;
 	    tab.findActiveMatchOrdinal = Number(result?.activeMatchOrdinal || 0) || 0;
 	    tab.findMatches = Number(result?.matches || 0) || 0;
 	    if (tab.id === activeTabId) updateFindMatchCountUi(tab);
@@ -3205,7 +3252,7 @@ function renderPromptShortcuts() {
 
 function syncPromptShortcutsDisabledState() {
   if (!promptShortcuts) return;
-  const disabled = isSendingChat || !prompts.length;
+  const disabled = isSendingChat || isAgentRunning || !prompts.length;
   promptShortcuts.classList.toggle("disabled", disabled);
   for (const btn of Array.from(promptShortcuts.querySelectorAll(".promptShortcutBtn"))) {
     btn.disabled = disabled;
@@ -4248,24 +4295,31 @@ pullModelBtn.addEventListener("click", async () => {
 
 function setChatSending(sending) {
   isSendingChat = Boolean(sending);
-  chatSendBtn.disabled = isSendingChat;
-  chatInput.disabled = isSendingChat;
-  syncPromptShortcutsDisabledState();
-  chatSendBtn.textContent = isSendingChat ? t("ai.chat.sending") : t("ai.chat.send");
-  syncChatMicButtonState();
-  syncAiStopButtonState();
+  syncAiComposerUiState();
 }
 
 function setAgentRunning(running) {
   isAgentRunning = Boolean(running);
-  syncAiStopButtonState();
+  syncAiComposerUiState();
 }
 
 function syncAiStopButtonState() {
   if (!aiAgentStopBtn) return;
-  const visible = isSendingChat || isAgentRunning;
-  aiAgentStopBtn.classList.toggle("hidden", !visible);
-  aiAgentStopBtn.disabled = !visible;
+  aiAgentStopBtn.classList.add("hidden");
+  aiAgentStopBtn.disabled = true;
+}
+
+function syncAiComposerUiState() {
+  const busy = isSendingChat || isAgentRunning;
+  chatInput.disabled = busy;
+  chatSendBtn.disabled = false;
+  chatSendBtn.classList.toggle("stopMode", busy);
+  chatSendBtn.textContent = busy ? t("ai.chat.stop") : t("ai.chat.send");
+  chatSendBtn.title = busy ? t("ai.chat.stop") : t("ai.chat.send");
+  chatSendBtn.setAttribute("aria-label", chatSendBtn.title);
+  syncPromptShortcutsDisabledState();
+  syncChatMicButtonState();
+  syncAiStopButtonState();
 }
 
 function stopAgentRun() {
@@ -4286,20 +4340,24 @@ function stopChatRun() {
   const stoppedText = t("ai.chat.stopped");
   const stoppedMeta = `${t("ai.meta.assistant")} · ${t("ai.meta.stopped")}`;
 
-  const assistantMsg = run?.assistantMsg;
-  if (assistantMsg?.root?.isConnected) {
-    assistantMsg.metaEl.textContent = stoppedMeta;
-    assistantMsg.contentEl.className = "aiMsgText";
-    assistantMsg.contentEl.textContent = stoppedText;
-    try {
-      assistantMsg.root.dataset.copyText = stoppedText;
-    } catch {
-    }
-    try {
-      aiChatMessages.appendChild(assistantMsg.root);
-    } catch {
-    }
-  }
+	  const assistantMsg = run?.assistantMsg;
+	  if (assistantMsg?.root?.isConnected) {
+	    assistantMsg.metaEl.textContent = stoppedMeta;
+	    assistantMsg.contentEl.className = "aiMsgText";
+	    assistantMsg.contentEl.textContent = stoppedText;
+	    try {
+	      assistantMsg.root.dataset.copyText = stoppedText;
+	    } catch {
+	    }
+	    try {
+	      assistantMsg.root.removeAttribute("aria-busy");
+	    } catch {
+	    }
+	    try {
+	      aiChatMessages.appendChild(assistantMsg.root);
+	    } catch {
+	    }
+	  }
 
   const conv = run?.conversationRecord;
   if (conv && Array.isArray(conv.messages)) {
@@ -4332,16 +4390,20 @@ function stopAgentFlow() {
 
   const stoppedText = t("ai.agent.stopped");
   const stoppedMeta = `${t("ai.meta.assistant")} · Agent · ${t("ai.meta.stopped")}`;
-  const assistantMsg = run?.assistantMsg;
-  if (assistantMsg?.root?.isConnected) {
-    assistantMsg.metaEl.textContent = stoppedMeta;
-    assistantMsg.contentEl.className = "aiMsgText";
-    assistantMsg.contentEl.textContent = stoppedText;
-    try {
-      assistantMsg.root.dataset.copyText = stoppedText;
-    } catch {
-    }
-  }
+	  const assistantMsg = run?.assistantMsg;
+	  if (assistantMsg?.root?.isConnected) {
+	    assistantMsg.metaEl.textContent = stoppedMeta;
+	    assistantMsg.contentEl.className = "aiMsgText";
+	    assistantMsg.contentEl.textContent = stoppedText;
+	    try {
+	      assistantMsg.root.dataset.copyText = stoppedText;
+	    } catch {
+	    }
+	    try {
+	      assistantMsg.root.removeAttribute("aria-busy");
+	    } catch {
+	    }
+	  }
 
   const stepsGroup = run?.stepsGroup;
   if (stepsGroup?.root) {
@@ -4386,7 +4448,7 @@ aiAgentStopBtn?.addEventListener("click", stopAiFlow);
 
 function syncChatMicButtonState() {
   if (!chatMicBtn) return;
-  const disabled = isSendingChat && !isVoiceRecording && !isVoiceTranscribing;
+  const disabled = (isSendingChat || isAgentRunning) && !isVoiceRecording && !isVoiceTranscribing;
   chatMicBtn.disabled = disabled;
   chatMicBtn.classList.toggle("recording", isVoiceRecording);
   chatMicBtn.classList.toggle("busy", isVoiceTranscribing);
@@ -4976,6 +5038,7 @@ async function sendAiChatMessage({ displayText, buildUserMessage }) {
     meta: t("ai.meta.assistant"),
     text: t("ai.chat.sending")
   });
+  setAiAssistantMessagePending(assistantMsg);
   setChatSending(true);
 
   ensureActiveAiConversation();
@@ -5070,16 +5133,20 @@ async function sendAiChatMessage({ displayText, buildUserMessage }) {
           ? t("ai.meta.provider.gemini")
           : t("ai.meta.provider.openai");
     const assistantMeta = `${t("ai.meta.assistant")} · ${providerLabel} · ${model}`;
-    const assistantText = String(res.text ?? "").trim();
-    if (assistantMsg?.root?.isConnected) {
-      assistantMsg.metaEl.textContent = assistantMeta;
-      assistantMsg.contentEl.className = "aiMarkdown";
-      assistantMsg.contentEl.innerHTML = renderAiMarkdownToSanitizedHtml(assistantText);
-      try {
-        assistantMsg.root.dataset.copyText = assistantText;
-      } catch {
-      }
-    }
+	    const assistantText = String(res.text ?? "").trim();
+	    if (assistantMsg?.root?.isConnected) {
+	      assistantMsg.metaEl.textContent = assistantMeta;
+	      assistantMsg.contentEl.className = "aiMarkdown";
+	      assistantMsg.contentEl.innerHTML = renderAiMarkdownToSanitizedHtml(assistantText);
+	      try {
+	        assistantMsg.root.dataset.copyText = assistantText;
+	      } catch {
+	      }
+	      try {
+	        assistantMsg.root.removeAttribute("aria-busy");
+	      } catch {
+	      }
+	    }
     const doneAt = Date.now();
     if (conv && Array.isArray(conv.messages)) {
       conv.messages.push({
@@ -5104,16 +5171,20 @@ async function sendAiChatMessage({ displayText, buildUserMessage }) {
   } catch (err) {
     if (seq !== chatRunSeq) return;
     const message = String(err?.message || err);
-    const errorMeta = `${t("ai.meta.assistant")} · ${t("ai.meta.error")}`;
-    if (assistantMsg?.root?.isConnected) {
-      assistantMsg.metaEl.textContent = errorMeta;
-      assistantMsg.contentEl.className = "aiMsgText";
-      assistantMsg.contentEl.textContent = message;
-      try {
-        assistantMsg.root.dataset.copyText = message;
-      } catch {
-      }
-    }
+	    const errorMeta = `${t("ai.meta.assistant")} · ${t("ai.meta.error")}`;
+	    if (assistantMsg?.root?.isConnected) {
+	      assistantMsg.metaEl.textContent = errorMeta;
+	      assistantMsg.contentEl.className = "aiMsgText";
+	      assistantMsg.contentEl.textContent = message;
+	      try {
+	        assistantMsg.root.dataset.copyText = message;
+	      } catch {
+	      }
+	      try {
+	        assistantMsg.root.removeAttribute("aria-busy");
+	      } catch {
+	      }
+	    }
     if (conv && Array.isArray(conv.messages)) {
       const ts = Date.now();
       conv.messages.push({ role: "assistant", meta: errorMeta, content: message, ts, skipContext: true });
@@ -5500,6 +5571,7 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
     meta: t("ai.meta.assistant"),
     text: t("ai.chat.sending")
   });
+  setAiAssistantMessagePending(assistantMsg);
   setChatSending(true);
 
   ensureActiveAiConversation();
@@ -5564,21 +5636,25 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
     }
   };
 
-  const markStopped = () => {
-    if (run.uiStopped) return;
-    run.uiStopped = true;
-    assistantMsg.metaEl.textContent = `${t("ai.meta.assistant")} · Agent · ${t("ai.meta.stopped")}`;
-    assistantMsg.contentEl.className = "aiMsgText";
-    assistantMsg.contentEl.textContent = t("ai.agent.stopped");
-    try {
-      assistantMsg.root.dataset.copyText = t("ai.agent.stopped");
-    } catch {
-    }
-    if (assistantMsg.root?.isConnected) {
-      try {
-        aiChatMessages.appendChild(assistantMsg.root);
-      } catch {
-      }
+	  const markStopped = () => {
+	    if (run.uiStopped) return;
+	    run.uiStopped = true;
+	    assistantMsg.metaEl.textContent = `${t("ai.meta.assistant")} · Agent · ${t("ai.meta.stopped")}`;
+	    assistantMsg.contentEl.className = "aiMsgText";
+	    assistantMsg.contentEl.textContent = t("ai.agent.stopped");
+	    try {
+	      assistantMsg.root.dataset.copyText = t("ai.agent.stopped");
+	    } catch {
+	    }
+	    try {
+	      assistantMsg.root.removeAttribute("aria-busy");
+	    } catch {
+	    }
+	    if (assistantMsg.root?.isConnected) {
+	      try {
+	        aiChatMessages.appendChild(assistantMsg.root);
+	      } catch {
+	      }
     }
     finalizeStepsGroup();
   };
@@ -5747,19 +5823,23 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
 		              ? t("ai.meta.provider.gemini")
 		              : t("ai.meta.provider.openai");
 		        const assistantMeta = `${t("ai.meta.assistant")} · Agent · ${providerLabel} · ${model}`;
-		        if (assistantMsg?.root?.isConnected) {
-		          assistantMsg.metaEl.textContent = assistantMeta;
-		          assistantMsg.contentEl.className = "aiMarkdown";
-		          assistantMsg.contentEl.innerHTML = renderAiMarkdownToSanitizedHtml(finalText || "(no output)");
-		          try {
-		            assistantMsg.root.dataset.copyText = finalText || "";
-		          } catch {
-		          }
-		          try {
-		            aiChatMessages.appendChild(assistantMsg.root);
-		          } catch {
-		          }
-		        }
+			        if (assistantMsg?.root?.isConnected) {
+			          assistantMsg.metaEl.textContent = assistantMeta;
+			          assistantMsg.contentEl.className = "aiMarkdown";
+			          assistantMsg.contentEl.innerHTML = renderAiMarkdownToSanitizedHtml(finalText || "(no output)");
+			          try {
+			            assistantMsg.root.dataset.copyText = finalText || "";
+			          } catch {
+			          }
+			          try {
+			            assistantMsg.root.removeAttribute("aria-busy");
+			          } catch {
+			          }
+			          try {
+			            aiChatMessages.appendChild(assistantMsg.root);
+			          } catch {
+			          }
+			        }
 		        finalizeStepsGroup();
 		        updateStepsGroupMeta(steps.length, maxSteps);
 
@@ -5897,19 +5977,23 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
 		    }
 		    const message = String(err?.message || err);
 		    const errorMeta = `${t("ai.meta.assistant")} · ${t("ai.meta.error")}`;
-		    if (assistantMsg?.root?.isConnected) {
-		      assistantMsg.metaEl.textContent = errorMeta;
-		      assistantMsg.contentEl.className = "aiMsgText";
-		      assistantMsg.contentEl.textContent = message;
-		      try {
-		        assistantMsg.root.dataset.copyText = message;
-		      } catch {
-		      }
-		      try {
-		        aiChatMessages.appendChild(assistantMsg.root);
-		      } catch {
-		      }
-		    }
+			    if (assistantMsg?.root?.isConnected) {
+			      assistantMsg.metaEl.textContent = errorMeta;
+			      assistantMsg.contentEl.className = "aiMsgText";
+			      assistantMsg.contentEl.textContent = message;
+			      try {
+			        assistantMsg.root.dataset.copyText = message;
+			      } catch {
+			      }
+			      try {
+			        assistantMsg.root.removeAttribute("aria-busy");
+			      } catch {
+			      }
+			      try {
+			        aiChatMessages.appendChild(assistantMsg.root);
+			      } catch {
+			      }
+			    }
 		    finalizeStepsGroup();
 		    if (conv && Array.isArray(conv.messages)) {
 		      const ts = Date.now();
@@ -5953,7 +6037,13 @@ function sendChatFromInput() {
   });
 }
 
-chatSendBtn.addEventListener("click", sendChatFromInput);
+chatSendBtn.addEventListener("click", () => {
+  if (isSendingChat || isAgentRunning) {
+    stopAiFlow();
+    return;
+  }
+  sendChatFromInput();
+});
 chatMicBtn?.addEventListener("click", async () => {
   if (isVoiceRecording || isVoiceTranscribing) {
     stopVoiceRecording();

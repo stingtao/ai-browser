@@ -5,12 +5,14 @@
 
 A minimal, privacy-focused Electron-based browser with an integrated AI Assistant side panel. The assistant supports local models (Ollama), Gemini, and OpenAI-compatible APIs, designed to feel like a native part of the browser UI.
 
+GitHub: https://github.com/stingtao/ai-browser
+
 > **⚠️ Note**: This is a hobby project in active development. Not recommended for security-critical workflows.
 
 ## Features
 
 - Chrome-like layout: tabs, address bar, content area, status bar
-- Find in page (match count + next/prev): `Cmd/Ctrl+F`
+- Find in page (real-time highlight + match count + next/prev): `Cmd/Ctrl+F`
 - Browser Settings:
   - Theme: light / dark / system
   - Home page, search engine, startup behavior
@@ -26,7 +28,7 @@ A minimal, privacy-focused Electron-based browser with an integrated AI Assistan
   - Per-tab AI Assistant panel (open/close is independent per tab)
   - Per-tab chat conversations (history list is shared)
   - Chat-style conversation UI with conversation history
-  - Stop button to cancel an in-flight chat/agent run
+  - Send button turns into Stop to cancel an in-flight chat/agent run (with an in-chat “Generating…” indicator)
   - Real-time voice input with Gemini Live API (speech-to-text)
   - Prompt shortcuts + prompt manager (template placeholders: `{{content}}`, `{{title}}`, `{{url}}`)
   - Safe Markdown rendering (sanitized HTML)
@@ -38,8 +40,14 @@ A minimal, privacy-focused Electron-based browser with an integrated AI Assistan
   - Gemini API key manager with encryption support (save/update/clear) with validation
   - AI panel font size (5 levels)
   - Context modes: auto-selection, selection-only, or full page content
+- App icon: `assets/app-icon.svg` (used for the UI favicon + macOS Dock icon in dev)
 
 ## Recent Updates
+
+### Unreleased
+- 🔎 **Find in Page**: Real-time highlight + match count refresh as you type
+- 🛑 **AI Stop UX**: Send button becomes Stop (in place) + in-chat “Generating…” indicator
+- 🎨 **App Icon**: New `assets/app-icon.svg` used for favicon + macOS Dock icon in dev
 
 ### v0.1.0 - December 15, 2025
 - 🎙️ **Real-time Voice Input**: Added Gemini Live API integration for real-time speech-to-text
@@ -128,7 +136,7 @@ In AI settings → Agent → Mode, switch to `Browser agent (Playwright)`.
 - Uses Chromium CDP on `127.0.0.1` by default
 - Shows intermediate tool steps in a collapsible “Agent steps” trace (auto-collapses when finished)
 - `Max steps` is configurable in AI settings (prevents runaway loops)
-- Use the Stop button (`⏹`) to cancel an in-flight agent run
+- Use the Stop button (Send → Stop) to cancel an in-flight agent run
 
 Environment variables:
 
@@ -210,7 +218,7 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 ### Development Setup
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/your-username/sting_browser.git`
+2. Clone your fork: `git clone https://github.com/your-username/ai-browser.git`
 3. Install dependencies: `npm install`
 4. Start development: `npm start`
 
