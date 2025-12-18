@@ -5334,6 +5334,7 @@ function normalizeBrowserAgentToolName(tool) {
   if (["click", "tap"].includes(compact)) return "click";
   if (["hover", "mouseover", "mousemove", "move"].includes(compact)) return "hover";
   if (["scroll", "wheel", "mousewheel", "scrollby", "scrollto"].includes(compact)) return "scroll";
+  if (["filltext", "focusandtype", "clickandtype", "smarttype"].includes(compact)) return "fillText";
   if (["type", "fill", "input", "setvalue"].includes(compact)) return "type";
   if (["press", "keypress", "key"].includes(compact)) return "press";
   if (["navigate", "goto", "open", "visit"].includes(compact)) return "navigate";
@@ -5368,6 +5369,8 @@ function inferBrowserAgentToolNameFromArgsObject(obj, rawText) {
 
   const hasId = hasAny(["id", "elementId", "element_id", "selectorId"]);
   const hasText = hasAny(["text", "value"]);
+  const hasFillMeta = hasAny(["count", "clickCount", "enter", "pressEnter", "retries", "retry"]);
+  if (hasText && hasFillMeta) return "fillText";
   if (hasText) return "type";
 
   const raw = String(rawText || "");
@@ -5394,14 +5397,14 @@ function normalizeBrowserAgentArgs(tool, args) {
   const raw = args && typeof args === "object" ? args : {};
   const out = { ...raw };
 
-  if (tool === "click" || tool === "hover" || tool === "type") {
+  if (tool === "click" || tool === "hover" || tool === "type" || tool === "fillText") {
     if (out.id == null && out.elementId != null) out.id = out.elementId;
     if (out.id == null && out.element_id != null) out.id = out.element_id;
     if (out.id == null && out.selectorId != null) out.id = out.selectorId;
     out.id = String(out.id ?? "").trim();
   }
 
-  if (tool === "click" || tool === "hover") {
+  if (tool === "click" || tool === "hover" || tool === "fillText") {
     if (out.x == null && out.clientX != null) out.x = out.clientX;
     if (out.y == null && out.clientY != null) out.y = out.clientY;
     const nx = out.x == null ? NaN : Number(out.x);
@@ -5415,7 +5418,7 @@ function normalizeBrowserAgentArgs(tool, args) {
     }
   }
 
-  if (tool === "click") {
+  if (tool === "click" || tool === "fillText") {
     if (out.count == null && out.clickCount != null) out.count = out.clickCount;
     const n = out.count == null ? NaN : Number(out.count);
     const c = Math.floor(n);
@@ -5447,9 +5450,22 @@ function normalizeBrowserAgentArgs(tool, args) {
     }
   }
 
-  if (tool === "type") {
+  if (tool === "type" || tool === "fillText") {
     if (out.text == null && out.value != null) out.text = out.value;
     out.text = String(out.text ?? "");
+  }
+
+  if (tool === "fillText") {
+    if (out.enter == null && out.pressEnter != null) out.enter = out.pressEnter;
+    if (out.enter == null && out.enterKey != null) out.enter = out.enterKey;
+    if (out.enter != null) out.enter = Boolean(out.enter);
+    else delete out.enter;
+
+    if (out.retries == null && out.retry != null) out.retries = out.retry;
+    const n = out.retries == null ? NaN : Number(out.retries);
+    const r = Math.floor(n);
+    if (Number.isFinite(r) && r >= 0 && r <= 5) out.retries = r;
+    else delete out.retries;
   }
 
   if (tool === "press") {
@@ -5537,7 +5553,7 @@ function normalizeBrowserAgentAction(parsed, rawText) {
       ok: false,
       error:
         `Unknown tool: ${String(toolName || "").trim() || "(missing)"}.\n` +
-        `Expected one of: snapshot, click, hover, scroll, type, press, navigate, waitForLoad.\n\n` +
+        `Expected one of: snapshot, click, hover, scroll, type, fillText, press, navigate, waitForLoad.\n\n` +
         `Raw response:\n${printable}`
     };
   }
@@ -5577,6 +5593,12 @@ function normalizeBrowserAgentAction(parsed, rawText) {
       return { ok: false, error: "Missing url for tool: navigate." };
     }
   }
+  if (tool === "fillText") {
+    const hasId = Boolean(normalizedArgs.id);
+    const hasXY = Number.isFinite(normalizedArgs.x) && Number.isFinite(normalizedArgs.y);
+    if (!hasId && !hasXY) return { ok: false, error: "Missing element id (or x/y) for tool: fillText." };
+    if (!String(normalizedArgs.text || "")) return { ok: false, error: "Missing text for tool: fillText." };
+  }
 
   const reason = String(obj.reason || "").trim();
   return { ok: true, type: "tool", tool, args: normalizedArgs, reason };
@@ -5594,7 +5616,7 @@ function buildBrowserAgentSystemPrompt() {
     "You are a browser automation agent running inside an Electron browser.",
     "You can control the currently active tab using tools (Playwright over CDP).",
     "Always respond with a single JSON object and nothing else (no Markdown).",
-    "On Google Docs/Slides (docs.google.com), entering edit mode can require a precise click; if typing doesn't apply, try click with count=2 (double-click) or click then press Enter before typing.",
+    "On Google Docs/Slides (docs.google.com), entering edit mode can require a precise click; if typing doesn't apply, prefer fillText (macro) or try click with count=2 (double-click) or click then press Enter before typing.",
     "After performing an action, verify via the next snapshot that it actually worked before moving on (especially after type: confirm the intended text appears in snapshot.visibleText or snapshot.axText or in element text/value/aria-label).",
     "Only return a final answer after verifying the task is complete in the latest snapshot; if something is missing, keep using tools to fix it.",
     `For the final answer, respond in ${lang}.`
@@ -5651,6 +5673,9 @@ function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
     '- hover: {"x":123,"y":456}',
     '- scroll: {"deltaY":600}',
     '- scroll: {"deltaY":600,"x":123,"y":456}',
+    '- fillText: {"id":"<elementId>","text":"..."}',
+    '- fillText: {"x":123,"y":456,"text":"..."}',
+    '- fillText: {"id":"<elementId>","text":"...","count":2,"enter":true,"retries":2}',
     '- type: {"text":"..."}',
     '- type: {"id":"<elementId>","text":"..."}',
     '- press: {"key":"Enter|Tab|Escape|Backspace|Delete|PageUp|PageDown|Home|End|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|Space"}',
@@ -5665,6 +5690,8 @@ function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
     '{"type":"tool","tool":"hover","args":{"id":"12"},"reason":"..."}',
     '{"type":"tool","tool":"hover","args":{"x":123,"y":456},"reason":"..."}',
     '{"type":"tool","tool":"scroll","args":{"deltaY":600},"reason":"..."}',
+    '{"type":"tool","tool":"fillText","args":{"id":"5","text":"hello"},"reason":"..."}',
+    '{"type":"tool","tool":"fillText","args":{"x":123,"y":456,"text":"hello","count":2},"reason":"..."}',
     '{"type":"tool","tool":"type","args":{"text":"hello"},"reason":"..."}',
     '{"type":"tool","tool":"type","args":{"id":"5","text":"hello"},"reason":"..."}',
     '{"type":"tool","tool":"press","args":{"key":"Enter"},"reason":"..."}',
@@ -5672,7 +5699,7 @@ function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
     '{"type":"tool","tool":"waitForLoad","args":{"state":"networkidle"},"reason":"..."}',
     '{"type":"final","final":"..."}',
     "",
-    `RULES:\n- Output valid JSON only (a single object).\n- For tool steps, always output {"type":"tool","tool":"...","args":{...},"reason":"..."} (do NOT output only args like {"id":"23"}).\n- tool must be one of: snapshot | click | hover | scroll | type | press | navigate | waitForLoad.\n- Use at most ${maxSteps} tool steps.\n- Prefer snapshot before interacting.\n- click/hover can use elementId from snapshot OR viewport coordinates (x,y). click supports optional count (2 = double-click).\n- scroll uses deltaY (positive = down, negative = up); optional x/y sets the wheel point.\n- type can omit id to type into the currently focused element.\n- When verifying typed text, check snapshot.visibleText first; if it's missing (common on Google Slides), also check snapshot.axText and element ariaLabel/value.\n- On Google Docs/Slides (docs.google.com), prefer clicking the exact editable area (textbox/contenteditable or canvas coordinates) before typing; Tab/Enter focus may not work.\n- Avoid destructive actions unless clearly required by TASK.`
+    `RULES:\n- Output valid JSON only (a single object).\n- For tool steps, always output {"type":"tool","tool":"...","args":{...},"reason":"..."} (do NOT output only args like {"id":"23"}).\n- tool must be one of: snapshot | click | hover | scroll | fillText | type | press | navigate | waitForLoad.\n- Use at most ${maxSteps} tool steps.\n- Prefer snapshot before interacting.\n- click/hover can use elementId from snapshot OR viewport coordinates (x,y). click supports optional count (2 = double-click).\n- scroll uses deltaY (positive = down, negative = up); optional x/y sets the wheel point.\n- fillText is a macro: click (optional double-click/Enter/retries) + type; prefer it for finicky editors like Google Docs/Slides.\n- type can omit id to type into the currently focused element.\n- When verifying typed text, check snapshot.visibleText first; if it's missing (common on Google Slides), also check snapshot.axText and element ariaLabel/value.\n- On Google Docs/Slides (docs.google.com), prefer clicking the exact editable area (textbox/contenteditable or canvas coordinates) before typing; Tab/Enter focus may not work.\n- Avoid destructive actions unless clearly required by TASK.`
   ].join("\n");
 }
 
@@ -6100,6 +6127,7 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
 		      }
 
       let toolRes = { ok: true };
+      await ensureWebviewHasAgentMarker(webview, marker);
       if (tool === "click") {
         const id = String(args.id || "").trim();
         const x = Number.isFinite(args.x) ? args.x : null;
@@ -6151,6 +6179,32 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
           x: hasXY ? x : undefined,
           y: hasXY ? y : undefined
         });
+      } else if (tool === "fillText") {
+        const id = String(args.id || "").trim();
+        const x = Number.isFinite(args.x) ? args.x : null;
+        const y = Number.isFinite(args.y) ? args.y : null;
+        const hasXY = Number.isFinite(x) && Number.isFinite(y);
+        const count = Number.isFinite(args.count) ? args.count : undefined;
+        const enter = typeof args.enter === "boolean" ? args.enter : undefined;
+        const retries = Number.isFinite(args.retries) ? args.retries : undefined;
+        if (!String(args.text || "")) {
+          toolRes = { ok: false, error: "Missing text for tool: fillText." };
+        } else if (id && snapshotElementIds.size && !snapshotElementIds.has(id)) {
+          toolRes = { ok: false, error: `Invalid element id: ${id} (not in current snapshot).` };
+        } else {
+          toolRes = await window.aiBridge.agentFillText({
+            url: targetUrl,
+            title: targetTitle,
+            marker,
+            elementId: id,
+            x: hasXY ? x : undefined,
+            y: hasXY ? y : undefined,
+            clickCount: count,
+            text: args.text,
+            enter,
+            retries
+          });
+        }
       } else if (tool === "type") {
         const id = String(args.id || "").trim();
         if (id && snapshotElementIds.size && !snapshotElementIds.has(id)) {

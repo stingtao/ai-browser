@@ -894,6 +894,7 @@ const GEMINI_LIVE_AUDIO_MIME_TYPE = "audio/pcm;rate=16000";
 const GEMINI_LIVE_WS_ENDPOINT =
   "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
 const GEMINI_MODELS = [
+  "gemini-3-flash-preview",
   "gemini-2.5-pro",
   "gemini-2.5-flash",
   "gemini-2.5-flash-preview-09-2025",
@@ -1066,15 +1067,9 @@ async function findWebviewTargetInfo({ cdp, sendToTarget }, { marker, url, title
   const wantMarker = String(marker || "").trim();
 
   const byUrl = wantUrl ? webviews.filter((t) => String(t.url || "") === wantUrl) : [];
-  if (byUrl.length === 1) return byUrl[0];
-
-  if (wantTitle) {
-    const matchTitle = (byUrl.length ? byUrl : webviews).find((t) => String(t.title || "") === wantTitle);
-    if (matchTitle) return matchTitle;
-  }
 
   if (wantMarker) {
-    const toCheck = (byUrl.length ? byUrl : webviews).slice(0, 20);
+    const toCheck = (byUrl.length ? byUrl : webviews).slice(0, 40);
     for (const t of toCheck) {
       let sessionId = "";
       try {
@@ -1097,6 +1092,13 @@ async function findWebviewTargetInfo({ cdp, sendToTarget }, { marker, url, title
         }
       }
     }
+  }
+
+  if (byUrl.length === 1) return byUrl[0];
+
+  if (wantTitle) {
+    const matchTitle = (byUrl.length ? byUrl : webviews).find((t) => String(t.title || "") === wantTitle);
+    if (matchTitle) return matchTitle;
   }
 
   if (byUrl.length > 1) return byUrl[0];
@@ -1415,12 +1417,131 @@ async function agentClick({ url, title, marker, elementId, x, y, clickCount } = 
       const locateExpr = `(() => {
         const id = ${JSON.stringify(id)};
         const sel = '[data-sting-agent-id=\"' + id + '\"]';
-        const el = document.querySelector(sel);
-        if (!el) return { ok: false, error: 'Element not found: ' + id };
-        try { el.scrollIntoView({ block: 'center', inline: 'center' }); } catch {}
-        try { el.focus && el.focus(); } catch {}
+        const rootEl = document.querySelector(sel);
+        if (!rootEl) return { ok: false, error: 'Element not found: ' + id };
+
+        const clean = (s) => String(s || '').trim().toLowerCase();
+        const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+        const isDisabled = (el) => {
+          if (!el) return true;
+          try { if (el.disabled) return true; } catch {}
+          try {
+            const aria = clean(el.getAttribute && el.getAttribute('aria-disabled'));
+            if (aria === 'true') return true;
+          } catch {}
+          return false;
+        };
+
+        const isVisible = (el) => {
+          if (!el) return false;
+          try {
+            const style = window.getComputedStyle(el);
+            if (!style) return false;
+            if (style.visibility === 'hidden' || style.display === 'none') return false;
+            if (style.pointerEvents === 'none') return false;
+            const r = el.getBoundingClientRect();
+            if (!r || r.width < 2 || r.height < 2) return false;
+            return true;
+          } catch {
+            return false;
+          }
+        };
+
+        const clickability = (el) => {
+          if (!el) return 0;
+          if (!isVisible(el) || isDisabled(el)) return 0;
+          let score = 0;
+          const tag = clean(el.tagName);
+          const role = clean(el.getAttribute && el.getAttribute('role'));
+          const type = clean(el.getAttribute && el.getAttribute('type'));
+          const href = clean(tag === 'a' ? (el.getAttribute && el.getAttribute('href')) : '');
+          if (tag === 'button') score += 6;
+          if (tag === 'a' && href) score += 5;
+          if (tag === 'input' && (type === 'button' || type === 'submit' || type === 'image')) score += 6;
+          if (tag === 'input' || tag === 'textarea' || tag === 'select') score += 4;
+          if (tag === 'canvas') score += 5;
+          if (tag === 'iframe') score += 3;
+          if (role === 'button' || role === 'link' || role === 'textbox') score += 5;
+          try { if (el.isContentEditable) score += 6; } catch {}
+          try { if (el.hasAttribute && el.hasAttribute('onclick')) score += 3; } catch {}
+          try {
+            if (typeof el.onclick === 'function') score += 3;
+          } catch {}
+          try {
+            const cur = clean(window.getComputedStyle(el).cursor);
+            if (cur === 'pointer') score += 2;
+          } catch {}
+          return score;
+        };
+
+        const getRect = (el) => {
+          try { return el.getBoundingClientRect(); } catch { return null; }
+        };
+
+        const collectCandidates = (el) => {
+          const out = [];
+          const seen = new Set();
+          const add = (node) => {
+            try {
+              if (!node || node.nodeType !== 1) return;
+              if (seen.has(node)) return;
+              seen.add(node);
+              out.push(node);
+            } catch {}
+          };
+
+          // self + ancestors
+          let cur = el;
+          for (let i = 0; i < 8 && cur; i++) {
+            add(cur);
+            try { cur = cur.parentElement; } catch { cur = null; }
+          }
+
+          // clickable descendants
+          try {
+            const nodes = el.querySelectorAll('button,a[href],input,textarea,select,canvas,iframe,[role=\"button\"],[role=\"link\"],[role=\"textbox\"],[onclick],[contenteditable=\"true\"]');
+            let count = 0;
+            for (const n of nodes) {
+              add(n);
+              count++;
+              if (count >= 120) break;
+            }
+          } catch {}
+
+          return out;
+        };
+
+        const candidates = collectCandidates(rootEl);
+        const rootRect = getRect(rootEl);
+        const rootCx = (Number(rootRect?.left) || 0) + (Number(rootRect?.width) || 0) / 2;
+        const rootCy = (Number(rootRect?.top) || 0) + (Number(rootRect?.height) || 0) / 2;
+
+        let bestEl = rootEl;
+        let bestScore = clickability(rootEl);
+        let bestDist = Number.POSITIVE_INFINITY;
+        let bestArea = 0;
+
+        for (const cand of candidates) {
+          const c = clickability(cand);
+          if (c <= 0) continue;
+          const r = getRect(cand);
+          const area = Math.max(0, (Number(r?.width) || 0) * (Number(r?.height) || 0));
+          const cx = (Number(r?.left) || 0) + (Number(r?.width) || 0) / 2;
+          const cy = (Number(r?.top) || 0) + (Number(r?.height) || 0) / 2;
+          const dist = Math.abs(cx - rootCx) + Math.abs(cy - rootCy);
+          if (c > bestScore || (c === bestScore && dist < bestDist) || (c === bestScore && dist === bestDist && area > bestArea)) {
+            bestEl = cand;
+            bestScore = c;
+            bestDist = dist;
+            bestArea = area;
+          }
+        }
+
+        try { bestEl.scrollIntoView({ block: 'center', inline: 'center' }); } catch {}
+        try { bestEl.focus && bestEl.focus(); } catch {}
         let rect = null;
-        try { rect = el.getBoundingClientRect(); } catch { rect = null; }
+        try { rect = bestEl.getBoundingClientRect(); } catch { rect = null; }
         if (!rect) return { ok: false, error: 'Element has no bounding rect: ' + id };
         const vw = Number(window.innerWidth) || 0;
         const vh = Number(window.innerHeight) || 0;
@@ -1431,9 +1552,32 @@ async function agentClick({ url, title, marker, elementId, x, y, clickCount } = 
         if (right - left < 2 || bottom - top < 2) {
           return { ok: false, error: 'Element not interactable in viewport: ' + id, vw, vh };
         }
-        const x = Math.floor((left + right) / 2);
-        const y = Math.floor((top + bottom) / 2);
-        return { ok: true, x, y };
+        const cx = clamp(Math.floor((left + right) / 2), 0, Math.max(0, vw - 1));
+        const cy = clamp(Math.floor((top + bottom) / 2), 0, Math.max(0, vh - 1));
+
+        const xs = [
+          cx,
+          clamp(Math.floor(left + 2), 0, Math.max(0, vw - 1)),
+          clamp(Math.floor(right - 3), 0, Math.max(0, vw - 1))
+        ].filter((v, i, a) => a.indexOf(v) === i);
+
+        const ys = [
+          cy,
+          clamp(Math.floor(top + 2), 0, Math.max(0, vh - 1)),
+          clamp(Math.floor(bottom - 3), 0, Math.max(0, vh - 1))
+        ].filter((v, i, a) => a.indexOf(v) === i);
+
+        for (const x of xs) {
+          for (const y of ys) {
+            let hit = null;
+            try { hit = document.elementFromPoint(x, y); } catch { hit = null; }
+            if (hit && (bestEl === hit || (bestEl.contains && bestEl.contains(hit)))) {
+              return { ok: true, x, y };
+            }
+          }
+        }
+
+        return { ok: true, x: cx, y: cy };
       })()`;
 
       const loc = await cdpEvalValue(sendToTarget, sessionId, locateExpr, { timeoutMs: 15_000 });
@@ -1473,20 +1617,20 @@ async function agentClick({ url, title, marker, elementId, x, y, clickCount } = 
       await sendToTarget(
         sessionId,
         "Input.dispatchMouseEvent",
-        { type: "mouseMoved", x: clickX, y: clickY, button: "left", buttons: 0, clickCount: count },
+        { type: "mouseMoved", x: clickX, y: clickY, button: "none", buttons: 0, clickCount: count, pointerType: "mouse" },
         { timeoutMs: 8_000 }
       );
       for (let i = 1; i <= count; i++) {
         await sendToTarget(
           sessionId,
           "Input.dispatchMouseEvent",
-          { type: "mousePressed", x: clickX, y: clickY, button: "left", buttons: 1, clickCount: i },
+          { type: "mousePressed", x: clickX, y: clickY, button: "left", buttons: 1, clickCount: i, pointerType: "mouse" },
           { timeoutMs: 8_000 }
         );
         await sendToTarget(
           sessionId,
           "Input.dispatchMouseEvent",
-          { type: "mouseReleased", x: clickX, y: clickY, button: "left", buttons: 0, clickCount: i },
+          { type: "mouseReleased", x: clickX, y: clickY, button: "left", buttons: 0, clickCount: i, pointerType: "mouse" },
           { timeoutMs: 8_000 }
         );
         if (i < count) await delay(55);
@@ -1876,7 +2020,15 @@ function buildAgentTypeVerifyExpression({ needle, elementId } = {}) {
     };
     const needle = normalize(needleRaw);
     if (!needle) return true;
-    const contains = (s) => normalize(s).includes(needle);
+    const needleCompact = needle.replace(/\\s+/g, "");
+    const contains = (s) => {
+      const norm = normalize(s);
+      if (!norm) return false;
+      if (norm.includes(needle)) return true;
+      if (!needleCompact) return false;
+      const compact = norm.replace(/\\s+/g, "");
+      return compact.includes(needleCompact);
+    };
 
     const checkNode = (el) => {
       if (!el) return false;
@@ -2009,6 +2161,7 @@ function cdpAxNodeCandidateTexts(node) {
 async function cdpAxContainsText(sendToTarget, sessionId, needle, { timeoutMs = 8_000, maxNodes = 2500 } = {}) {
   const query = normalizeAgentSearchText(needle);
   if (!query) return true;
+  const queryCompact = query.replace(/\s+/g, "");
   try {
     await sendToTarget(sessionId, "Accessibility.enable", {}, { timeoutMs: 4_000 });
   } catch {
@@ -2030,7 +2183,9 @@ async function cdpAxContainsText(sendToTarget, sessionId, needle, { timeoutMs = 
     const texts = cdpAxNodeCandidateTexts(node);
     for (const text of texts) {
       if (!text) continue;
-      if (normalizeAgentSearchText(text).includes(query)) return true;
+      const norm = normalizeAgentSearchText(text);
+      if (norm.includes(query)) return true;
+      if (queryCompact && norm.replace(/\s+/g, "").includes(queryCompact)) return true;
     }
   }
   return false;
@@ -2393,6 +2548,330 @@ async function agentType({ url, title, marker, elementId, text } = {}) {
 
     return { ok: true };
   });
+}
+
+async function agentVerifyTextPresent({ url, title, marker, needle, elementId, isGoogleDocs } = {}) {
+  const query = String(needle || "").trim();
+  if (!query) return true;
+  const id = String(elementId || "").trim();
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    try {
+      const ok = await cdpEvalValue(
+        sendToTarget,
+        sessionId,
+        buildAgentTypeVerifyExpression({ needle: query, elementId: id }),
+        { timeoutMs: 5_000 }
+      );
+      if (ok === true) return true;
+    } catch {
+    }
+
+    if (isGoogleDocs) {
+      try {
+        return await cdpAxContainsText(sendToTarget, sessionId, query, { timeoutMs: 12_000, maxNodes: 12_000 });
+      } catch {
+        return false;
+      }
+    }
+
+    return false;
+  });
+}
+
+function clampAgentNumber(value, min, max) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return min;
+  return Math.max(min, Math.min(max, n));
+}
+
+function buildFillTextPointSequence({ primary, secondary, maxAttempts }) {
+  const points = [];
+  if (!primary && !secondary) return points;
+  const a = primary || secondary;
+  const b = secondary || primary || a;
+  for (let i = 0; i < maxAttempts; i++) {
+    const pick = Math.floor(i / 2) % 2 === 0 ? a : b;
+    points.push({ x: pick.x, y: pick.y });
+  }
+  return points;
+}
+
+function buildFillTextJitterSequence({ x, y, maxAttempts, vw, vh }) {
+  const baseX = Number(x);
+  const baseY = Number(y);
+  const maxX = Number.isFinite(Number(vw)) && Number(vw) > 0 ? Math.max(0, Number(vw) - 1) : Number.POSITIVE_INFINITY;
+  const maxY = Number.isFinite(Number(vh)) && Number(vh) > 0 ? Math.max(0, Number(vh) - 1) : Number.POSITIVE_INFINITY;
+  const offsets = [
+    [0, 0],
+    [3, 0],
+    [-3, 0],
+    [0, 3],
+    [0, -3],
+    [3, 3],
+    [-3, 3],
+    [3, -3],
+    [-3, -3]
+  ];
+  const points = [];
+  for (let i = 0; i < maxAttempts; i++) {
+    const [dx, dy] = offsets[i % offsets.length];
+    const px = clampAgentNumber(baseX + dx, 0, maxX);
+    const py = clampAgentNumber(baseY + dy, 0, maxY);
+    points.push({ x: px, y: py });
+  }
+  return points;
+}
+
+async function agentResolveGoogleDocsFillSurface({ url, title, marker, elementId } = {}) {
+  const id = String(elementId || "").trim();
+  if (!id) return null;
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    try {
+      await sendToTarget(sessionId, "Page.bringToFront", {}, { timeoutMs: 4_000 });
+    } catch {
+    }
+
+    const expr = `(() => {
+      const id = ${JSON.stringify(id)};
+      const clean = (s) => String(s || '').replace(/\\s+/g, ' ').trim();
+      const vw = Number(window.innerWidth) || 0;
+      const vh = Number(window.innerHeight) || 0;
+
+      const isVisible = (el) => {
+        try {
+          if (!el) return false;
+          const style = window.getComputedStyle(el);
+          if (!style) return false;
+          if (style.visibility === 'hidden' || style.display === 'none') return false;
+          const rect = el.getBoundingClientRect();
+          if (!rect || rect.width < 8 || rect.height < 8) return false;
+          if (rect.bottom < 0 || rect.right < 0) return false;
+          if (rect.top > vh || rect.left > vw) return false;
+          return true;
+        } catch {
+          return false;
+        }
+      };
+
+      const clampRect = (rect) => {
+        try {
+          if (!rect) return null;
+          const left = Math.max(0, Number(rect.left) || 0);
+          const right = Math.min(vw, Number(rect.right) || 0);
+          const top = Math.max(0, Number(rect.top) || 0);
+          const bottom = Math.min(vh, Number(rect.bottom) || 0);
+          const w = right - left;
+          const h = bottom - top;
+          if (w < 8 || h < 8) return null;
+          return { left, right, top, bottom, w, h, area: w * h };
+        } catch {
+          return null;
+        }
+      };
+
+      const describe = (el) => {
+        try {
+          const tag = String(el && el.tagName ? el.tagName : '').toLowerCase();
+          const role = clean(el && el.getAttribute ? el.getAttribute('role') : '');
+          const ariaLabel = clean(el && el.getAttribute ? el.getAttribute('aria-label') : '');
+          const text = clean(el && (el.innerText || el.textContent) ? (el.innerText || el.textContent) : '');
+          const isContentEditable = Boolean(el && el.isContentEditable);
+          const isTextLike = role === 'textbox' || isContentEditable || tag === 'input' || tag === 'textarea';
+          return { tag, role, ariaLabel, text, isContentEditable, isTextLike };
+        } catch {
+          return { tag: '', role: '', ariaLabel: '', text: '', isContentEditable: false, isTextLike: false };
+        }
+      };
+
+      let targetEl = null;
+      try { targetEl = document.querySelector('[data-sting-agent-id=\"' + id + '\"]'); } catch { targetEl = null; }
+      let targetMeta = targetEl ? describe(targetEl) : null;
+      let targetRect = null;
+      if (targetEl) {
+        try { targetEl.scrollIntoView({ block: 'center', inline: 'center' }); } catch {}
+        try { targetEl.focus && targetEl.focus(); } catch {}
+        try { targetRect = clampRect(targetEl.getBoundingClientRect()); } catch { targetRect = null; }
+      }
+
+      let bestCanvasRect = null;
+      let bestCanvasArea = 0;
+      try {
+        const canvases = document.querySelectorAll('canvas');
+        for (const c of canvases) {
+          if (!isVisible(c)) continue;
+          const r = clampRect(c.getBoundingClientRect());
+          if (!r) continue;
+          if (r.area > bestCanvasArea) {
+            bestCanvasArea = r.area;
+            bestCanvasRect = r;
+          }
+        }
+      } catch {
+        bestCanvasRect = null;
+      }
+
+      const isSidebarRect = (r) => {
+        if (!r) return false;
+        return r.w < vw * 0.22 && r.h > vh * 0.35;
+      };
+
+      const useTarget =
+        Boolean(targetRect) &&
+        Boolean(targetMeta) &&
+        (targetMeta.isTextLike || targetMeta.tag === 'canvas' || (!isSidebarRect(targetRect) && targetRect.w > vw * 0.28 && targetRect.h > vh * 0.28));
+
+      const useCanvas = Boolean(bestCanvasRect) && bestCanvasRect.w > vw * 0.28 && bestCanvasRect.h > vh * 0.28;
+
+      let chosen = null;
+      if (useTarget) {
+        chosen = { ...targetRect, ...targetMeta, source: 'target' };
+      } else if (useCanvas) {
+        chosen = { ...bestCanvasRect, tag: 'canvas', role: '', ariaLabel: '', text: '', isContentEditable: false, isTextLike: false, source: 'canvas' };
+      } else if (targetRect && targetMeta) {
+        chosen = { ...targetRect, ...targetMeta, source: 'target-weak' };
+      } else if (bestCanvasRect) {
+        chosen = { ...bestCanvasRect, tag: 'canvas', role: '', ariaLabel: '', text: '', isContentEditable: false, isTextLike: false, source: 'canvas-weak' };
+      }
+
+      return { vw, vh, chosen };
+    })()`;
+
+    try {
+      const res = await cdpEvalValue(sendToTarget, sessionId, expr, { timeoutMs: 12_000 });
+      if (!res || typeof res !== "object" || !res.chosen) return null;
+      return res;
+    } catch {
+      return null;
+    }
+  });
+}
+
+async function agentFillText({ url, title, marker, elementId, x, y, clickCount, text, enter, retries } = {}) {
+  const id = String(elementId || "").trim();
+  const value = String(text ?? "");
+  const hasCoords = Number.isFinite(Number(x)) && Number.isFinite(Number(y));
+  if (!id && !hasCoords) throw new Error("Missing elementId (or x/y)");
+  if (!value) throw new Error("Missing text");
+
+  let isGoogleDocs = false;
+  try {
+    const href = String(url || "");
+    const host = href && href.includes("://") ? new URL(href).hostname : "";
+    isGoogleDocs = host.endsWith("docs.google.com");
+  } catch {
+    isGoogleDocs = false;
+  }
+
+  const countRaw = Number(clickCount);
+  const preferredCount = Number.isFinite(countRaw) ? Math.max(1, Math.min(3, Math.floor(countRaw))) : isGoogleDocs ? 2 : 1;
+  const altCount = preferredCount === 1 ? 2 : 1;
+  const countOptions = [preferredCount, altCount].filter((v, i, a) => a.indexOf(v) === i);
+
+  const enterPref = enter == null ? null : Boolean(enter);
+  const enterOptions = enterPref == null ? (isGoogleDocs ? [false, true] : [false]) : [enterPref, false].filter((v, i, a) => a.indexOf(v) === i);
+  const strategies = [];
+  for (const c of countOptions) {
+    for (const e of enterOptions) strategies.push({ clickCount: c, enter: e });
+  }
+
+  const retriesRaw = Number(retries);
+  const extraAttempts = Number.isFinite(retriesRaw) ? Math.max(0, Math.min(5, Math.floor(retriesRaw))) : isGoogleDocs ? 3 : 1;
+  const maxAttempts = Math.max(1, 1 + extraAttempts);
+
+  const verifyNeedle = isGoogleDocs ? pickAgentTypeVerificationNeedle(value) : "";
+  const typedElementId = isGoogleDocs ? "" : id;
+
+  let docsSurface = null;
+  if (isGoogleDocs && !hasCoords && id) {
+    try {
+      docsSurface = await agentResolveGoogleDocsFillSurface({ url, title, marker, elementId: id });
+    } catch {
+      docsSurface = null;
+    }
+  }
+
+  const clickPoints = (() => {
+    if (!isGoogleDocs) return [];
+    const max = maxAttempts;
+    if (hasCoords) {
+      const viewport = docsSurface && typeof docsSurface === "object" ? docsSurface : null;
+      const vw = Number(viewport?.vw) || 0;
+      const vh = Number(viewport?.vh) || 0;
+      return buildFillTextJitterSequence({ x: Number(x), y: Number(y), maxAttempts: max, vw, vh });
+    }
+    const chosen = docsSurface && typeof docsSurface === "object" ? docsSurface.chosen : null;
+    if (!chosen || typeof chosen !== "object") return [];
+
+    const vw = Number(docsSurface.vw) || 0;
+    const vh = Number(docsSurface.vh) || 0;
+    const left = Number(chosen.left) || 0;
+    const top = Number(chosen.top) || 0;
+    const w = Math.max(0, Number(chosen.w) || 0);
+    const h = Math.max(0, Number(chosen.h) || 0);
+    if (!w || !h || !vw || !vh) return [];
+
+    const cx = clampAgentNumber(Math.floor(left + w / 2), 0, Math.max(0, vw - 1));
+    const cy = clampAgentNumber(Math.floor(top + h / 2), 0, Math.max(0, vh - 1));
+    const preferTop = chosen.tag === "canvas" || (h > vh * 0.45 && w > vw * 0.35 && chosen.isTextLike !== true);
+    const topYRaw = preferTop ? top + h * 0.22 : top + h * 0.35;
+    const topY = clampAgentNumber(Math.floor(topYRaw), 0, Math.max(0, vh - 1));
+    const primary = preferTop ? { x: cx, y: topY } : { x: cx, y: cy };
+    const secondary = { x: cx, y: cy };
+    return buildFillTextPointSequence({ primary, secondary, maxAttempts: max });
+  })();
+
+  let lastError = null;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const strat = strategies[Math.min(attempt, strategies.length - 1)];
+    try {
+      const point = clickPoints.length ? clickPoints[Math.min(attempt, clickPoints.length - 1)] : null;
+      await agentClick(
+        point
+          ? { url, title, marker, x: Number(point.x), y: Number(point.y), clickCount: strat.clickCount }
+          : {
+              url,
+              title,
+              marker,
+              elementId: id,
+              x: hasCoords ? Number(x) : undefined,
+              y: hasCoords ? Number(y) : undefined,
+              clickCount: strat.clickCount
+            }
+      );
+      if (isGoogleDocs) await delay(120);
+
+      if (strat.enter) {
+        try {
+          await agentPress({ url, title, marker, key: "Enter" });
+        } catch {
+        }
+        if (isGoogleDocs) await delay(120);
+      }
+
+      await agentType({ url, title, marker, elementId: typedElementId, text: value });
+      return { ok: true };
+    } catch (err) {
+      lastError = err;
+      if (isGoogleDocs && verifyNeedle) {
+        try {
+          const present = await agentVerifyTextPresent({
+            url,
+            title,
+            marker,
+            needle: verifyNeedle,
+            elementId: id,
+            isGoogleDocs: true
+          });
+          if (present) return { ok: true };
+        } catch {
+        }
+      }
+      await delay(180);
+    }
+  }
+
+  const msg = String(lastError?.message || lastError || "fillText failed");
+  throw new Error(`fillText failed after ${maxAttempts} attempt(s): ${msg}`);
 }
 
 function normalizePressKey(rawKey) {
@@ -3875,6 +4354,15 @@ ipcMain.handle("agent:scroll", async (_e, payload) => {
 ipcMain.handle("agent:type", async (_e, payload) => {
   try {
     await agentType(payload || {});
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:fillText", async (_e, payload) => {
+  try {
+    await agentFillText(payload || {});
     return { ok: true };
   } catch (err) {
     return { ok: false, error: String(err?.message || err) };
