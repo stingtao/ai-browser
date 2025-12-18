@@ -5331,14 +5331,24 @@ function normalizeBrowserAgentToolName(tool) {
   const compact = raw.toLowerCase().replace(/[^a-z]/g, "");
   if (!compact) return null;
   if (["snapshot", "observe", "inspect", "scan"].includes(compact)) return "snapshot";
+  if (["screenshot", "capturescreenshot", "screencap", "screen", "captureimage"].includes(compact)) return "screenshot";
+  if (["findelements", "findelement", "find", "query", "search", "locate"].includes(compact)) return "findElements";
+  if (["readelement", "getelement", "elementinfo", "elementdetails"].includes(compact)) return "readElement";
+  if (["scrollintoview", "bringintoview", "scrolltoelement"].includes(compact)) return "scrollIntoView";
   if (["click", "tap"].includes(compact)) return "click";
   if (["hover", "mouseover", "mousemove", "move"].includes(compact)) return "hover";
   if (["scroll", "wheel", "mousewheel", "scrollby", "scrollto"].includes(compact)) return "scroll";
   if (["filltext", "focusandtype", "clickandtype", "smarttype"].includes(compact)) return "fillText";
   if (["type", "fill", "input", "setvalue"].includes(compact)) return "type";
+  if (["hotkey", "shortcut", "keycombo", "keycombination"].includes(compact)) return "hotkey";
   if (["press", "keypress", "key"].includes(compact)) return "press";
   if (["navigate", "goto", "open", "visit"].includes(compact)) return "navigate";
+  if (["waitfor", "waitforselector", "waitfortext", "waitforurl", "waitcondition"].includes(compact)) return "waitFor";
   if (["wait", "waitforload", "waitfornavigation", "waituntil"].includes(compact)) return "waitForLoad";
+  if (["tablist", "listtabs", "tabs"].includes(compact)) return "tabList";
+  if (["tabactivate", "activatetab", "switchtab", "focustab"].includes(compact)) return "tabActivate";
+  if (["downloadswait", "downloadwait", "waitdownload", "waitfordownload"].includes(compact)) return "downloadsWait";
+  if (["uploadfile", "setinputfiles", "attachfile", "upload"].includes(compact)) return "uploadFile";
   return null;
 }
 
@@ -5359,8 +5369,13 @@ function inferBrowserAgentToolNameFromArgsObject(obj, rawText) {
 
   if (hasAny(["url", "toUrl", "href"])) return "navigate";
   if (hasAny(["state", "waitUntil", "wait_until"])) return "waitForLoad";
+  if (hasAny(["selector", "css", "querySelector", "urlIncludes", "timeoutMs", "timeout_ms"])) return "waitFor";
   if (hasAny(["key", "keys"])) return "press";
   if (hasAny(["deltaY", "deltaX", "dy", "dx"])) return "scroll";
+  if (hasAny(["fullPage", "full_page", "format", "mimeType"])) return "screenshot";
+  if (hasAny(["fields", "field"])) return "readElement";
+  if (hasAny(["paths", "path", "filePath", "file_path"])) return "uploadFile";
+  if (hasAny(["tabId", "tab_id", "tabIndex", "tab_index"])) return "tabActivate";
   if ((get("x") && get("y")) || (get("clientX") && get("clientY"))) {
     const raw = String(rawText || "");
     if (/(hover|mouseover|mousemove|悬停|移到|停留)/i.test(raw)) return "hover";
@@ -5397,7 +5412,16 @@ function normalizeBrowserAgentArgs(tool, args) {
   const raw = args && typeof args === "object" ? args : {};
   const out = { ...raw };
 
-  if (tool === "click" || tool === "hover" || tool === "type" || tool === "fillText") {
+  if (
+    tool === "click" ||
+    tool === "hover" ||
+    tool === "type" ||
+    tool === "fillText" ||
+    tool === "readElement" ||
+    tool === "scrollIntoView" ||
+    tool === "screenshot" ||
+    tool === "uploadFile"
+  ) {
     if (out.id == null && out.elementId != null) out.id = out.elementId;
     if (out.id == null && out.element_id != null) out.id = out.element_id;
     if (out.id == null && out.selectorId != null) out.id = out.selectorId;
@@ -5468,6 +5492,12 @@ function normalizeBrowserAgentArgs(tool, args) {
     else delete out.retries;
   }
 
+  if (tool === "hotkey") {
+    if (out.keys == null && out.combo != null) out.keys = out.combo;
+    if (out.keys == null && out.shortcut != null) out.keys = out.shortcut;
+    out.keys = String(out.keys ?? "").trim();
+  }
+
   if (tool === "press") {
     if (out.key == null && out.keys != null) out.key = out.keys;
     out.key = String(out.key ?? "").trim();
@@ -5479,10 +5509,85 @@ function normalizeBrowserAgentArgs(tool, args) {
     out.url = String(out.url ?? "").trim();
   }
 
+  if (tool === "findElements") {
+    if (out.text == null && out.query != null) out.text = out.query;
+    if (out.text == null && out.q != null) out.text = out.q;
+    out.text = String(out.text ?? "").trim();
+    out.selector = String(out.selector ?? out.css ?? "").trim();
+    out.role = String(out.role ?? "").trim();
+    out.tag = String(out.tag ?? "").trim();
+    const n = out.limit == null ? NaN : Number(out.limit);
+    const lim = Math.floor(n);
+    if (Number.isFinite(lim)) out.limit = lim;
+    else delete out.limit;
+  }
+
+  if (tool === "readElement") {
+    if (out.fields == null && out.field != null) out.fields = out.field;
+    if (typeof out.fields === "string") out.fields = [out.fields];
+    if (Array.isArray(out.fields)) {
+      out.fields = out.fields.map((f) => String(f || "").trim()).filter(Boolean).slice(0, 24);
+    } else {
+      delete out.fields;
+    }
+  }
+
+  if (tool === "screenshot") {
+    if (out.fullPage == null && out.full_page != null) out.fullPage = out.full_page;
+    if (out.fullPage != null) out.fullPage = Boolean(out.fullPage);
+    else delete out.fullPage;
+    out.format = String(out.format ?? "").trim();
+    if (!out.format) delete out.format;
+  }
+
+  if (tool === "waitFor") {
+    out.selector = String(out.selector ?? out.css ?? "").trim();
+    out.text = String(out.text ?? "").trim();
+    if (out.urlIncludes == null && out.url_contains != null) out.urlIncludes = out.url_contains;
+    out.urlIncludes = String(out.urlIncludes ?? "").trim();
+    const n = out.timeoutMs == null ? NaN : Number(out.timeoutMs);
+    const ms = Math.floor(n);
+    if (Number.isFinite(ms) && ms > 0) out.timeoutMs = ms;
+    else delete out.timeoutMs;
+  }
+
   if (tool === "waitForLoad") {
     if (out.state == null && out.waitUntil != null) out.state = out.waitUntil;
     if (out.state == null && out.wait_until != null) out.state = out.wait_until;
     out.state = String(out.state ?? "").trim();
+  }
+
+  if (tool === "tabActivate") {
+    if (out.tabId == null && out.tab_id != null) out.tabId = out.tab_id;
+    if (out.tabId == null && out.tabIndex != null) out.tabId = out.tabIndex;
+    const n = out.tabId == null ? NaN : Number(out.tabId);
+    if (Number.isFinite(n) && n > 0) out.tabId = Math.floor(n);
+    else out.tabId = String(out.tabId ?? "").trim();
+  }
+
+  if (tool === "downloadsWait") {
+    if (out.id == null && out.downloadId != null) out.id = out.downloadId;
+    out.id = String(out.id ?? "").trim();
+    const since = out.since == null ? NaN : Number(out.since);
+    if (Number.isFinite(since) && since >= 0) out.since = Math.floor(since);
+    else delete out.since;
+    out.state = String(out.state ?? "").trim();
+    const ms = out.timeoutMs == null ? NaN : Number(out.timeoutMs);
+    if (Number.isFinite(ms) && ms > 0) out.timeoutMs = Math.floor(ms);
+    else delete out.timeoutMs;
+  }
+
+  if (tool === "uploadFile") {
+    if (out.paths == null && out.files != null) out.paths = out.files;
+    if (out.paths == null && out.filePath != null) out.paths = [out.filePath];
+    if (out.paths == null && out.file_path != null) out.paths = [out.file_path];
+    if (out.paths == null && out.path != null) out.paths = [out.path];
+    if (typeof out.paths === "string") out.paths = [out.paths];
+    if (Array.isArray(out.paths)) {
+      out.paths = out.paths.map((p) => String(p || "").trim()).filter(Boolean).slice(0, 10);
+    } else {
+      delete out.paths;
+    }
   }
 
   return out;
@@ -5553,7 +5658,7 @@ function normalizeBrowserAgentAction(parsed, rawText) {
       ok: false,
       error:
         `Unknown tool: ${String(toolName || "").trim() || "(missing)"}.\n` +
-        `Expected one of: snapshot, click, hover, scroll, type, fillText, press, navigate, waitForLoad.\n\n` +
+        `Expected one of: snapshot, screenshot, findElements, readElement, scrollIntoView, click, hover, scroll, type, fillText, hotkey, press, navigate, waitFor, waitForLoad, tabList, tabActivate, downloadsWait, uploadFile.\n\n` +
         `Raw response:\n${printable}`
     };
   }
@@ -5571,6 +5676,17 @@ function normalizeBrowserAgentAction(parsed, rawText) {
   }
 
   const normalizedArgs = normalizeBrowserAgentArgs(tool, args);
+  if (tool === "findElements") {
+    if (!normalizedArgs.text && !normalizedArgs.selector && !normalizedArgs.role && !normalizedArgs.tag) {
+      return { ok: false, error: "Missing query/selector/role/tag for tool: findElements." };
+    }
+  }
+  if (tool === "readElement") {
+    if (!normalizedArgs.id) return { ok: false, error: "Missing element id for tool: readElement." };
+  }
+  if (tool === "scrollIntoView") {
+    if (!normalizedArgs.id) return { ok: false, error: "Missing element id for tool: scrollIntoView." };
+  }
   if (tool === "click" || tool === "hover") {
     const hasId = Boolean(normalizedArgs.id);
     const hasXY = Number.isFinite(normalizedArgs.x) && Number.isFinite(normalizedArgs.y);
@@ -5588,9 +5704,26 @@ function normalizeBrowserAgentAction(parsed, rawText) {
       return { ok: false, error: "Missing key for tool: press." };
     }
   }
+  if (tool === "hotkey") {
+    if (!normalizedArgs.keys) return { ok: false, error: "Missing keys for tool: hotkey." };
+  }
   if (tool === "navigate") {
     if (!normalizedArgs.url) {
       return { ok: false, error: "Missing url for tool: navigate." };
+    }
+  }
+  if (tool === "waitFor") {
+    if (!normalizedArgs.selector && !normalizedArgs.text && !normalizedArgs.urlIncludes) {
+      return { ok: false, error: "Missing selector/text/urlIncludes for tool: waitFor." };
+    }
+  }
+  if (tool === "tabActivate") {
+    if (!normalizedArgs.tabId) return { ok: false, error: "Missing tabId for tool: tabActivate." };
+  }
+  if (tool === "uploadFile") {
+    if (!normalizedArgs.id) return { ok: false, error: "Missing element id for tool: uploadFile." };
+    if (!Array.isArray(normalizedArgs.paths) || !normalizedArgs.paths.length) {
+      return { ok: false, error: "Missing paths for tool: uploadFile." };
     }
   }
   if (tool === "fillText") {
@@ -5616,6 +5749,7 @@ function buildBrowserAgentSystemPrompt() {
     "You are a browser automation agent running inside an Electron browser.",
     "You can control the currently active tab using tools (Playwright over CDP).",
     "Always respond with a single JSON object and nothing else (no Markdown).",
+    "Element ids (data-sting-agent-id) persist for this agent run, so you can reuse ids across steps (but still verify with snapshot when the page changes).",
     "On Google Docs/Slides (docs.google.com), entering edit mode can require a precise click; if typing doesn't apply, prefer fillText (macro) or try click with count=2 (double-click) or click then press Enter before typing.",
     "After performing an action, verify via the next snapshot that it actually worked before moving on (especially after type: confirm the intended text appears in snapshot.visibleText or snapshot.axText or in element text/value/aria-label).",
     "Only return a final answer after verifying the task is complete in the latest snapshot; if something is missing, keep using tools to fix it.",
@@ -5627,7 +5761,7 @@ function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
   const safeTask = String(task || "").trim();
   const snap = snapshot && typeof snapshot === "object" ? snapshot : {};
   const elements = Array.isArray(snap.elements) ? snap.elements : [];
-  const compactElements = elements.slice(0, 120).map((e) => ({
+  const compactElements = elements.slice(0, 160).map((e) => ({
     id: String(e?.id || ""),
     tag: String(e?.tag || ""),
     role: String(e?.role || ""),
@@ -5653,6 +5787,7 @@ function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
         title: String(snap.title || ""),
         scroll: snap.scroll || null,
         viewport: snap.viewport || null,
+        active: snap.active || null,
         visibleText: String(snap.visibleText || ""),
         axText: String(snap.axText || ""),
         elements: compactElements
@@ -5666,6 +5801,13 @@ function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
     "",
     "TOOLS:",
     '- snapshot: {}',
+    '- screenshot: {}',
+    '- screenshot: {"id":"<elementId>"}',
+    '- screenshot: {"fullPage":true}',
+    '- findElements: {"text":"...","limit":10}',
+    '- findElements: {"selector":"button[type=submit]"}',
+    '- readElement: {"id":"<elementId>","fields":["value","text","ariaLabel","rect","checked","disabled"]}',
+    '- scrollIntoView: {"id":"<elementId>"}',
     '- click: {"id":"<elementId>"}',
     '- click: {"x":123,"y":456}',
     '- click: {"x":123,"y":456,"count":2}',
@@ -5678,12 +5820,23 @@ function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
     '- fillText: {"id":"<elementId>","text":"...","count":2,"enter":true,"retries":2}',
     '- type: {"text":"..."}',
     '- type: {"id":"<elementId>","text":"..."}',
+    '- hotkey: {"keys":"Ctrl+L"}',
     '- press: {"key":"Enter|Tab|Escape|Backspace|Delete|PageUp|PageDown|Home|End|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|Space"}',
     '- navigate: {"url":"https://..."}',
+    '- waitFor: {"selector":"...","timeoutMs":15000}',
+    '- waitFor: {"text":"...","timeoutMs":15000}',
+    '- waitFor: {"urlIncludes":"...","timeoutMs":15000}',
     '- waitForLoad: {"state":"domcontentloaded|load|networkidle"}',
+    '- tabList: {}',
+    '- tabActivate: {"tabId":123}',
+    '- downloadsWait: {"since":1730000000000,"timeoutMs":30000}',
+    '- uploadFile: {"id":"<elementId>","paths":["/absolute/path/to/file"]}',
     "",
     "RESPONSE_SCHEMA (choose one):",
     '{"type":"tool","tool":"snapshot","args":{},"reason":"..."}',
+    '{"type":"tool","tool":"findElements","args":{"text":"login"},"reason":"..."}',
+    '{"type":"tool","tool":"readElement","args":{"id":"12","fields":["value"]},"reason":"..."}',
+    '{"type":"tool","tool":"scrollIntoView","args":{"id":"12"},"reason":"..."}',
     '{"type":"tool","tool":"click","args":{"id":"12"},"reason":"..."}',
     '{"type":"tool","tool":"click","args":{"x":123,"y":456},"reason":"..."}',
     '{"type":"tool","tool":"click","args":{"x":123,"y":456,"count":2},"reason":"..."}',
@@ -5694,12 +5847,14 @@ function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
     '{"type":"tool","tool":"fillText","args":{"x":123,"y":456,"text":"hello","count":2},"reason":"..."}',
     '{"type":"tool","tool":"type","args":{"text":"hello"},"reason":"..."}',
     '{"type":"tool","tool":"type","args":{"id":"5","text":"hello"},"reason":"..."}',
+    '{"type":"tool","tool":"hotkey","args":{"keys":"Ctrl+L"},"reason":"..."}',
     '{"type":"tool","tool":"press","args":{"key":"Enter"},"reason":"..."}',
     '{"type":"tool","tool":"navigate","args":{"url":"https://example.com"},"reason":"..."}',
+    '{"type":"tool","tool":"waitFor","args":{"selector":"button[type=submit]","timeoutMs":15000},"reason":"..."}',
     '{"type":"tool","tool":"waitForLoad","args":{"state":"networkidle"},"reason":"..."}',
     '{"type":"final","final":"..."}',
     "",
-    `RULES:\n- Output valid JSON only (a single object).\n- For tool steps, always output {"type":"tool","tool":"...","args":{...},"reason":"..."} (do NOT output only args like {"id":"23"}).\n- tool must be one of: snapshot | click | hover | scroll | fillText | type | press | navigate | waitForLoad.\n- Use at most ${maxSteps} tool steps.\n- Prefer snapshot before interacting.\n- click/hover can use elementId from snapshot OR viewport coordinates (x,y). click supports optional count (2 = double-click).\n- scroll uses deltaY (positive = down, negative = up); optional x/y sets the wheel point.\n- fillText is a macro: click (optional double-click/Enter/retries) + type; prefer it for finicky editors like Google Docs/Slides.\n- type can omit id to type into the currently focused element.\n- When verifying typed text, check snapshot.visibleText first; if it's missing (common on Google Slides), also check snapshot.axText and element ariaLabel/value.\n- On Google Docs/Slides (docs.google.com), prefer clicking the exact editable area (textbox/contenteditable or canvas coordinates) before typing; Tab/Enter focus may not work.\n- Avoid destructive actions unless clearly required by TASK.`
+    `RULES:\n- Output valid JSON only (a single object).\n- For tool steps, always output {"type":"tool","tool":"...","args":{...},"reason":"..."} (do NOT output only args like {"id":"23"}).\n- tool must be one of: snapshot | screenshot | findElements | readElement | scrollIntoView | click | hover | scroll | fillText | type | hotkey | press | navigate | waitFor | waitForLoad | tabList | tabActivate | downloadsWait | uploadFile.\n- Use at most ${maxSteps} tool steps.\n- Prefer snapshot before interacting.\n- click/hover can use elementId OR viewport coordinates (x,y). click supports optional count (2 = double-click).\n- scroll uses deltaY (positive = down, negative = up); optional x/y sets the wheel point.\n- fillText is a macro: click (optional double-click/Enter/retries) + type; prefer it for finicky editors like Google Docs/Slides.\n- type can omit id to type into the currently focused element.\n- waitFor is for dynamic SPA waits (selector/text/urlIncludes).\n- When verifying typed text, check snapshot.visibleText first; if it's missing (common on Google Slides), also check snapshot.axText and element ariaLabel/value.\n- On Google Docs/Slides (docs.google.com), prefer clicking the exact editable area (textbox/contenteditable or canvas coordinates) before typing; Tab/Enter focus may not work.\n- Avoid destructive actions unless clearly required by TASK.`
   ].join("\n");
 }
 
@@ -5709,9 +5864,159 @@ async function ensureWebviewHasAgentMarker(webview, marker) {
   const m = String(marker || "").trim();
   if (!m) return;
   try {
-    await wv.executeJavaScript(`window.__stingAgentMarker = ${JSON.stringify(m)}; true;`);
+    await wv.executeJavaScript(
+      `(() => {
+        const marker = ${JSON.stringify(m)};
+        try { window.__stingAgentMarker = marker; } catch {}
+        try {
+          if (window.__stingAgentIdSession !== marker) {
+            window.__stingAgentIdSession = marker;
+            window.__stingAgentNextId = 1;
+            try {
+              document
+                .querySelectorAll("[data-sting-agent-id]")
+                .forEach((el) => el.removeAttribute("data-sting-agent-id"));
+            } catch {}
+          }
+        } catch {}
+        return true;
+      })()`
+    );
   } catch {
   }
+}
+
+function compactAgentToolOutput(tool, toolRes) {
+  const res = toolRes && typeof toolRes === "object" ? toolRes : {};
+  const safeText = (value, maxLen = 180) => {
+    const text = String(value ?? "");
+    if (text.length <= maxLen) return text;
+    return `${text.slice(0, maxLen)}…`;
+  };
+  const pickRect = (rect) => {
+    if (!rect || typeof rect !== "object") return null;
+    const x = Number(rect.x);
+    const y = Number(rect.y);
+    const w = Number(rect.w ?? rect.width);
+    const h = Number(rect.h ?? rect.height);
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(w) || !Number.isFinite(h)) return null;
+    return { x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) };
+  };
+
+  if (tool === "click") {
+    const r = res.result && typeof res.result === "object" ? res.result : null;
+    if (!r) return null;
+    return {
+      x: Number.isFinite(r.x) ? r.x : undefined,
+      y: Number.isFinite(r.y) ? r.y : undefined,
+      clickCount: Number.isFinite(r.clickCount) ? r.clickCount : undefined,
+      usedTrustedInput: typeof r.usedTrustedInput === "boolean" ? r.usedTrustedInput : undefined
+    };
+  }
+  if (tool === "hover") {
+    const r = res.result && typeof res.result === "object" ? res.result : null;
+    if (!r) return null;
+    return { x: Number.isFinite(r.x) ? r.x : undefined, y: Number.isFinite(r.y) ? r.y : undefined };
+  }
+  if (tool === "scroll") {
+    const r = res.result && typeof res.result === "object" ? res.result : null;
+    if (!r) return null;
+    return r;
+  }
+  if (tool === "findElements") {
+    const matches = Array.isArray(res.matches) ? res.matches : [];
+    return {
+      count: matches.length,
+      matches: matches.slice(0, 8).map((m) => ({
+        id: String(m?.id || ""),
+        tag: String(m?.tag || ""),
+        role: String(m?.role || ""),
+        text: safeText(m?.text || ""),
+        ariaLabel: safeText(m?.ariaLabel || ""),
+        placeholder: safeText(m?.placeholder || ""),
+        rect: pickRect(m?.rect)
+      }))
+    };
+  }
+  if (tool === "readElement") {
+    const el = res.element && typeof res.element === "object" ? res.element : null;
+    if (!el) return null;
+    return {
+      id: String(el.id || ""),
+      tag: String(el.tag || ""),
+      role: String(el.role || ""),
+      ariaLabel: safeText(el.ariaLabel || ""),
+      placeholder: safeText(el.placeholder || ""),
+      name: safeText(el.name || ""),
+      type: safeText(el.type || ""),
+      value: safeText(el.value || "", 260),
+      text: safeText(el.text || "", 260),
+      checked: typeof el.checked === "boolean" ? el.checked : undefined,
+      disabled: typeof el.disabled === "boolean" ? el.disabled : undefined,
+      isContentEditable: typeof el.isContentEditable === "boolean" ? el.isContentEditable : undefined,
+      rect: pickRect(el.rect)
+    };
+  }
+  if (tool === "scrollIntoView") {
+    return { rect: pickRect(res.rect) };
+  }
+  if (tool === "screenshot") {
+    const s = res.screenshot && typeof res.screenshot === "object" ? res.screenshot : null;
+    if (!s) return null;
+    return { path: String(s.path || ""), mimeType: String(s.mimeType || "") };
+  }
+  if (tool === "uploadFile") {
+    return { filesCount: Number(res.filesCount) || 0 };
+  }
+  if (tool === "hotkey" || tool === "press" || tool === "type" || tool === "fillText" || tool === "navigate") {
+    const r = res.result && typeof res.result === "object" ? res.result : null;
+    return r || null;
+  }
+  if (tool === "waitForLoad" || tool === "waitFor") {
+    const r = res.result && typeof res.result === "object" ? res.result : null;
+    if (!r) return null;
+    const element = r.element && typeof r.element === "object" ? r.element : null;
+    return {
+      waitedMs: Number.isFinite(r.waitedMs) ? r.waitedMs : undefined,
+      quietMs: Number.isFinite(r.quietMs) ? r.quietMs : undefined,
+      url: safeText(r.url || "", 420),
+      element: element
+        ? {
+          id: String(element.id || ""),
+          tag: String(element.tag || ""),
+          role: String(element.role || ""),
+          ariaLabel: safeText(element.ariaLabel || ""),
+          text: safeText(element.text || ""),
+          rect: pickRect(element.rect)
+        }
+        : null
+    };
+  }
+  if (tool === "downloadsWait") {
+    const d = res.download && typeof res.download === "object" ? res.download : null;
+    if (!d) return null;
+    return {
+      id: String(d.id || ""),
+      filename: String(d.filename || ""),
+      state: String(d.state || ""),
+      savePath: String(d.savePath || "")
+    };
+  }
+  if (tool === "tabList") {
+    const tabs = Array.isArray(res.tabs) ? res.tabs : [];
+    return {
+      tabs: tabs.slice(0, 12).map((t) => ({
+        tabId: String(t?.tabId || ""),
+        title: safeText(t?.title || "", 120),
+        url: safeText(t?.url || "", 300),
+        isActive: Boolean(t?.isActive)
+      }))
+    };
+  }
+  if (tool === "tabActivate") {
+    return { tabId: String(res.tabId || "") };
+  }
+  return null;
 }
 
 async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
@@ -5724,7 +6029,6 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
 
   const tab = getActiveTab();
   const tabId = tab?.id || null;
-  const webview = tab?.webview || null;
 
   const userMsg = createAiChatMessage({ role: "user", meta: t("ai.meta.user"), text: shown });
   const assistantMsg = createAiChatMessage({
@@ -5835,7 +6139,7 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
       return;
     }
 
-    const ctx = await buildAiPageContext(webview);
+    const ctx = await buildAiPageContext();
     if (seq !== agentRunSeq || !isAgentRunning) {
       markStopped();
       return;
@@ -5881,10 +6185,11 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
     if (userMessageForHistory) userRecord.content = userMessageForHistory;
 
 		    const marker = `agent_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-	    const steps = [];
-	    const maxSteps = clampAgentMaxSteps(agentMaxStepsInput?.value);
-	    let targetUrl = String(ctx.pageUrl || "").trim();
-	    let targetTitle = String(ctx.pageTitle || "").trim();
+		    const steps = [];
+        const knownElementIds = new Set();
+		    const maxSteps = clampAgentMaxSteps(agentMaxStepsInput?.value);
+		    let targetUrl = String(ctx.pageUrl || "").trim();
+		    let targetTitle = String(ctx.pageTitle || "").trim();
 
 		    stepsGroup = createAiAgentStepsGroup({
 		      meta: `${t("ai.meta.assistant")} · Agent`,
@@ -5903,8 +6208,8 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
 	        return;
 	      }
 
-		      await ensureWebviewHasAgentMarker(webview, marker);
-		      const snapRes = await window.aiBridge.agentSnapshot({ url: targetUrl, title: targetTitle, marker });
+			      await ensureWebviewHasAgentMarker(null, marker);
+			      const snapRes = await window.aiBridge.agentSnapshot({ url: targetUrl, title: targetTitle, marker });
 	      if (!snapRes?.ok) throw new Error(snapRes?.error || "Failed to snapshot page");
       const snapshot = snapRes.snapshot || {};
       agentDebugLog(`snapshot ${step}`, {
@@ -5920,6 +6225,9 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
           .map((e) => String(e?.id || "").trim())
           .filter(Boolean)
       );
+      for (const id of snapshotElementIds) knownElementIds.add(id);
+      const activeId = String(snapshot?.active?.id || "").trim();
+      if (activeId) knownElementIds.add(activeId);
 
       const system = buildBrowserAgentSystemPrompt();
       const prompt = buildBrowserAgentUserPrompt({ task: agentTask, snapshot, steps, maxSteps });
@@ -5954,22 +6262,32 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
 	          `Reason: ${reason}`,
 	          "",
 	          "Return ONLY one JSON object (no extra text, no Markdown).",
-	          "If you intended multiple steps, return only the next immediate step as a tool call.",
-	          "Use one of:",
-	          '{"type":"tool","tool":"snapshot","args":{},"reason":"..."}',
-	          '{"type":"tool","tool":"click","args":{"id":"12"},"reason":"..."}',
-	          '{"type":"tool","tool":"click","args":{"x":123,"y":456,"count":2},"reason":"..."}',
-	          '{"type":"tool","tool":"hover","args":{"x":123,"y":456},"reason":"..."}',
-	          '{"type":"tool","tool":"scroll","args":{"deltaY":600},"reason":"..."}',
-	          '{"type":"tool","tool":"type","args":{"text":"..."},"reason":"..."}',
-	          '{"type":"tool","tool":"press","args":{"key":"Enter"},"reason":"..."}',
-	          '{"type":"tool","tool":"navigate","args":{"url":"https://..."},"reason":"..."}',
-	          '{"type":"tool","tool":"waitForLoad","args":{"state":"networkidle"},"reason":"..."}',
-	          '{"type":"final","final":"..."}',
-	          "",
-	          "PREVIOUS_INVALID_RESPONSE:",
-	          assistantBad
-	        ].join("\n");
+          "If you intended multiple steps, return only the next immediate step as a tool call.",
+          "Use one of:",
+          '{"type":"tool","tool":"snapshot","args":{},"reason":"..."}',
+          '{"type":"tool","tool":"findElements","args":{"text":"login"},"reason":"..."}',
+          '{"type":"tool","tool":"readElement","args":{"id":"12","fields":["value"]},"reason":"..."}',
+          '{"type":"tool","tool":"scrollIntoView","args":{"id":"12"},"reason":"..."}',
+          '{"type":"tool","tool":"click","args":{"id":"12"},"reason":"..."}',
+          '{"type":"tool","tool":"click","args":{"x":123,"y":456,"count":2},"reason":"..."}',
+          '{"type":"tool","tool":"hover","args":{"x":123,"y":456},"reason":"..."}',
+          '{"type":"tool","tool":"scroll","args":{"deltaY":600},"reason":"..."}',
+          '{"type":"tool","tool":"fillText","args":{"id":"12","text":"hello"},"reason":"..."}',
+          '{"type":"tool","tool":"type","args":{"text":"..."},"reason":"..."}',
+          '{"type":"tool","tool":"hotkey","args":{"keys":"Ctrl+L"},"reason":"..."}',
+          '{"type":"tool","tool":"press","args":{"key":"Enter"},"reason":"..."}',
+          '{"type":"tool","tool":"navigate","args":{"url":"https://..."},"reason":"..."}',
+          '{"type":"tool","tool":"waitFor","args":{"selector":"button[type=submit]","timeoutMs":15000},"reason":"..."}',
+          '{"type":"tool","tool":"waitForLoad","args":{"state":"networkidle"},"reason":"..."}',
+          '{"type":"tool","tool":"tabList","args":{},"reason":"..."}',
+          '{"type":"tool","tool":"tabActivate","args":{"tabId":123},"reason":"..."}',
+          '{"type":"tool","tool":"downloadsWait","args":{"timeoutMs":30000},"reason":"..."}',
+          '{"type":"tool","tool":"uploadFile","args":{"id":"12","paths":["/absolute/path/to/file"]},"reason":"..."}',
+          '{"type":"final","final":"..."}',
+          "",
+          "PREVIOUS_INVALID_RESPONSE:",
+          assistantBad
+        ].join("\n");
 
 	        const repairRes = await window.aiBridge.generate({
 	          provider,
@@ -6127,15 +6445,119 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
 		      }
 
       let toolRes = { ok: true };
-      await ensureWebviewHasAgentMarker(webview, marker);
-      if (tool === "click") {
+      await ensureWebviewHasAgentMarker(null, marker);
+
+      if (tool === "tabList") {
+        const list = tabs
+          .slice(0, 20)
+          .map((t) => ({
+            tabId: String(t?.id || ""),
+            title: String(t?.title || ""),
+            url: String(t?.url || safeCall(() => t?.webview?.getURL?.(), "") || ""),
+            isActive: Boolean(t?.id && t.id === activeTabId)
+          }))
+          .filter((t) => t.tabId);
+        toolRes = { ok: true, tabs: list };
+      } else if (tool === "tabActivate") {
+        const want = String(args.tabId || "").trim();
+        const exists = want ? tabs.some((t) => String(t?.id || "") === want) : false;
+        if (!want || !exists) {
+          toolRes = { ok: false, error: `Invalid tabId: ${want || "(missing)"}` };
+        } else {
+          setActiveTab(want);
+          await ensureWebviewHasAgentMarker(null, marker);
+          toolRes = { ok: true, tabId: want };
+        }
+      } else if (tool === "downloadsWait") {
+        toolRes = await window.aiBridge.agentDownloadsWait({
+          id: String(args.id || "").trim(),
+          since: Number.isFinite(args.since) ? args.since : undefined,
+          state: String(args.state || "").trim() || undefined,
+          timeoutMs: Number.isFinite(args.timeoutMs) ? args.timeoutMs : undefined
+        });
+      } else if (tool === "findElements") {
+        toolRes = await window.aiBridge.agentFindElements({
+          url: targetUrl,
+          title: targetTitle,
+          marker,
+          text: args.text,
+          selector: args.selector,
+          role: args.role,
+          tag: args.tag,
+          limit: Number.isFinite(args.limit) ? args.limit : undefined
+        });
+      } else if (tool === "readElement") {
+        const id = String(args.id || "").trim();
+        if (id && knownElementIds.size && !knownElementIds.has(id)) {
+          toolRes = { ok: false, error: `Invalid element id: ${id} (not seen in this agent run).` };
+        } else {
+          toolRes = await window.aiBridge.agentReadElement({
+            url: targetUrl,
+            title: targetTitle,
+            marker,
+            elementId: id,
+            fields: Array.isArray(args.fields) ? args.fields : undefined
+          });
+        }
+      } else if (tool === "scrollIntoView") {
+        const id = String(args.id || "").trim();
+        if (id && knownElementIds.size && !knownElementIds.has(id)) {
+          toolRes = { ok: false, error: `Invalid element id: ${id} (not seen in this agent run).` };
+        } else {
+          toolRes = await window.aiBridge.agentScrollIntoView({ url: targetUrl, title: targetTitle, marker, elementId: id });
+        }
+      } else if (tool === "screenshot") {
+        const id = String(args.id || "").trim();
+        if (id && knownElementIds.size && !knownElementIds.has(id)) {
+          toolRes = { ok: false, error: `Invalid element id: ${id} (not seen in this agent run).` };
+        } else {
+          toolRes = await window.aiBridge.agentScreenshot({
+            url: targetUrl,
+            title: targetTitle,
+            marker,
+            elementId: id,
+            fullPage: args.fullPage === true,
+            format: args.format
+          });
+        }
+      } else if (tool === "uploadFile") {
+        const id = String(args.id || "").trim();
+        if (id && knownElementIds.size && !knownElementIds.has(id)) {
+          toolRes = { ok: false, error: `Invalid element id: ${id} (not seen in this agent run).` };
+        } else {
+          toolRes = await window.aiBridge.agentUploadFile({
+            url: targetUrl,
+            title: targetTitle,
+            marker,
+            elementId: id,
+            paths: Array.isArray(args.paths) ? args.paths : []
+          });
+        }
+      } else if (tool === "hotkey") {
+        toolRes = await window.aiBridge.agentHotkey({
+          url: targetUrl,
+          title: targetTitle,
+          marker,
+          keys: args.keys
+        });
+      } else if (tool === "waitFor") {
+        toolRes = await window.aiBridge.agentWaitFor({
+          url: targetUrl,
+          title: targetTitle,
+          marker,
+          selector: args.selector,
+          text: args.text,
+          urlIncludes: args.urlIncludes,
+          timeoutMs: Number.isFinite(args.timeoutMs) ? args.timeoutMs : undefined
+        });
+      } else if (tool === "click") {
         const id = String(args.id || "").trim();
         const x = Number.isFinite(args.x) ? args.x : null;
         const y = Number.isFinite(args.y) ? args.y : null;
         const hasXY = Number.isFinite(x) && Number.isFinite(y);
         const count = Number.isFinite(args.count) ? args.count : undefined;
-        if (id && snapshotElementIds.size && !snapshotElementIds.has(id)) {
-          toolRes = { ok: false, error: `Invalid element id: ${id} (not in current snapshot).` };
+        if (id && knownElementIds.size && !knownElementIds.has(id)) {
+          toolRes = { ok: false, error: `Invalid element id: ${id} (not seen in this agent run).` };
         } else {
           toolRes = await window.aiBridge.agentClick({
             url: targetUrl,
@@ -6152,8 +6574,8 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
         const x = Number.isFinite(args.x) ? args.x : null;
         const y = Number.isFinite(args.y) ? args.y : null;
         const hasXY = Number.isFinite(x) && Number.isFinite(y);
-        if (id && snapshotElementIds.size && !snapshotElementIds.has(id)) {
-          toolRes = { ok: false, error: `Invalid element id: ${id} (not in current snapshot).` };
+        if (id && knownElementIds.size && !knownElementIds.has(id)) {
+          toolRes = { ok: false, error: `Invalid element id: ${id} (not seen in this agent run).` };
         } else {
           toolRes = await window.aiBridge.agentHover({
             url: targetUrl,
@@ -6189,8 +6611,8 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
         const retries = Number.isFinite(args.retries) ? args.retries : undefined;
         if (!String(args.text || "")) {
           toolRes = { ok: false, error: "Missing text for tool: fillText." };
-        } else if (id && snapshotElementIds.size && !snapshotElementIds.has(id)) {
-          toolRes = { ok: false, error: `Invalid element id: ${id} (not in current snapshot).` };
+        } else if (id && knownElementIds.size && !knownElementIds.has(id)) {
+          toolRes = { ok: false, error: `Invalid element id: ${id} (not seen in this agent run).` };
         } else {
           toolRes = await window.aiBridge.agentFillText({
             url: targetUrl,
@@ -6207,8 +6629,8 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
         }
       } else if (tool === "type") {
         const id = String(args.id || "").trim();
-        if (id && snapshotElementIds.size && !snapshotElementIds.has(id)) {
-          toolRes = { ok: false, error: `Invalid element id: ${id} (not in current snapshot).` };
+        if (id && knownElementIds.size && !knownElementIds.has(id)) {
+          toolRes = { ok: false, error: `Invalid element id: ${id} (not seen in this agent run).` };
         } else {
           toolRes = await window.aiBridge.agentType({
             url: targetUrl,
@@ -6233,10 +6655,10 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
         toolRes = { ok: false, error: `Unknown tool: ${tool || "(missing)"}` };
       }
 
-	      if (!toolRes?.ok) {
-	        stepRecord.result = "error";
-	        stepRecord.error = String(toolRes?.error || "Tool failed");
-	        agentDebugLog(`tool ${step} failed`, { tool, args, error: toolRes?.error });
+		      if (!toolRes?.ok) {
+		        stepRecord.result = "error";
+		        stepRecord.error = String(toolRes?.error || "Tool failed");
+		        agentDebugLog(`tool ${step} failed`, { tool, args, error: toolRes?.error });
 	        createAiChatMessage({
 	          role: "assistant",
 	          meta: `${t("ai.meta.assistant")} · ${t("ai.meta.error")}`,
@@ -6245,31 +6667,55 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
 	        });
 	        stepErrors++;
 	        updateStepsGroupMeta(steps.length, maxSteps);
-	        continue;
+		        continue;
+		      }
+		      stepRecord.result = "ok";
+          const output = compactAgentToolOutput(tool, toolRes);
+          if (output != null) stepRecord.output = output;
+
+          if (tool === "findElements" && Array.isArray(toolRes.matches)) {
+            for (const m of toolRes.matches) {
+              const id = String(m?.id || "").trim();
+              if (id) knownElementIds.add(id);
+            }
+          } else if (tool === "readElement") {
+            const id = String(toolRes?.element?.id || "").trim();
+            if (id) knownElementIds.add(id);
+          } else if (tool === "waitFor") {
+            const id = String(toolRes?.result?.element?.id || "").trim();
+            if (id) knownElementIds.add(id);
+          }
+		      if (seq !== agentRunSeq || !isAgentRunning) {
+		        markStopped();
+	        return;
 	      }
-	      stepRecord.result = "ok";
+
+        if (tool !== "downloadsWait") {
+	        try {
+	          await ensureWebviewHasAgentMarker(null, marker);
+	        } catch {
+	        }
+	        try {
+	          await window.aiBridge.agentWaitForLoad({ url: targetUrl, title: targetTitle, marker, state: "networkidle" });
+	        } catch {
+	        }
+        }
 	      if (seq !== agentRunSeq || !isAgentRunning) {
 	        markStopped();
-        return;
-      }
+	        return;
+	      }
 
-      try {
-        await window.aiBridge.agentWaitForLoad({ url: targetUrl, title: targetTitle, marker, state: "networkidle" });
-      } catch {
-      }
-      if (seq !== agentRunSeq || !isAgentRunning) {
-        markStopped();
-        return;
-      }
-
-		      createAiChatMessage({
-		        role: "assistant",
-		        meta,
-		        markdown: `**${tool}**\n\n\`\`\`json\n${JSON.stringify(args || {}, null, 2)}\n\`\`\`\n\n${reason || ""}`.trim(),
-		        parentEl: stepsGroup?.listEl
-		      });
-		      updateStepsGroupMeta(steps.length, maxSteps);
-		    }
+          const outputSummary = stepRecord.output != null ? stepRecord.output : null;
+          const outputText = outputSummary ? `\n\n\`\`\`json\n${JSON.stringify(outputSummary, null, 2)}\n\`\`\`` : "";
+          const reasonText = reason ? `\n\n${reason}` : "";
+			      createAiChatMessage({
+			        role: "assistant",
+			        meta,
+			        markdown: `**${tool}**\n\n\`\`\`json\n${JSON.stringify(args || {}, null, 2)}\n\`\`\`${outputText}${reasonText}`.trim(),
+			        parentEl: stepsGroup?.listEl
+			      });
+			      updateStepsGroupMeta(steps.length, maxSteps);
+			    }
 
 	    throw new Error("Agent reached max steps without finishing.");
 		  } catch (err) {

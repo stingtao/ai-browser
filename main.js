@@ -1069,7 +1069,19 @@ async function findWebviewTargetInfo({ cdp, sendToTarget }, { marker, url, title
   const byUrl = wantUrl ? webviews.filter((t) => String(t.url || "") === wantUrl) : [];
 
   if (wantMarker) {
-    const toCheck = (byUrl.length ? byUrl : webviews).slice(0, 40);
+    const ordered = [];
+    const seen = new Set();
+    for (const t of byUrl) {
+      if (!t || !t.targetId || seen.has(t.targetId)) continue;
+      seen.add(t.targetId);
+      ordered.push(t);
+    }
+    for (const t of webviews) {
+      if (!t || !t.targetId || seen.has(t.targetId)) continue;
+      seen.add(t.targetId);
+      ordered.push(t);
+    }
+    const toCheck = ordered.slice(0, 40);
     for (const t of toCheck) {
       let sessionId = "";
       try {
@@ -1162,11 +1174,6 @@ const CDP_SNAPSHOT_EXPRESSION = `(() => {
       return false;
     }
   };
-
-  try {
-    document.querySelectorAll("[data-sting-agent-id]").forEach((el) => el.removeAttribute("data-sting-agent-id"));
-  } catch {
-  }
 
   const vw = Number(window.innerWidth) || 0;
   const vh = Number(window.innerHeight) || 0;
@@ -1311,12 +1318,25 @@ const CDP_SNAPSHOT_EXPRESSION = `(() => {
 
   const elements = [];
   let nextId = 1;
-  for (const item of scored.slice(0, 180)) {
-    const id = String(nextId++);
+  try {
+    const n = Number(window.__stingAgentNextId);
+    if (Number.isFinite(n) && n > 0) nextId = Math.floor(n);
+  } catch {
+  }
+  for (const item of scored.slice(0, 220)) {
+    let id = "";
     try {
-      item.el.setAttribute("data-sting-agent-id", id);
+      id = String(item.el.getAttribute("data-sting-agent-id") || "").trim();
     } catch {
-      continue;
+      id = "";
+    }
+    if (!id) {
+      id = String(nextId++);
+      try {
+        item.el.setAttribute("data-sting-agent-id", id);
+      } catch {
+        continue;
+      }
     }
     elements.push({
       id,
@@ -1333,6 +1353,61 @@ const CDP_SNAPSHOT_EXPRESSION = `(() => {
     });
   }
 
+  let active = null;
+  try {
+    const el = document.activeElement;
+    if (el && el.nodeType === 1 && el !== document.body && el !== document.documentElement) {
+      const tag = String(el.tagName || "").toLowerCase();
+      let id = "";
+      try {
+        id = String(el.getAttribute && el.getAttribute("data-sting-agent-id") ? el.getAttribute("data-sting-agent-id") : "").trim();
+      } catch {
+        id = "";
+      }
+      if (!id) {
+        id = String(nextId++);
+        try { el.setAttribute("data-sting-agent-id", id); } catch { id = ""; }
+      }
+      const role = clean(el.getAttribute && el.getAttribute("role"));
+      const ariaLabel = clean(el.getAttribute && el.getAttribute("aria-label"));
+      const placeholder = clean(el.getAttribute && el.getAttribute("placeholder"));
+      const name = clean(el.getAttribute && el.getAttribute("name"));
+      const type = clean(el.getAttribute && el.getAttribute("type"));
+      let value = "";
+      try {
+        const t = String(tag || "");
+        value = t === "input" || t === "textarea" ? clean(el.value) : "";
+      } catch {
+        value = "";
+      }
+      const text = clean(el.innerText || el.textContent);
+      const rect = toRect(el);
+      const isContentEditable = (() => {
+        try { return Boolean(el.isContentEditable); } catch { return false; }
+      })();
+      active = {
+        id: String(id || ""),
+        tag,
+        role,
+        ariaLabel: String(ariaLabel || "").slice(0, 120),
+        placeholder: String(placeholder || "").slice(0, 120),
+        name: String(name || "").slice(0, 80),
+        type: String(type || "").slice(0, 40),
+        value: String(value || "").slice(0, 120),
+        text: String(text || "").slice(0, 120),
+        isContentEditable: Boolean(isContentEditable),
+        rect
+      };
+    }
+  } catch {
+    active = null;
+  }
+
+  try {
+    window.__stingAgentNextId = nextId;
+  } catch {
+  }
+
   let visibleText = "";
   try {
     visibleText = clean(document.body && document.body.innerText ? document.body.innerText : "");
@@ -1345,6 +1420,7 @@ const CDP_SNAPSHOT_EXPRESSION = `(() => {
     title: clean(document.title || ""),
     viewport: { w: Number(window.innerWidth) || 0, h: Number(window.innerHeight) || 0 },
     scroll: { x: Number(window.scrollX) || 0, y: Number(window.scrollY) || 0 },
+    active,
     elements,
     visibleText: visibleText.slice(0, 4000)
   };
@@ -1364,6 +1440,396 @@ async function agentSnapshot({ url, title, marker } = {}) {
       }
     }
     return snapshot;
+  });
+}
+
+async function agentFindElements({ url, title, marker, text, query, selector, role, tag, limit } = {}) {
+  const q = String(text ?? query ?? "").trim();
+  const sel = String(selector || "").trim();
+  const wantRole = String(role || "").trim();
+  const wantTag = String(tag || "").trim().toLowerCase();
+  const max = (() => {
+    const n = Number(limit);
+    if (!Number.isFinite(n)) return 12;
+    return Math.max(1, Math.min(40, Math.floor(n)));
+  })();
+
+  if (!q && !sel && !wantRole && !wantTag) throw new Error("Missing query/selector/role/tag");
+
+  const expr = `(() => {
+    const clean = (s) => String(s || "").replace(/\\s+/g, " ").trim();
+    const toRect = (el) => {
+      try {
+        const r = el.getBoundingClientRect();
+        return { x: r.x, y: r.y, w: r.width, h: r.height };
+      } catch {
+        return null;
+      }
+    };
+    const isVisible = (el) => {
+      try {
+        const style = window.getComputedStyle(el);
+        if (!style) return false;
+        if (style.visibility === "hidden" || style.display === "none") return false;
+        if (style.pointerEvents === "none") return false;
+        const rect = el.getBoundingClientRect();
+        if (!rect || rect.width < 2 || rect.height < 2) return false;
+        if (rect.bottom < 0 || rect.right < 0) return false;
+        if (rect.top > (window.innerHeight || 0) || rect.left > (window.innerWidth || 0)) return false;
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    const queryRaw = ${JSON.stringify(q)};
+    const query = clean(queryRaw).toLowerCase();
+    const selector = clean(${JSON.stringify(sel)});
+    const wantRole = clean(${JSON.stringify(wantRole)});
+    const wantTag = clean(${JSON.stringify(wantTag)}).toLowerCase();
+    const limit = Math.max(1, Math.min(40, Math.floor(Number(${JSON.stringify(max)}) || 12)));
+
+    let nextId = 1;
+    try {
+      const n = Number(window.__stingAgentNextId);
+      if (Number.isFinite(n) && n > 0) nextId = Math.floor(n);
+    } catch {}
+
+    const ensureId = (el) => {
+      if (!el) return "";
+      let id = "";
+      try { id = String(el.getAttribute && el.getAttribute("data-sting-agent-id") ? el.getAttribute("data-sting-agent-id") : "").trim(); } catch { id = ""; }
+      if (!id) {
+        id = String(nextId++);
+        try { el.setAttribute("data-sting-agent-id", id); } catch { return ""; }
+      }
+      return id;
+    };
+
+    const pickCandidates = () => {
+      if (selector) {
+        try { return Array.from(document.querySelectorAll(selector)); } catch { return []; }
+      }
+      try {
+        return Array.from(document.querySelectorAll('input,textarea,select,button,a,canvas,iframe,[onclick],[contenteditable=\"true\"],[role=\"button\"],[role=\"link\"],[role=\"textbox\"],[role=\"menuitem\"],[role=\"option\"],[role=\"listitem\"]'));
+      } catch {
+        return [];
+      }
+    };
+
+    const candidates = pickCandidates();
+    const scored = [];
+    for (const el of candidates) {
+      if (!el || el.nodeType !== 1) continue;
+      const t = String(el.tagName || "").toLowerCase();
+      if (wantTag && t !== wantTag) continue;
+      const r = clean(el.getAttribute && el.getAttribute("role"));
+      if (wantRole && r !== wantRole) continue;
+      if (!isVisible(el)) continue;
+
+      const text = clean(el.innerText || el.textContent);
+      const ariaLabel = clean(el.getAttribute && el.getAttribute("aria-label"));
+      const placeholder = clean(el.getAttribute && el.getAttribute("placeholder"));
+      const name = clean(el.getAttribute && el.getAttribute("name"));
+      const type = clean(el.getAttribute && el.getAttribute("type"));
+      const href = t === "a" ? clean(el.getAttribute && el.getAttribute("href")) : "";
+      let value = "";
+      try { value = t === "input" || t === "textarea" ? clean(el.value) : ""; } catch { value = ""; }
+
+      if (query) {
+        const hay = clean([ariaLabel, placeholder, text, value, name, type].filter(Boolean).join(" ")).toLowerCase();
+        if (!hay.includes(query)) continue;
+      }
+
+      const rect = toRect(el);
+      const area = Math.max(0, (Number(rect?.w) || 0) * (Number(rect?.h) || 0));
+      let score = 0;
+      if (query) {
+        const q = query;
+        const al = ariaLabel.toLowerCase();
+        const tx = text.toLowerCase();
+        const ph = placeholder.toLowerCase();
+        const vl = value.toLowerCase();
+        if (al.includes(q)) score += 90;
+        if (tx.includes(q)) score += 70;
+        if (ph.includes(q)) score += 55;
+        if (vl.includes(q)) score += 35;
+      }
+      score += Math.min(70, Math.log(area + 1) * 9);
+      if (t === "input" || t === "textarea") score += 110;
+      if (t === "button" || r === "button") score += 35;
+      if (t === "a" || r === "link") score += 18;
+
+      scored.push({ el, tag: t, role: r, text, ariaLabel, placeholder, name, type, href, value, rect, score });
+    }
+
+    scored.sort((a, b) => Number(b.score) - Number(a.score));
+
+    const out = [];
+    for (const item of scored.slice(0, limit)) {
+      const id = ensureId(item.el);
+      if (!id) continue;
+      out.push({
+        id,
+        tag: item.tag,
+        role: item.role,
+        text: String(item.text || "").slice(0, 120),
+        ariaLabel: String(item.ariaLabel || "").slice(0, 120),
+        placeholder: String(item.placeholder || "").slice(0, 120),
+        name: String(item.name || "").slice(0, 80),
+        type: String(item.type || "").slice(0, 40),
+        href: String(item.href || "").slice(0, 300),
+        value: String(item.value || "").slice(0, 120),
+        rect: item.rect || null
+      });
+    }
+
+    try { window.__stingAgentNextId = nextId; } catch {}
+    return { ok: true, matches: out };
+  })()`;
+
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    const res = await cdpEvalValue(sendToTarget, sessionId, expr, { timeoutMs: 15_000 });
+    if (!res || res.ok !== true) throw new Error(String(res?.error || "findElements failed"));
+    const matches = Array.isArray(res.matches) ? res.matches : [];
+    return { ok: true, matches };
+  });
+}
+
+async function agentReadElement({ url, title, marker, elementId, fields } = {}) {
+  const id = String(elementId || "").trim();
+  if (!id) throw new Error("Missing elementId");
+
+  const wantedFields = Array.isArray(fields)
+    ? fields.map((f) => String(f || "").trim()).filter(Boolean).slice(0, 24)
+    : null;
+
+  const expr = `(() => {
+    const clean = (s) => String(s || "").replace(/\\s+/g, " ").trim();
+    const toRect = (el) => {
+      try {
+        const r = el.getBoundingClientRect();
+        return { x: r.x, y: r.y, w: r.width, h: r.height };
+      } catch {
+        return null;
+      }
+    };
+    const id = ${JSON.stringify(id)};
+    const wanted = ${JSON.stringify(wantedFields)};
+    const want = (k) => !wanted || (Array.isArray(wanted) && wanted.includes(k));
+    const sel = '[data-sting-agent-id=\"' + id + '\"]';
+    const el = document.querySelector(sel);
+    if (!el) return { ok: false, error: 'Element not found: ' + id };
+
+    const tag = String(el.tagName || '').toLowerCase();
+    const role = clean(el.getAttribute && el.getAttribute('role'));
+    const ariaLabel = clean(el.getAttribute && el.getAttribute('aria-label'));
+    const placeholder = clean(el.getAttribute && el.getAttribute('placeholder'));
+    const name = clean(el.getAttribute && el.getAttribute('name'));
+    const type = clean(el.getAttribute && el.getAttribute('type'));
+    const href = tag === 'a' ? clean(el.getAttribute && el.getAttribute('href')) : '';
+    let value = '';
+    try { value = tag === 'input' || tag === 'textarea' ? clean(el.value) : ''; } catch { value = ''; }
+    const text = clean(el.innerText || el.textContent);
+    const rect = toRect(el);
+
+    const out = { id };
+    if (want('tag')) out.tag = tag;
+    if (want('role')) out.role = role;
+    if (want('ariaLabel')) out.ariaLabel = ariaLabel;
+    if (want('placeholder')) out.placeholder = placeholder;
+    if (want('name')) out.name = name;
+    if (want('type')) out.type = type;
+    if (want('href')) out.href = href;
+    if (want('value')) out.value = value;
+    if (want('text')) out.text = text;
+    if (want('rect')) out.rect = rect;
+    if (want('disabled')) {
+      let disabled = false;
+      try { disabled = Boolean(el.disabled); } catch { disabled = false; }
+      try {
+        const aria = clean(el.getAttribute && el.getAttribute('aria-disabled')).toLowerCase();
+        if (aria === 'true') disabled = true;
+      } catch {}
+      out.disabled = Boolean(disabled);
+    }
+    if (want('checked')) {
+      let checked = false;
+      try { checked = Boolean(el.checked); } catch { checked = false; }
+      out.checked = Boolean(checked);
+    }
+    if (want('isContentEditable')) {
+      let ce = false;
+      try { ce = Boolean(el.isContentEditable); } catch { ce = false; }
+      out.isContentEditable = Boolean(ce);
+    }
+
+    return { ok: true, element: out };
+  })()`;
+
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    const res = await cdpEvalValue(sendToTarget, sessionId, expr, { timeoutMs: 15_000 });
+    if (!res || res.ok !== true) throw new Error(String(res?.error || "readElement failed"));
+    return { ok: true, element: res.element || null };
+  });
+}
+
+async function agentScrollIntoView({ url, title, marker, elementId } = {}) {
+  const id = String(elementId || "").trim();
+  if (!id) throw new Error("Missing elementId");
+
+  const expr = `(() => {
+    const toRect = (el) => {
+      try {
+        const r = el.getBoundingClientRect();
+        return { x: r.x, y: r.y, w: r.width, h: r.height };
+      } catch {
+        return null;
+      }
+    };
+    const id = ${JSON.stringify(id)};
+    const sel = '[data-sting-agent-id=\"' + id + '\"]';
+    const el = document.querySelector(sel);
+    if (!el) return { ok: false, error: 'Element not found: ' + id };
+    try { el.scrollIntoView({ block: 'center', inline: 'center' }); } catch {}
+    let rect = null;
+    try { rect = toRect(el); } catch { rect = null; }
+    return { ok: true, rect };
+  })()`;
+
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    const res = await cdpEvalValue(sendToTarget, sessionId, expr, { timeoutMs: 12_000 });
+    if (!res || res.ok !== true) throw new Error(String(res?.error || "scrollIntoView failed"));
+    return { ok: true, rect: res.rect || null };
+  });
+}
+
+async function agentScreenshot({ url, title, marker, elementId, fullPage, format } = {}) {
+  const id = String(elementId || "").trim();
+  const full = Boolean(fullPage);
+  const fmtRaw = String(format || "png").trim().toLowerCase();
+  const fmt = fmtRaw === "jpeg" || fmtRaw === "jpg" ? "jpeg" : "png";
+  const mimeType = fmt === "jpeg" ? "image/jpeg" : "image/png";
+
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    try {
+      await sendToTarget(sessionId, "Page.bringToFront", {}, { timeoutMs: 4_000 });
+    } catch {
+    }
+
+    let clip = null;
+    if (id) {
+      const locateExpr = `(() => {
+        const id = ${JSON.stringify(id)};
+        const sel = '[data-sting-agent-id=\"' + id + '\"]';
+        const el = document.querySelector(sel);
+        if (!el) return { ok: false, error: 'Element not found: ' + id };
+        try { el.scrollIntoView({ block: 'center', inline: 'center' }); } catch {}
+        let rect = null;
+        try { rect = el.getBoundingClientRect(); } catch { rect = null; }
+        if (!rect) return { ok: false, error: 'Element has no bounding rect: ' + id };
+        const vw = Number(window.innerWidth) || 0;
+        const vh = Number(window.innerHeight) || 0;
+        const x = Math.max(0, Math.min(vw, Number(rect.left) || 0));
+        const y = Math.max(0, Math.min(vh, Number(rect.top) || 0));
+        const w = Math.max(1, Math.min(vw - x, Number(rect.width) || 0));
+        const h = Math.max(1, Math.min(vh - y, Number(rect.height) || 0));
+        return { ok: true, x, y, w, h };
+      })()`;
+      const loc = await cdpEvalValue(sendToTarget, sessionId, locateExpr, { timeoutMs: 15_000 });
+      if (!loc || loc.ok !== true) throw new Error(String(loc?.error || "Screenshot failed"));
+      clip = { x: Number(loc.x), y: Number(loc.y), width: Number(loc.w), height: Number(loc.h), scale: 1 };
+    } else if (full) {
+      try {
+        const metrics = await sendToTarget(sessionId, "Page.getLayoutMetrics", {}, { timeoutMs: 8_000 });
+        const size = metrics?.contentSize || metrics?.cssContentSize || null;
+        const w = Math.max(1, Math.floor(Number(size?.width) || 0));
+        const h = Math.max(1, Math.floor(Number(size?.height) || 0));
+        if (w && h) {
+          clip = { x: 0, y: 0, width: w, height: h, scale: 1 };
+        }
+      } catch {
+        clip = null;
+      }
+    }
+
+    const params = {
+      format: fmt,
+      fromSurface: true,
+      captureBeyondViewport: true
+    };
+    if (clip && Number.isFinite(clip.width) && Number.isFinite(clip.height)) {
+      params.clip = clip;
+    }
+
+    const res = await sendToTarget(sessionId, "Page.captureScreenshot", params, { timeoutMs: 20_000 });
+    const data = String(res?.data || "");
+    if (!data) throw new Error("Screenshot failed (empty data)");
+
+    const dir = path.join(app.getPath("userData"), "agent_screenshots");
+    await fs.mkdir(dir, { recursive: true });
+    const fileName = `shot_${Date.now()}_${Math.random().toString(16).slice(2)}.${fmt === "jpeg" ? "jpg" : "png"}`;
+    const filePath = path.join(dir, fileName);
+    await fs.writeFile(filePath, Buffer.from(data, "base64"));
+
+    return { ok: true, path: filePath, mimeType };
+  });
+}
+
+async function agentUploadFile({ url, title, marker, elementId, paths, path: singlePath, filePath } = {}) {
+  const id = String(elementId || "").trim();
+  if (!id) throw new Error("Missing elementId");
+
+  const list = Array.isArray(paths)
+    ? paths
+    : singlePath != null
+      ? [singlePath]
+      : filePath != null
+        ? [filePath]
+        : [];
+  const filePaths = list.map((p) => String(p || "").trim()).filter(Boolean).slice(0, 10);
+  if (!filePaths.length) throw new Error("Missing file path(s)");
+
+  for (const p of filePaths) {
+    if (!existsSync(p)) throw new Error(`File not found: ${p}`);
+  }
+
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    try {
+      await sendToTarget(sessionId, "Page.bringToFront", {}, { timeoutMs: 4_000 });
+    } catch {
+    }
+    try {
+      await sendToTarget(sessionId, "DOM.enable", {}, { timeoutMs: 4_000 });
+    } catch {
+    }
+
+    const selector = `[data-sting-agent-id=\"${id}\"]`;
+    const doc = await sendToTarget(sessionId, "DOM.getDocument", { depth: 1, pierce: true }, { timeoutMs: 8_000 });
+    const rootId = Number(doc?.root?.nodeId);
+    if (!Number.isFinite(rootId) || rootId <= 0) throw new Error("Failed to resolve DOM root");
+
+    const q = await sendToTarget(sessionId, "DOM.querySelector", { nodeId: rootId, selector }, { timeoutMs: 8_000 });
+    const nodeId = Number(q?.nodeId);
+    if (!Number.isFinite(nodeId) || nodeId <= 0) throw new Error(`Element not found: ${id}`);
+
+    await sendToTarget(sessionId, "DOM.setFileInputFiles", { nodeId, files: filePaths }, { timeoutMs: 15_000 });
+
+    const verifyExpr = `(() => {
+      const sel = ${JSON.stringify(selector)};
+      const el = document.querySelector(sel);
+      const count = Number(el && el.files ? el.files.length : 0) || 0;
+      try { el && el.dispatchEvent && el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+      try { el && el.dispatchEvent && el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+      return { ok: true, filesCount: count };
+    })()`;
+    let filesCount = 0;
+    try {
+      const v = await cdpEvalValue(sendToTarget, sessionId, verifyExpr, { timeoutMs: 8_000 });
+      filesCount = Number(v?.filesCount) || 0;
+    } catch {
+      filesCount = 0;
+    }
+    return { ok: true, filesCount };
   });
 }
 
@@ -1664,7 +2130,7 @@ async function agentClick({ url, title, marker, elementId, x, y, clickCount } = 
     if (!usedTrustedInput && (await isGoogleDocsHost())) {
       throw new Error("Untrusted click event; Google Docs/Slides often ignores programmatic clicks (CDP input may be blocked).");
     }
-    return { ok: true };
+    return { ok: true, x: clickX, y: clickY, clickCount: count, usedTrustedInput };
   });
 }
 
@@ -1721,7 +2187,7 @@ async function agentHover({ url, title, marker, elementId, x, y } = {}) {
       { type: "mouseMoved", x: hoverX, y: hoverY, button: "none", buttons: 0, pointerType: "mouse" },
       { timeoutMs: 8_000 }
     );
-    return { ok: true };
+    return { ok: true, x: hoverX, y: hoverY };
   });
 }
 
@@ -1841,7 +2307,7 @@ async function agentScroll({ url, title, marker, deltaX, deltaY, x, y } = {}) {
       }
     }
 
-    return { ok: true };
+    return { ok: true, before: before || null, after: after || null, changed: Boolean(changed) };
   });
 }
 
@@ -2546,7 +3012,7 @@ async function agentType({ url, title, marker, elementId, text } = {}) {
       }
     }
 
-    return { ok: true };
+    return { ok: true, isGoogleDocs };
   });
 }
 
@@ -2910,6 +3376,71 @@ function normalizePressKey(rawKey) {
   return map[normalized] || null;
 }
 
+function normalizeHotkeyCombo(raw) {
+  const text = String(raw || "").trim();
+  if (!text) return null;
+  const tokens = text
+    .split(/[+\s]+/g)
+    .map((t) => String(t || "").trim())
+    .filter(Boolean)
+    .slice(0, 8);
+  if (!tokens.length) return null;
+
+  let modifiers = 0;
+  let main = "";
+
+  for (const token of tokens) {
+    const t = token.replace(/\s+/g, "").toLowerCase();
+    if (!t) continue;
+    if (["cmd", "command", "meta", "win", "windows"].includes(t)) modifiers |= CDP_KEY_MODIFIER_META;
+    else if (["ctrl", "control"].includes(t)) modifiers |= CDP_KEY_MODIFIER_CTRL;
+    else if (["alt", "option"].includes(t)) modifiers |= CDP_KEY_MODIFIER_ALT;
+    else if (t === "shift") modifiers |= CDP_KEY_MODIFIER_SHIFT;
+    else main = token;
+  }
+
+  if (!main) return null;
+
+  const named = normalizePressKey(main);
+  if (named) return { modifiers, ...named };
+
+  const single = String(main || "").trim();
+  if (/^[a-z]$/i.test(single)) {
+    const upper = single.toUpperCase();
+    return { modifiers, key: upper, code: `Key${upper}`, vk: upper.charCodeAt(0) };
+  }
+  if (/^[0-9]$/.test(single)) {
+    return { modifiers, key: single, code: `Digit${single}`, vk: single.charCodeAt(0) };
+  }
+  if (single === " ") return { modifiers, key: " ", code: "Space", vk: 32 };
+
+  return null;
+}
+
+async function agentHotkey({ url, title, marker, keys } = {}) {
+  const combo = normalizeHotkeyCombo(keys);
+  if (!combo) {
+    throw new Error("Unsupported hotkey (example: Ctrl+L, Cmd+Shift+P, Enter).");
+  }
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    try {
+      await sendToTarget(sessionId, "Page.bringToFront", {}, { timeoutMs: 4_000 });
+    } catch {
+    }
+
+    const base = {
+      key: combo.key,
+      code: combo.code,
+      windowsVirtualKeyCode: combo.vk,
+      nativeVirtualKeyCode: combo.vk,
+      modifiers: combo.modifiers
+    };
+    await sendToTarget(sessionId, "Input.dispatchKeyEvent", { type: "rawKeyDown", ...base }, { timeoutMs: 8_000 });
+    await sendToTarget(sessionId, "Input.dispatchKeyEvent", { type: "keyUp", ...base }, { timeoutMs: 8_000 });
+    return { ok: true, keys: String(keys || "").trim(), key: combo.key, code: combo.code, modifiers: combo.modifiers };
+  });
+}
+
 async function agentPress({ url, title, marker, key } = {}) {
   const info = normalizePressKey(key);
   if (!info) {
@@ -3188,7 +3719,7 @@ async function agentPress({ url, title, marker, key } = {}) {
         }
       }
     }
-    return { ok: true };
+    return { ok: true, key: info.key, code: info.code };
   });
 }
 
@@ -3197,7 +3728,7 @@ async function agentNavigate({ url, title, marker, toUrl } = {}) {
   if (!next) throw new Error("Missing url");
   return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
     await sendToTarget(sessionId, "Page.navigate", { url: next }, { timeoutMs: 15_000 });
-    return { ok: true };
+    return { ok: true, url: next };
   });
 }
 
@@ -3205,21 +3736,161 @@ async function agentWaitForLoad({ url, title, marker, state } = {}) {
   const s = String(state || "networkidle").trim().toLowerCase();
   const desired = s === "domcontentloaded" ? "domcontentloaded" : s === "load" ? "load" : "networkidle";
   const timeoutMs = 20_000;
+  const quietMs = 650;
 
   return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
     const start = Date.now();
+    let lastResourceCount = null;
+    let lastResourceChangeAt = Date.now();
+    const getPerfCountsExpr = `(() => {
+      try {
+        const perf = (typeof performance !== "undefined" && performance) ? performance : null;
+        if (!perf || typeof perf.getEntriesByType !== "function") return { ok: false };
+        const resources = perf.getEntriesByType("resource");
+        const n = Array.isArray(resources) ? resources.length : Number(resources && resources.length ? resources.length : 0) || 0;
+        return { ok: true, resources: Number(n) || 0 };
+      } catch {
+        return { ok: false };
+      }
+    })()`;
     while (Date.now() - start < timeoutMs) {
       const readyState = await cdpEvalValue(sendToTarget, sessionId, "document.readyState", { timeoutMs: 3_000 });
       const rs = String(readyState || "").toLowerCase();
       if (desired === "domcontentloaded") {
         if (rs === "interactive" || rs === "complete") return { ok: true };
       } else if (rs === "complete") {
-        if (desired === "networkidle") await delay(350);
-        return { ok: true };
+        if (desired !== "networkidle") return { ok: true };
+
+        let perf = null;
+        try {
+          perf = await cdpEvalValue(sendToTarget, sessionId, getPerfCountsExpr, { timeoutMs: 3_000 });
+        } catch {
+          perf = null;
+        }
+
+        if (!perf || perf.ok !== true) {
+          await delay(350);
+          return { ok: true };
+        }
+
+        const count = Number(perf.resources);
+        const now = Date.now();
+        if (!Number.isFinite(count)) {
+          await delay(350);
+          return { ok: true };
+        }
+        if (lastResourceCount == null) {
+          lastResourceCount = count;
+          lastResourceChangeAt = now;
+        } else if (count !== lastResourceCount) {
+          lastResourceCount = count;
+          lastResourceChangeAt = now;
+        }
+
+        if (now - lastResourceChangeAt >= quietMs) {
+          return { ok: true, waitedMs: now - start, quietMs };
+        }
       }
       await delay(180);
     }
     throw new Error(`Timed out waiting for load (${desired})`);
+  });
+}
+
+async function agentWaitFor({ url, title, marker, selector, text, urlIncludes, timeoutMs } = {}) {
+  const sel = String(selector || "").trim();
+  const query = String(text || "").trim();
+  const urlNeedle = String(urlIncludes || "").trim();
+  const timeout = (() => {
+    const n = Number(timeoutMs);
+    if (!Number.isFinite(n)) return 15_000;
+    return Math.max(1_000, Math.min(60_000, Math.floor(n)));
+  })();
+
+  if (!sel && !query && !urlNeedle) {
+    throw new Error("waitFor requires selector/text/urlIncludes");
+  }
+
+  const expr = `(() => {
+    const clean = (s) => String(s || "").replace(/\\s+/g, " ").trim();
+    const toRect = (el) => {
+      try {
+        const r = el.getBoundingClientRect();
+        return { x: r.x, y: r.y, w: r.width, h: r.height };
+      } catch {
+        return null;
+      }
+    };
+    const isVisible = (el) => {
+      try {
+        const style = window.getComputedStyle(el);
+        if (!style) return false;
+        if (style.visibility === "hidden" || style.display === "none") return false;
+        if (style.pointerEvents === "none") return false;
+        const rect = el.getBoundingClientRect();
+        if (!rect || rect.width < 2 || rect.height < 2) return false;
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    const selector = clean(${JSON.stringify(sel)});
+    const text = clean(${JSON.stringify(query)});
+    const urlNeedle = clean(${JSON.stringify(urlNeedle)});
+    const href = String(location && location.href ? location.href : '');
+    if (urlNeedle && !href.includes(urlNeedle)) return { ok: false, url: href, reason: 'url' };
+
+    if (text) {
+      let bodyText = '';
+      try { bodyText = clean(document.body && document.body.innerText ? document.body.innerText : ''); } catch { bodyText = ''; }
+      const hay = bodyText.toLowerCase();
+      const needle = text.toLowerCase();
+      if (!hay.includes(needle)) return { ok: false, url: href, reason: 'text' };
+    }
+
+    let element = null;
+    if (selector) {
+      let el = null;
+      try { el = document.querySelector(selector); } catch { el = null; }
+      if (!el) return { ok: false, url: href, reason: 'selector' };
+      if (!isVisible(el)) return { ok: false, url: href, reason: 'selector_not_visible' };
+
+      let nextId = 1;
+      try {
+        const n = Number(window.__stingAgentNextId);
+        if (Number.isFinite(n) && n > 0) nextId = Math.floor(n);
+      } catch {}
+
+      let id = '';
+      try { id = String(el.getAttribute && el.getAttribute('data-sting-agent-id') ? el.getAttribute('data-sting-agent-id') : '').trim(); } catch { id = ''; }
+      if (!id) {
+        id = String(nextId++);
+        try { el.setAttribute('data-sting-agent-id', id); } catch { id = ''; }
+      }
+      try { window.__stingAgentNextId = nextId; } catch {}
+
+      const tag = String(el.tagName || '').toLowerCase();
+      const role = clean(el.getAttribute && el.getAttribute('role'));
+      const ariaLabel = clean(el.getAttribute && el.getAttribute('aria-label'));
+      const text = clean(el.innerText || el.textContent);
+      const rect = toRect(el);
+      element = { id: String(id || ''), tag, role, ariaLabel: String(ariaLabel || '').slice(0, 120), text: String(text || '').slice(0, 120), rect };
+    }
+
+    return { ok: true, url: href, element };
+  })()`;
+
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+      const res = await cdpEvalValue(sendToTarget, sessionId, expr, { timeoutMs: 4_000 });
+      if (res && res.ok === true) {
+        return { ok: true, url: String(res.url || ""), element: res.element || null, waitedMs: Date.now() - start };
+      }
+      await delay(220);
+    }
+    throw new Error("Timed out waiting for condition");
   });
 }
 
@@ -4289,6 +4960,50 @@ ipcMain.handle("ai:liveVoiceStop", async (e) => {
   }
 });
 
+async function agentDownloadsWait({ id, since, state, timeoutMs } = {}) {
+  const wantId = String(id || "").trim();
+  const sinceMs = (() => {
+    const n = Number(since);
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.floor(n));
+  })();
+  const wantState = String(state || "completed").trim().toLowerCase();
+  const timeout = (() => {
+    const n = Number(timeoutMs);
+    if (!Number.isFinite(n)) return 30_000;
+    return Math.max(1_000, Math.min(120_000, Math.floor(n)));
+  })();
+
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    let rec = null;
+    if (wantId) {
+      rec = downloadsById.get(wantId) || null;
+      if (rec && sinceMs && Number(rec.startTime) < sinceMs) rec = null;
+    } else {
+      const items = Array.from(downloadsById.values()).sort((a, b) => Number(b.startTime) - Number(a.startTime));
+      rec =
+        items.find((d) => {
+          if (!d) return false;
+          if (sinceMs && Number(d.startTime) < sinceMs) return false;
+          if (!wantState) return true;
+          return String(d.state || "").trim().toLowerCase() === wantState;
+        }) || null;
+    }
+
+    if (rec) {
+      const s = String(rec.state || "").trim().toLowerCase();
+      if (!wantState || s === wantState) {
+        return { ok: true, download: rec };
+      }
+    }
+
+    await delay(250);
+  }
+
+  throw new Error("Timed out waiting for download");
+}
+
 ipcMain.handle("agent:status", async () => {
   try {
     if (!CDP_ENABLED) {
@@ -4324,10 +5039,55 @@ ipcMain.handle("agent:snapshot", async (_e, payload) => {
   }
 });
 
+ipcMain.handle("agent:findElements", async (_e, payload) => {
+  try {
+    const result = await agentFindElements(payload || {});
+    return { ok: true, matches: Array.isArray(result?.matches) ? result.matches : [] };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:readElement", async (_e, payload) => {
+  try {
+    const result = await agentReadElement(payload || {});
+    return { ok: true, element: result?.element || null };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:scrollIntoView", async (_e, payload) => {
+  try {
+    const result = await agentScrollIntoView(payload || {});
+    return { ok: true, rect: result?.rect || null };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:screenshot", async (_e, payload) => {
+  try {
+    const result = await agentScreenshot(payload || {});
+    return { ok: true, screenshot: { path: String(result?.path || ""), mimeType: String(result?.mimeType || "") } };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:uploadFile", async (_e, payload) => {
+  try {
+    const result = await agentUploadFile(payload || {});
+    return { ok: true, filesCount: Number(result?.filesCount) || 0 };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
 ipcMain.handle("agent:click", async (_e, payload) => {
   try {
-    await agentClick(payload || {});
-    return { ok: true };
+    const result = await agentClick(payload || {});
+    return { ok: true, result };
   } catch (err) {
     return { ok: false, error: String(err?.message || err) };
   }
@@ -4335,8 +5095,8 @@ ipcMain.handle("agent:click", async (_e, payload) => {
 
 ipcMain.handle("agent:hover", async (_e, payload) => {
   try {
-    await agentHover(payload || {});
-    return { ok: true };
+    const result = await agentHover(payload || {});
+    return { ok: true, result };
   } catch (err) {
     return { ok: false, error: String(err?.message || err) };
   }
@@ -4344,8 +5104,8 @@ ipcMain.handle("agent:hover", async (_e, payload) => {
 
 ipcMain.handle("agent:scroll", async (_e, payload) => {
   try {
-    await agentScroll(payload || {});
-    return { ok: true };
+    const result = await agentScroll(payload || {});
+    return { ok: true, result };
   } catch (err) {
     return { ok: false, error: String(err?.message || err) };
   }
@@ -4353,8 +5113,8 @@ ipcMain.handle("agent:scroll", async (_e, payload) => {
 
 ipcMain.handle("agent:type", async (_e, payload) => {
   try {
-    await agentType(payload || {});
-    return { ok: true };
+    const result = await agentType(payload || {});
+    return { ok: true, result };
   } catch (err) {
     return { ok: false, error: String(err?.message || err) };
   }
@@ -4362,8 +5122,17 @@ ipcMain.handle("agent:type", async (_e, payload) => {
 
 ipcMain.handle("agent:fillText", async (_e, payload) => {
   try {
-    await agentFillText(payload || {});
-    return { ok: true };
+    const result = await agentFillText(payload || {});
+    return { ok: true, result };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:hotkey", async (_e, payload) => {
+  try {
+    const result = await agentHotkey(payload || {});
+    return { ok: true, result };
   } catch (err) {
     return { ok: false, error: String(err?.message || err) };
   }
@@ -4371,8 +5140,8 @@ ipcMain.handle("agent:fillText", async (_e, payload) => {
 
 ipcMain.handle("agent:press", async (_e, payload) => {
   try {
-    await agentPress(payload || {});
-    return { ok: true };
+    const result = await agentPress(payload || {});
+    return { ok: true, result };
   } catch (err) {
     return { ok: false, error: String(err?.message || err) };
   }
@@ -4380,8 +5149,8 @@ ipcMain.handle("agent:press", async (_e, payload) => {
 
 ipcMain.handle("agent:navigate", async (_e, payload) => {
   try {
-    await agentNavigate(payload || {});
-    return { ok: true };
+    const result = await agentNavigate(payload || {});
+    return { ok: true, result };
   } catch (err) {
     return { ok: false, error: String(err?.message || err) };
   }
@@ -4389,8 +5158,26 @@ ipcMain.handle("agent:navigate", async (_e, payload) => {
 
 ipcMain.handle("agent:waitForLoad", async (_e, payload) => {
   try {
-    await agentWaitForLoad(payload || {});
-    return { ok: true };
+    const result = await agentWaitForLoad(payload || {});
+    return { ok: true, result };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:waitFor", async (_e, payload) => {
+  try {
+    const result = await agentWaitFor(payload || {});
+    return { ok: true, result };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:downloadsWait", async (_e, payload) => {
+  try {
+    const result = await agentDownloadsWait(payload || {});
+    return { ok: true, download: result?.download || null };
   } catch (err) {
     return { ok: false, error: String(err?.message || err) };
   }

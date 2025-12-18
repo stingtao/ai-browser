@@ -34,7 +34,7 @@ GitHub: https://github.com/stingtao/ai-browser
   - Safe Markdown rendering (sanitized HTML)
   - AI settings modal (provider/model/context mode)
   - Support for local Ollama models, Gemini API, and OpenAI-compatible APIs
-  - Experimental Browser Agent mode (Playwright): can snapshot/navigate/click (incl. double-click)/hover/scroll/type/press + `fillText` macro in the active tab (reuses your login session)
+  - Experimental Browser Agent mode (Playwright): operates the active tab via tools like `snapshot`, `findElements`, `click`/`hover`/`scroll`, `type`/`fillText`, `hotkey`/`press`, `navigate`, `waitFor`/`waitForLoad`, `screenshot`, `tabList`/`tabActivate`, `downloadsWait`, `uploadFile` (reuses your login session)
   - Agent step trace UI (auto-collapses on completion; toggle to expand)
   - Agent max steps limit (configurable in AI settings)
   - Gemini API key manager with encryption support (save/update/clear) with validation
@@ -139,7 +139,13 @@ In AI settings → Agent → Mode, switch to `Browser agent (Playwright)`.
 - Uses Chromium CDP on `127.0.0.1` by default
 - Shows intermediate tool steps in a collapsible “Agent steps” trace (auto-collapses when finished)
 - Uses trusted CDP mouse/key input (better compatibility with apps like Google Docs/Slides than `element.click()`)
-- Tools: `snapshot`, `click` (id or x/y, optional `count=2` for double-click), `hover` (id or x/y), `scroll` (deltaY/deltaX), `fillText` (macro), `type`, `press`, `navigate`, `waitForLoad`
+- Tools:
+  - Observe/search: `snapshot`, `screenshot`, `findElements`, `readElement`
+  - Targeting/helpers: `scrollIntoView`, `waitFor`, `waitForLoad`
+  - Input/actions: `click`, `hover`, `scroll`, `type`, `fillText`, `press`, `hotkey`
+  - Navigation/tabs: `navigate`, `tabList`, `tabActivate`
+  - Files/downloads: `uploadFile`, `downloadsWait`
+- Element ids (`data-sting-agent-id`) persist for the duration of a single agent run (so the agent can reuse ids across steps).
 - `type` supports both element targeting and typing into the currently focused element (useful for canvas-style editors); on `docs.google.com` it uses trusted key events + post-typing verification (click the editable canvas area first; sometimes double-click or press Enter)
 - `fillText` is a high-level macro for finicky editors (especially Google Docs/Slides): focuses via click/double-click (optional `enter` + `retries`) and then types with verification
 - On `docs.google.com`, `snapshot` also includes `axText` (Accessibility tree excerpt) to help verify text in canvas-style editors like Google Slides.
