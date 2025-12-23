@@ -98,6 +98,8 @@ const UI_I18N = {
     "ai.meta.assistant": "AI",
     "ai.meta.stopped": "Stopped",
     "ai.meta.error": "Error",
+    "ai.meta.retry": "Retry",
+    "ai.retry.message": "Error: {{error}}\nRetry {{retry}}/{{maxRetries}} in {{seconds}}s…",
     "ai.meta.provider.local": "Local",
     "ai.meta.provider.gemini": "Gemini",
     "ai.meta.provider.openai": "OpenAI-compatible",
@@ -385,6 +387,8 @@ const UI_I18N = {
     "ai.meta.assistant": "IA",
     "ai.meta.stopped": "Detenido",
     "ai.meta.error": "Error",
+    "ai.meta.retry": "Reintento",
+    "ai.retry.message": "Error: {{error}}\nReintento {{retry}}/{{maxRetries}} en {{seconds}}s…",
     "ai.meta.provider.local": "Local",
     "ai.meta.provider.gemini": "Gemini",
     "ai.meta.provider.openai": "OpenAI-compatible",
@@ -673,6 +677,8 @@ const UI_I18N = {
     "ai.meta.assistant": "AI",
     "ai.meta.stopped": "已停止",
     "ai.meta.error": "錯誤",
+    "ai.meta.retry": "重試",
+    "ai.retry.message": "錯誤：{{error}}\n{{seconds}} 秒後重試（{{retry}}/{{maxRetries}}）…",
     "ai.meta.provider.local": "本地",
     "ai.meta.provider.gemini": "Gemini",
     "ai.meta.provider.openai": "OpenAI 相容",
@@ -1334,6 +1340,7 @@ applyI18nToDom();
 
 let tabs = [];
 let activeTabId = null;
+let tabActivationMru = [];
 
 let downloads = [];
 let isDownloadsShelfDismissed = false;
@@ -2469,6 +2476,32 @@ function getActiveWebview() {
   return getActiveTab()?.webview ?? null;
 }
 
+function pruneTabActivationMru() {
+  if (!tabActivationMru.length) return;
+  const existing = new Set(tabs.map((t) => t?.id).filter(Boolean));
+  tabActivationMru = tabActivationMru.filter((id) => existing.has(id));
+}
+
+function shouldAutoFocusActiveWebview() {
+  if (!document.hasFocus()) return false;
+  const activeEl = document.activeElement;
+  if (!activeEl) return true;
+  const tag = String(activeEl.tagName || "").toUpperCase();
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return false;
+  if (activeEl.isContentEditable) return false;
+  return true;
+}
+
+function focusActiveWebview({ force = false } = {}) {
+  if (!force && !shouldAutoFocusActiveWebview()) return;
+  const webview = getActiveWebview();
+  if (!webview) return;
+  try {
+    webview.focus();
+  } catch {
+  }
+}
+
 function resetFindInPageState(tab, { clearQuery = false } = {}) {
   if (!tab) return;
   if (clearQuery) tab.findQuery = "";
@@ -3327,6 +3360,7 @@ function attachWebviewEvents(tab) {
 }
 
 function createTab(initialUrl = homeUrl || DEFAULT_HOME_URL, { makeActive = true } = {}) {
+  const prevFocus = document.activeElement;
   const id = `tab_${Date.now()}_${Math.random().toString(16).slice(2)}`;
   const webview = document.createElement("webview");
   webview.className = "tabWebview hiddenWebview";
@@ -3358,17 +3392,27 @@ function createTab(initialUrl = homeUrl || DEFAULT_HOME_URL, { makeActive = true
   attachWebviewEvents(tab);
   createTabElement(tab);
 
-	  if (makeActive) setActiveTab(id);
-	  else updateStatusMeta();
-	  persistLastSessionTabs();
+		  if (makeActive) setActiveTab(id);
+		  else {
+        updateStatusMeta();
+        try {
+          if (prevFocus && typeof prevFocus.focus === "function" && prevFocus.isConnected) prevFocus.focus();
+          else focusActiveWebview();
+        } catch {
+          focusActiveWebview();
+        }
+      }
+		  persistLastSessionTabs();
 
-	  return tab;
-	}
+		  return tab;
+		}
 
 function setActiveTab(tabId) {
   const tab = getTab(tabId);
   if (!tab) return;
   activeTabId = tabId;
+  tabActivationMru = [tabId, ...tabActivationMru.filter((id) => id !== tabId)].slice(0, 50);
+  pruneTabActivationMru();
 
   applyActiveWebviewVisibility();
   for (const t of tabs) updateTabElement(t.id);
@@ -3383,11 +3427,12 @@ function setActiveTab(tabId) {
 	  syncStatusBar();
 	  syncAiContext();
 	  syncAiConversationForActiveTab();
-	  syncAiPanelOpenForActiveTab({ focus: false });
-	  syncFindBarForActiveTab();
-	  updateLoadErrorOverlay();
+		  syncAiPanelOpenForActiveTab({ focus: false });
+		  syncFindBarForActiveTab();
+		  updateLoadErrorOverlay();
 
   tab.tabEl?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+  focusActiveWebview();
 }
 
 function closeTab(tabId) {
@@ -3395,16 +3440,21 @@ function closeTab(tabId) {
   if (idx === -1) return;
 
   const [tab] = tabs.splice(idx, 1);
+  tabActivationMru = tabActivationMru.filter((id) => id !== tabId);
   tab.tabEl?.remove();
   tab.webview?.remove();
 
   if (activeTabId === tabId) {
-    const fallback = tabs[idx] || tabs[idx - 1] || tabs[0] || null;
+    pruneTabActivationMru();
+    const mruId = tabActivationMru.find((id) => tabs.some((t) => t.id === id));
+    const fallback = (mruId ? getTab(mruId) : null) || tabs[idx] || tabs[idx - 1] || tabs[0] || null;
     if (fallback) setActiveTab(fallback.id);
     else createTab(homeUrl || DEFAULT_HOME_URL, { makeActive: true });
   } else {
+    pruneTabActivationMru();
     updateStatusMeta();
     updateTabScrollButtons();
+    focusActiveWebview();
   }
   persistLastSessionTabs();
 }
@@ -5427,6 +5477,179 @@ function buildPromptMessageFromPrompt(prompt, ctx) {
   return `${text}\n\n${ctxBlock}`.trim();
 }
 
+const AI_GENERATE_MAX_RETRIES = 3;
+
+function sleepMs(ms) {
+  const t = Number(ms);
+  return new Promise((resolve) => setTimeout(resolve, Number.isFinite(t) ? Math.max(0, t) : 0));
+}
+
+function extractAiHttpStatusCodeFromText(text) {
+  const raw = String(text ?? "");
+  const match = raw.match(/\b([45]\d{2})\b/);
+  if (!match) return null;
+  const code = Number(match[1]);
+  return Number.isFinite(code) ? code : null;
+}
+
+function parseAiErrorDetails(error) {
+  const raw = String(error ?? "").trim();
+  let statusCode = null;
+  let message = raw;
+
+  if (raw && (raw.startsWith("{") || raw.startsWith("["))) {
+    try {
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === "object") {
+        const statusCandidates = [
+          obj.StatusCode,
+          obj.statusCode,
+          obj.code,
+          obj?.error?.StatusCode,
+          obj?.error?.statusCode,
+          obj?.error?.code
+        ];
+        for (const v of statusCandidates) {
+          const n = Number(v);
+          if (Number.isFinite(n) && n >= 100 && n <= 999) {
+            statusCode = n;
+            break;
+          }
+        }
+
+        const msgCandidates = [
+          obj.error,
+          obj.message,
+          obj.Status,
+          obj.status,
+          obj?.error?.message,
+          obj?.error?.status
+        ];
+        for (const v of msgCandidates) {
+          if (typeof v === "string" && v.trim()) {
+            message = v.trim();
+            break;
+          }
+        }
+      }
+    } catch {
+    }
+  }
+
+  if (statusCode == null) statusCode = extractAiHttpStatusCodeFromText(raw);
+  const text = String(message || raw || "").trim();
+  return {
+    raw,
+    message: text || raw || t("error.aiGeneric"),
+    statusCode
+  };
+}
+
+function isRetryableAiError(details) {
+  const statusCode = Number(details?.statusCode);
+  const raw = String(details?.raw || details?.message || "").toLowerCase();
+
+  if (Number.isFinite(statusCode)) {
+    if (statusCode === 429) return true;
+    if (statusCode >= 500) return true;
+    if (statusCode >= 400) return false;
+  }
+
+  if (
+    raw.includes("api key not set") ||
+    raw.includes("invalid api key") ||
+    raw.includes("api key not valid") ||
+    raw.includes("permission denied")
+  ) {
+    return false;
+  }
+
+  const transientHints = [
+    "timed out",
+    "timeout",
+    "econnreset",
+    "econnrefused",
+    "enetunreach",
+    "eai_again",
+    "enotfound",
+    "socket hang up",
+    "handshake failed",
+    "ssl",
+    "tls",
+    "networkerror",
+    "fetch failed",
+    "service unavailable",
+    "temporarily unavailable",
+    "overloaded"
+  ];
+  if (transientHints.some((h) => raw.includes(h))) return true;
+
+  return true;
+}
+
+function computeAiRetryDelayMs(retryNumber, statusCode) {
+  const retry = Math.max(1, Math.min(10, Math.floor(Number(retryNumber) || 1)));
+  const code = Number(statusCode);
+  const base = code === 429 ? 2000 : 900;
+  const exp = Math.min(12_000, base * Math.pow(2, retry - 1));
+  const jitter = exp * (0.2 * Math.random());
+  return Math.round(exp + jitter);
+}
+
+function formatAiRetrySeconds(delayMs) {
+  const ms = Number(delayMs);
+  if (!Number.isFinite(ms) || ms <= 0) return "0";
+  const seconds = ms / 1000;
+  const fixed = seconds < 10 ? seconds.toFixed(1) : seconds.toFixed(0);
+  return fixed.replace(/\.0$/, "");
+}
+
+async function aiGenerateWithRetry(payload, { maxRetries = AI_GENERATE_MAX_RETRIES, onRetry, shouldAbort } = {}) {
+  const retries = Math.max(0, Math.min(6, Math.floor(Number(maxRetries) || 0)));
+
+  for (let attempt = 1; attempt <= retries + 1; attempt++) {
+    if (typeof shouldAbort === "function" && shouldAbort()) {
+      return { ok: false, error: t("ai.chat.stopped"), aborted: true };
+    }
+
+    let res = null;
+    try {
+      res = await window.aiBridge.generate(payload);
+    } catch (err) {
+      res = { ok: false, error: String(err?.message || err) };
+    }
+
+    if (res?.ok) return { ok: true, text: String(res.text ?? "") };
+
+    const details = parseAiErrorDetails(res?.error || t("error.aiGeneric"));
+    const retryable = attempt <= retries && isRetryableAiError(details);
+    if (!retryable) return { ok: false, error: details.message, statusCode: details.statusCode, raw: details.raw };
+
+    const retryNumber = attempt;
+    const delayMs = computeAiRetryDelayMs(retryNumber, details.statusCode);
+    const seconds = formatAiRetrySeconds(delayMs);
+    const errorText = truncateText(details.message || details.raw || t("error.aiGeneric"), 900);
+
+    try {
+      if (typeof onRetry === "function") {
+        onRetry({
+          retry: retryNumber,
+          maxRetries: retries,
+          delayMs,
+          seconds,
+          error: errorText,
+          details
+        });
+      }
+    } catch {
+    }
+
+    await sleepMs(delayMs);
+  }
+
+  return { ok: false, error: t("error.aiGeneric") };
+}
+
 async function sendAiChatMessage({ displayText, buildUserMessage }) {
   const shown = String(displayText ?? "").trim();
   if (!shown) return;
@@ -5527,7 +5750,26 @@ async function sendAiChatMessage({ displayText, buildUserMessage }) {
       { role: "user", content: aiMessage }
     ];
 
-    const res = await window.aiBridge.generate({ provider, model, baseUrl, messages, prompt: aiMessage });
+    const res = await aiGenerateWithRetry(
+      { provider, model, baseUrl, messages, prompt: aiMessage },
+      {
+        maxRetries: AI_GENERATE_MAX_RETRIES,
+        shouldAbort: () => seq !== chatRunSeq,
+        onRetry: ({ retry, maxRetries, seconds, error }) => {
+          const retryMeta = `${t("ai.meta.assistant")} · ${t("ai.meta.retry")} · ${retry}/${maxRetries}`;
+          const retryText = t("ai.retry.message", { error, retry, maxRetries, seconds });
+          if (assistantMsg?.root?.isConnected) {
+            createAiChatMessage({ role: "assistant", meta: retryMeta, text: retryText });
+          }
+          if (conv && Array.isArray(conv.messages)) {
+            const ts = Date.now();
+            conv.messages.push({ role: "assistant", meta: retryMeta, content: retryText, ts, skipContext: true });
+            conv.updatedAt = ts;
+            persistAiChatStore();
+          }
+        }
+      }
+    );
     if (seq !== chatRunSeq) return;
     if (!res.ok) throw new Error(res.error || t("error.aiGeneric"));
 
@@ -5604,7 +5846,6 @@ async function sendAiChatMessage({ displayText, buildUserMessage }) {
     ) {
       renderAiConversationMessages(conv?.messages || []);
     }
-    window.aiBridge.showError(message);
   } finally {
     if (activeChatRun?.seq === seq) activeChatRun = null;
     if (seq === chatRunSeq) setChatSending(false);
@@ -6532,10 +6773,33 @@ function buildBrowserAgentSystemPrompt() {
     "On Google Docs/Slides (docs.google.com), entering edit mode can require a precise click; if typing doesn't apply, prefer fillText (macro) or try click with count=2 (double-click) or click then press Enter before typing.",
     "After performing an action, verify via the next snapshot that it actually worked before moving on (especially after type: confirm the intended text appears in snapshot.visibleText or snapshot.axText or in element text/value/aria-label).",
     "",
+    "INITIAL PLANNING PHASE:",
+    "- FIRST RESPONSE: Always start by analyzing the user's intent and creating a clear execution plan.",
+    "- Break down complex tasks into 3-7 logical steps, not more than 10 steps.",
+    "- Display the plan clearly using numbered steps in your response.",
+    "- Example plan format:",
+    "  1. Analyze current page content and identify relevant sections",
+    "  2. Navigate to specific article pages for detailed analysis",
+    "  3. Extract key information and user opinions",
+    "  4. Summarize findings with source citations",
+    "  5. Provide final recommendations",
+    "",
+    "EXECUTION AND ADAPTATION:",
+    "- Execute steps systematically, one at a time.",
+    "- After each step, assess progress and check if the plan needs modification.",
+    "- If you discover new information that changes the approach, update the plan and continue.",
+    "- CRITICAL: If current page lacks relevant information for the task, immediately search and navigate to relevant websites.",
+    "- For comparison/shopping tasks: Actively visit each mentioned platform (PChome, Momo, etc.) to gather data.",
+    "- For research tasks: Don't apologize for missing info - use tools to find and visit appropriate sources.",
+    "- Use tools strategically - don't waste steps on unnecessary actions.",
+    "- When plan is complete, provide comprehensive final answer with source citations.",
+    "",
     "CRITICAL REASONING AND PLANNING:",
     "- BEFORE each step, perform self-reflection: assess what you've learned, evaluate progress, and decide if you should continue or conclude.",
     "- Actively count and track what you've collected (e.g., 'I've analyzed 3 articles, gathered 15 key points, collected data from 4 pages').",
     "- Ask yourself: 'Do I have enough information to provide a meaningful answer to the user's task?'",
+    "- SPECIAL CASE - Irrelevant Current Page: If current page (like TechCrunch) has no relation to task (like shopping prices), immediately plan to visit relevant websites.",
+    "- SHOPPING/COMPARISON TASKS: For price comparisons across platforms, plan to visit each platform directly - don't rely on current page.",
     "- If you notice repetitive patterns (e.g., clicking similar links, extracting similar content), it's time to synthesize and conclude.",
     "- When you have collected sufficient data (typically 3-5 examples or when patterns emerge), STOP collecting and START organizing.",
     "- Use reportCreate tool to create structured reports with findings, conclusions, and recommendations.",
@@ -6600,13 +6864,24 @@ function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
     "PREVIOUS_STEPS (JSON):",
     JSON.stringify(history, null, 2),
     "",
-    "PROGRESS REFLECTION:",
-    `- You have completed ${history.length} steps so far.`,
-    `- Review what you've accomplished and ask: "Do I have enough data to provide a meaningful answer?"`,
-    `- If you've been doing similar actions repeatedly, consider synthesizing your findings.`,
-    `- Remember: Quality over quantity - 3-5 well-analyzed examples are often sufficient.`,
-    `- Track your data sources: Remember which URLs you visited and what content you extracted from each.`,
-    `- When concluding, ensure you can attribute information to specific sources.`,
+    "EXECUTION GUIDANCE:",
+    history.length === 0 ? [
+      "- This is your FIRST response - start by analyzing the user's intent and creating a clear execution plan.",
+      "- For comparison/shopping/research tasks: Identify all mentioned platforms/websites and plan visits to each.",
+      "- If current page is irrelevant (like TechCrunch for shopping), plan to visit relevant sites immediately.",
+      "- Display a numbered step-by-step plan (3-7 steps) before taking any actions.",
+      "- Format: 'EXECUTION PLAN:\\n1. Step description\\n2. Next step...'",
+      "- Do NOT execute any tools in your first response - only create and display the plan.",
+      "- After showing the plan, wait for the next interaction to begin execution."
+    ].join("\\n") : [
+      "- You have completed ${history.length} steps so far.",
+      "- Review what you've accomplished and ask: 'Do I have enough data to provide a meaningful answer?'",
+      "- If you've been doing similar actions repeatedly, consider synthesizing your findings.",
+      "- Remember: Quality over quantity - 3-5 well-analyzed examples are often sufficient.",
+      "- Track your data sources: Remember which URLs you visited and what content you extracted from each.",
+      "- When concluding, ensure you can attribute information to specific sources.",
+      "- If new information requires plan changes, clearly state the updated plan before continuing."
+    ].join("\\n"),
     "",
 	    "TOOLS:",
 	    '- snapshot: {}',
@@ -6660,6 +6935,19 @@ function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
 	    '- uploadFile: {"id":"<elementId>","paths":["/absolute/path/to/file"]}',
 	    '- exportFile: {"filename":"report.md","format":"md","content":"..."}',
     "",
+    "FOR FIRST RESPONSE (when no steps have been taken yet):",
+    "Return a planning response that analyzes the task and creates a step-by-step execution plan:",
+    "",
+    "EXECUTION PLAN:",
+    "1. Analyze current page content - if irrelevant for task (e.g., TechCrunch for shopping), skip to step 2",
+    "2. Navigate to PChome Shopping and search for '皇家貓食 10kg'",
+    "3. Extract price and product information from PChome results",
+    "4. Navigate to Momo Shopping and search for '皇家貓食 10kg'",
+    "5. Extract price and product information from Momo results",
+    "6. Navigate to 酷澎 and search for '皇家貓食 10kg'",
+    "7. Extract price and product information from 酷澎 results",
+    "8. Compare prices across all platforms and provide summary with sources",
+    "",
     "RESPONSE_SCHEMA (choose one):",
     '{"type":"tool","tool":"snapshot","args":{},"reason":"..."}',
     '{"type":"tool","tool":"findElements","args":{"text":"login"},"reason":"..."}',
@@ -6692,7 +6980,7 @@ function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
 	    '{"type":"tool","tool":"exportFile","args":{"filename":"report.md","format":"md","content":"..."},"reason":"..."}',
     '{"type":"final","final":"## Analysis Summary\\n\\nKey findings from Hacker News:\\n- Popular discussion about data backup solutions\\n- Users sharing Spotify backup experiences\\n\\n**Sources:**\\n- [Hacker News Main Page](https://news.ycombinator.com/)\\n- [Backing up Spotify Discussion](https://news.ycombinator.com/item?id=46338339)"}',
     "",
-    `RULES:\n- Output valid JSON only (a single object).\n- For tool steps, always output {"type":"tool","tool":"...","args":{...},"reason":"..."} (do NOT output only args like {"id":"23"}).\n- tool must be one of: snapshot | screenshot | findElements | readElement | collectLinks | extractStructuredData | extractTables | readerExtract | scrollIntoView | click | clickByText | clickBySelector | hover | scroll | paginateAndCollect | type | fillText | hotkey | press | navigate | waitFor | waitForLoad | tabList | tabActivate | tabOpen | tabClose | multiTabResearch | networkGetResponses | cookieExport | cookieImport | googleSheetsAppendRows | googleDocsCreateOrAppend | googleSlidesCreateDeck | reportCreate | downloadsWait | uploadFile | exportFile.\n- Use at most ${maxSteps} tool steps.\n- Prefer snapshot before interacting.\n- click/hover can use elementId OR viewport coordinates (x,y). click supports optional count (2 = double-click).\n- scroll uses deltaY (positive = down, negative = up); optional x/y sets the wheel point.\n- fillText is a macro: click (optional double-click/Enter/retries) + type; prefer it for finicky editors like Google Docs/Slides.\n- type can omit id to type into the currently focused element.\n- waitFor is for dynamic SPA waits (selector/text/urlIncludes).\n- When verifying typed text, check snapshot.visibleText first; if it's missing (common on Google Slides), also check snapshot.axText and element ariaLabel/value.\n- On Google Docs/Slides (docs.google.com), prefer clicking the exact editable area (textbox/contenteditable or canvas coordinates) before typing; Tab/Enter focus may not work.\n- Avoid destructive actions unless clearly required by TASK.\n- PROGRESS TRACKING: Count your steps and collected data. After 3-5 similar actions, evaluate if you should conclude.\n- CONCLUDE PROACTIVELY: When you have meaningful data, use reportCreate to organize findings or return final answer with comprehensive summary.\n- AVOID ENDLESS LOOPS: If you're repeating similar patterns, synthesize what you've learned and provide conclusions.\n- SOURCE CITATION: In final answers, ALWAYS include clickable Markdown links [text](url) for all sources you used.`
+    `RULES:\n- Output valid JSON only (a single object).\n- For tool steps, always output {"type":"tool","tool":"...","args":{...},"reason":"..."} (do NOT output only args like {"id":"23"}).\n- tool must be one of: snapshot | screenshot | findElements | readElement | collectLinks | extractStructuredData | extractTables | readerExtract | scrollIntoView | click | clickByText | clickBySelector | hover | scroll | paginateAndCollect | type | fillText | hotkey | press | navigate | waitFor | waitForLoad | tabList | tabActivate | tabOpen | tabClose | multiTabResearch | networkGetResponses | cookieExport | cookieImport | googleSheetsAppendRows | googleDocsCreateOrAppend | googleSlidesCreateDeck | reportCreate | downloadsWait | uploadFile | exportFile.\n- Use at most ${maxSteps} tool steps.\n- Prefer snapshot before interacting.\n- click/hover can use elementId OR viewport coordinates (x,y). click supports optional count (2 = double-click).\n- scroll uses deltaY (positive = down, negative = up); optional x/y sets the wheel point.\n- fillText is a macro: click (optional double-click/Enter/retries) + type; prefer it for finicky editors like Google Docs/Slides.\n- type can omit id to type into the currently focused element.\n- waitFor is for dynamic SPA waits (selector/text/urlIncludes).\n- When verifying typed text, check snapshot.visibleText first; if it's missing (common on Google Slides), also check snapshot.axText and element ariaLabel/value.\n- On Google Docs/Slides (docs.google.com), prefer clicking the exact editable area (textbox/contenteditable or canvas coordinates) before typing; Tab/Enter focus may not work.\n- Avoid destructive actions unless clearly required by TASK.\n- PROGRESS TRACKING: Count your steps and collected data. After 3-5 similar actions, evaluate if you should conclude.\n- CONCLUDE PROACTIVELY: When you have meaningful data, use reportCreate to organize findings or return final answer with comprehensive summary.\n- AVOID ENDLESS LOOPS: If you're repeating similar patterns, synthesize what you've learned and provide conclusions.\n- PLANNING PROTOCOL: First response must be a plan, not tool execution.\n- STEP-BY-STEP EXECUTION: Execute one logical step at a time, then reassess.\n- PLAN ADAPTATION: If new information changes approach, update plan and continue.\n- IRRELEVANT PAGE DETECTION: If current page lacks task-relevant information, immediately plan visits to appropriate websites.\n- COMPARISON TASKS: For price/product comparisons, visit each mentioned platform directly to gather data.\n- SOURCE CITATION: In final answers, ALWAYS include clickable Markdown links [text](url) for all sources you used.`
 	  ].join("\n");
 	}
 
