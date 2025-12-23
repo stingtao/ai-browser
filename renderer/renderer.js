@@ -118,6 +118,7 @@ const UI_I18N = {
     "aiSettings.close": "Close",
     "aiSettings.section.modelSource": "Model Source",
     "aiSettings.section.agent": "Agent",
+    "aiSettings.section.integrations": "Integrations",
     "aiSettings.provider.label": "Provider",
     "aiSettings.provider.local": "Local (Ollama)",
     "aiSettings.provider.gemini": "Gemini API",
@@ -167,6 +168,32 @@ const UI_I18N = {
     "aiSettings.openai.keyClear": "Clear",
     "aiSettings.openai.keyClearConfirm": "Clear the saved OpenAI-compatible API key?",
     "aiSettings.openai.keyError.invalid": "Invalid API key format.",
+
+    "aiSettings.google.status.label": "Status",
+    "aiSettings.google.status.connected": "Connected",
+    "aiSettings.google.status.disconnected": "Not connected",
+    "aiSettings.google.status.clientSecretSaved": "Client secret saved",
+    "aiSettings.google.status.refreshTokenSaved": "Refresh token saved",
+    "aiSettings.google.clientId": "Client ID",
+    "aiSettings.google.clientSecret": "Client Secret",
+    "aiSettings.google.scopes": "Scopes",
+    "aiSettings.google.scope.sheets": "Google Sheets",
+    "aiSettings.google.scope.docs": "Google Docs",
+    "aiSettings.google.scope.slides": "Google Slides",
+    "aiSettings.google.scope.driveFile": "Drive (files you create/open)",
+    "aiSettings.google.saveClientId": "Save",
+    "aiSettings.google.saveClientSecret": "Save",
+    "aiSettings.google.toggleSecret": "Show/Hide",
+    "aiSettings.google.toggleSecretAria": "Toggle client secret visibility",
+    "aiSettings.google.connect": "Connect",
+    "aiSettings.google.reconnect": "Reconnect",
+    "aiSettings.google.connecting": "Connecting…",
+    "aiSettings.google.disconnect": "Disconnect",
+    "aiSettings.google.disconnectConfirm": "Disconnect Google OAuth? You can reconnect later.",
+    "aiSettings.google.clear": "Clear",
+    "aiSettings.google.clearConfirm": "Clear Google OAuth client and tokens? You'll need to set client id/secret again.",
+    "aiSettings.google.hint":
+      "Create an OAuth client (Desktop app) in Google Cloud Console. Redirect URI will be a temporary localhost URL.",
 
     "aiSettings.agent.mode": "Mode",
     "aiSettings.agent.mode.chat": "Chat",
@@ -378,6 +405,7 @@ const UI_I18N = {
     "aiSettings.close": "Cerrar",
     "aiSettings.section.modelSource": "Origen del modelo",
     "aiSettings.section.agent": "Agente",
+    "aiSettings.section.integrations": "Integraciones",
     "aiSettings.provider.label": "Proveedor",
     "aiSettings.provider.local": "Local (Ollama)",
     "aiSettings.provider.gemini": "Gemini API",
@@ -427,6 +455,33 @@ const UI_I18N = {
     "aiSettings.openai.keyClear": "Borrar",
     "aiSettings.openai.keyClearConfirm": "¿Borrar la clave API OpenAI-compatible guardada?",
     "aiSettings.openai.keyError.invalid": "Formato de clave API no válido.",
+
+    "aiSettings.google.status.label": "Estado",
+    "aiSettings.google.status.connected": "Conectado",
+    "aiSettings.google.status.disconnected": "No conectado",
+    "aiSettings.google.status.clientSecretSaved": "Secreto de cliente guardado",
+    "aiSettings.google.status.refreshTokenSaved": "Token de actualización guardado",
+    "aiSettings.google.clientId": "ID de cliente",
+    "aiSettings.google.clientSecret": "Secreto de cliente",
+    "aiSettings.google.scopes": "Permisos",
+    "aiSettings.google.scope.sheets": "Google Sheets",
+    "aiSettings.google.scope.docs": "Google Docs",
+    "aiSettings.google.scope.slides": "Google Slides",
+    "aiSettings.google.scope.driveFile": "Drive (archivos que creas/abres)",
+    "aiSettings.google.saveClientId": "Guardar",
+    "aiSettings.google.saveClientSecret": "Guardar",
+    "aiSettings.google.toggleSecret": "Mostrar/Ocultar",
+    "aiSettings.google.toggleSecretAria": "Mostrar u ocultar el secreto de cliente",
+    "aiSettings.google.connect": "Conectar",
+    "aiSettings.google.reconnect": "Reconectar",
+    "aiSettings.google.connecting": "Conectando…",
+    "aiSettings.google.disconnect": "Desconectar",
+    "aiSettings.google.disconnectConfirm": "¿Desconectar Google OAuth? Puedes reconectar más tarde.",
+    "aiSettings.google.clear": "Borrar",
+    "aiSettings.google.clearConfirm":
+      "¿Borrar el cliente y los tokens de Google OAuth? Tendrás que configurar el ID/secreto de cliente otra vez.",
+    "aiSettings.google.hint":
+      "Crea un cliente OAuth (Aplicación de escritorio) en Google Cloud Console. El URI de redirección será un localhost temporal.",
 
     "aiSettings.agent.mode": "Modo",
     "aiSettings.agent.mode.chat": "Chat",
@@ -636,6 +691,7 @@ const UI_I18N = {
     "aiSettings.close": "關閉",
     "aiSettings.section.modelSource": "模型來源",
     "aiSettings.section.agent": "代理",
+    "aiSettings.section.integrations": "整合",
     "aiSettings.provider.label": "Provider",
     "aiSettings.provider.local": "Local (Ollama)",
     "aiSettings.provider.gemini": "Gemini API",
@@ -682,6 +738,31 @@ const UI_I18N = {
     "aiSettings.openai.keyClear": "清除",
     "aiSettings.openai.keyClearConfirm": "確定清除已儲存的 OpenAI 相容 API Key？",
     "aiSettings.openai.keyError.invalid": "API Key 格式不正確。",
+
+    "aiSettings.google.status.label": "狀態",
+    "aiSettings.google.status.connected": "已連結",
+    "aiSettings.google.status.disconnected": "未連結",
+    "aiSettings.google.status.clientSecretSaved": "已儲存 Client Secret",
+    "aiSettings.google.status.refreshTokenSaved": "已儲存 Refresh Token",
+    "aiSettings.google.clientId": "Client ID",
+    "aiSettings.google.clientSecret": "Client Secret",
+    "aiSettings.google.scopes": "權限",
+    "aiSettings.google.scope.sheets": "Google Sheets",
+    "aiSettings.google.scope.docs": "Google Docs",
+    "aiSettings.google.scope.slides": "Google Slides",
+    "aiSettings.google.scope.driveFile": "Drive（你建立/開啟的檔案）",
+    "aiSettings.google.saveClientId": "儲存",
+    "aiSettings.google.saveClientSecret": "儲存",
+    "aiSettings.google.toggleSecret": "顯示/隱藏",
+    "aiSettings.google.toggleSecretAria": "切換 Client Secret 顯示",
+    "aiSettings.google.connect": "連結",
+    "aiSettings.google.reconnect": "重新連結",
+    "aiSettings.google.connecting": "連結中...",
+    "aiSettings.google.disconnect": "解除連結",
+    "aiSettings.google.disconnectConfirm": "確定要解除 Google OAuth 連結？之後可以重新連結。",
+    "aiSettings.google.clear": "清除",
+    "aiSettings.google.clearConfirm": "清除 Google OAuth Client 與 token？之後需要重新設定 Client ID/Secret。",
+    "aiSettings.google.hint": "請在 Google Cloud Console 建立 OAuth client（桌面應用程式）。Redirect URI 會使用暫時的 localhost URL。",
 
     "aiSettings.agent.mode": "模式",
     "aiSettings.agent.mode.chat": "Chat",
@@ -1005,9 +1086,20 @@ const openAiApiKeyInput = document.getElementById("openAiApiKeyInput");
 const toggleOpenAiKeyBtn = document.getElementById("toggleOpenAiKeyBtn");
 const saveOpenAiKeyBtn = document.getElementById("saveOpenAiKeyBtn");
 const clearOpenAiKeyBtn = document.getElementById("clearOpenAiKeyBtn");
-const openAiKeyStatus = document.getElementById("openAiKeyStatus");
-const openAiKeyErrorRow = document.getElementById("openAiKeyErrorRow");
-const openAiKeyError = document.getElementById("openAiKeyError");
+	const openAiKeyStatus = document.getElementById("openAiKeyStatus");
+	const openAiKeyErrorRow = document.getElementById("openAiKeyErrorRow");
+	const openAiKeyError = document.getElementById("openAiKeyError");
+
+  const googleOauthStatus = document.getElementById("googleOauthStatus");
+  const googleOauthClientIdInput = document.getElementById("googleOauthClientIdInput");
+  const googleOauthSaveClientIdBtn = document.getElementById("googleOauthSaveClientIdBtn");
+  const googleOauthClientSecretInput = document.getElementById("googleOauthClientSecretInput");
+  const toggleGoogleOauthSecretBtn = document.getElementById("toggleGoogleOauthSecretBtn");
+  const googleOauthSaveClientSecretBtn = document.getElementById("googleOauthSaveClientSecretBtn");
+  const googleOauthConnectBtn = document.getElementById("googleOauthConnectBtn");
+  const googleOauthDisconnectBtn = document.getElementById("googleOauthDisconnectBtn");
+  const googleOauthClearBtn = document.getElementById("googleOauthClearBtn");
+  const googleOauthScopeInputs = Array.from(document.querySelectorAll('input[name="googleOauthScope"]'));
 
 const aiFontSizeSelect = document.getElementById("aiFontSizeSelect");
 const voiceModelSelect = document.getElementById("voiceModelSelect");
@@ -1020,13 +1112,172 @@ const addPromptBtn = document.getElementById("addPromptBtn");
 const savePromptBtn = document.getElementById("savePromptBtn");
 const deletePromptBtn = document.getElementById("deletePromptBtn");
 const resetPromptsBtn = document.getElementById("resetPromptsBtn");
-const customPromptInput = document.getElementById("customPromptInput");
+	const customPromptInput = document.getElementById("customPromptInput");
+	
+	const DEFAULT_LOCAL_MODEL = "MaziyarPanahi/calme-3.2-instruct-78b";
+	const DEFAULT_VOICE_MODEL = "gemini-2.5-flash-native-audio-preview-12-2025";
+	  const DEFAULT_GOOGLE_OAUTH_SCOPES = [
+	    "https://www.googleapis.com/auth/spreadsheets",
+	    "https://www.googleapis.com/auth/documents",
+	    "https://www.googleapis.com/auth/presentations"
+	  ];
 
-const DEFAULT_LOCAL_MODEL = "MaziyarPanahi/calme-3.2-instruct-78b";
-const DEFAULT_VOICE_MODEL = "gemini-2.5-flash-native-audio-preview-12-2025";
-const AGENT_MAX_STEPS_MIN = 1;
-const AGENT_MAX_STEPS_MAX = 50;
-const AGENT_MAX_STEPS_DEFAULT = 10;
+	  const AGENT_CONTROL_UI_STYLE_ID = "sting-agent-control-ui-style";
+	  const AGENT_CONTROL_UI_ROOT_ID = "sting-agent-control-ui-root";
+	  const AGENT_CONTROL_UI_CURSOR_SVG =
+	    '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">' +
+	    '<path d="M5 3 L19 16 L13 16 L15.6 22 L12.7 23 L10 16.7 L6.7 20 Z" fill="rgba(255,255,255,0.96)" stroke="rgba(0,0,0,0.65)" stroke-width="1.2" stroke-linejoin="round"/>' +
+	    "</svg>";
+	  const AGENT_CONTROL_UI_CSS = `
+	    #${AGENT_CONTROL_UI_ROOT_ID} {
+	      position: fixed;
+	      inset: 0;
+	      z-index: 2147483647;
+	      pointer-events: none;
+	      display: none;
+	      contain: layout style paint;
+	      --sting-agent-flicker-alpha: 0.06;
+	      --sting-agent-jitter-x: 0px;
+	      --sting-agent-jitter-y: 0px;
+	      --sting-agent-cursor-x: 16px;
+	      --sting-agent-cursor-y: 16px;
+	    }
+	    #${AGENT_CONTROL_UI_ROOT_ID}[data-enabled="true"] { display: block; }
+	    #${AGENT_CONTROL_UI_ROOT_ID} .stingAgentFlicker {
+	      position: absolute;
+	      inset: 0;
+	      opacity: var(--sting-agent-flicker-alpha);
+	      transform: translate3d(var(--sting-agent-jitter-x), var(--sting-agent-jitter-y), 0);
+	      background:
+	        repeating-linear-gradient(
+	          180deg,
+	          rgba(0,0,0,0.00) 0px,
+	          rgba(0,0,0,0.00) 2px,
+	          rgba(0,0,0,0.035) 3px,
+	          rgba(0,0,0,0.00) 7px
+	        );
+	      mix-blend-mode: overlay;
+	      animation: stingAgentScan 1.7s linear infinite;
+	      will-change: opacity, transform;
+	    }
+	    #${AGENT_CONTROL_UI_ROOT_ID} .stingAgentFlicker::before {
+	      content: "";
+	      position: absolute;
+	      inset: 0;
+	      background:
+	        radial-gradient(1200px 800px at 28% 12%, rgba(66,133,244,0.12), rgba(0,0,0,0) 60%),
+	        radial-gradient(900px 650px at 72% 88%, rgba(15,157,88,0.10), rgba(0,0,0,0) 62%),
+	        radial-gradient(800px 560px at 80% 20%, rgba(244,180,0,0.08), rgba(0,0,0,0) 58%);
+	      opacity: 0.95;
+	    }
+	    #${AGENT_CONTROL_UI_ROOT_ID} .stingAgentBorder {
+	      position: absolute;
+	      inset: 0;
+	      margin: 6px;
+	      border-radius: 12px;
+	      box-shadow:
+	        0 0 0 2px rgba(66,133,244,0.22) inset,
+	        0 0 0 1px rgba(255,255,255,0.06) inset,
+	        0 12px 40px rgba(0,0,0,0.08);
+	      opacity: 0.6;
+	      animation: stingAgentBorderPulse 1.6s ease-in-out infinite;
+	    }
+	    #${AGENT_CONTROL_UI_ROOT_ID} .stingAgentBadge {
+	      position: absolute;
+	      top: 10px;
+	      right: 10px;
+	      display: inline-flex;
+	      align-items: center;
+	      gap: 8px;
+	      padding: 7px 10px;
+	      border-radius: 999px;
+	      background: rgba(17,19,24,0.62);
+	      border: 1px solid rgba(255,255,255,0.14);
+	      color: rgba(255,255,255,0.92);
+	      font: 700 11px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+	      letter-spacing: 0.4px;
+	      backdrop-filter: blur(8px);
+	      box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+	      user-select: none;
+	      -webkit-font-smoothing: antialiased;
+	    }
+	    #${AGENT_CONTROL_UI_ROOT_ID} .stingAgentBadgeDot {
+	      width: 8px;
+	      height: 8px;
+	      border-radius: 50%;
+	      background: #34a853;
+	      box-shadow: 0 0 0 0 rgba(52,168,83,0.0);
+	      animation: stingAgentDot 1.2s ease-in-out infinite;
+	    }
+	    #${AGENT_CONTROL_UI_ROOT_ID} .stingAgentCursor {
+	      position: absolute;
+	      left: 0;
+	      top: 0;
+	      width: 22px;
+	      height: 22px;
+	      transform: translate3d(calc(var(--sting-agent-cursor-x) - 2px), calc(var(--sting-agent-cursor-y) - 2px), 0);
+	      transition: transform 70ms linear;
+	      filter: drop-shadow(0 2px 2px rgba(0,0,0,0.45));
+	      opacity: 0;
+	      will-change: transform, opacity;
+	    }
+	    #${AGENT_CONTROL_UI_ROOT_ID}[data-has-cursor="true"] .stingAgentCursor { opacity: 1; }
+	    #${AGENT_CONTROL_UI_ROOT_ID} .stingAgentCursor svg { width: 100%; height: 100%; display: block; }
+	    #${AGENT_CONTROL_UI_ROOT_ID} .stingAgentRipple {
+	      position: absolute;
+	      width: 14px;
+	      height: 14px;
+	      border-radius: 999px;
+	      border: 2px solid rgba(66,133,244,0.95);
+	      box-shadow: 0 0 0 4px rgba(66,133,244,0.12);
+	      transform: translate(-50%, -50%) scale(0.18);
+	      opacity: 0;
+	      animation: stingAgentRipple 420ms ease-out forwards;
+	    }
+	    #${AGENT_CONTROL_UI_ROOT_ID} .stingAgentScrollChip {
+	      position: absolute;
+	      transform: translate(-50%, -50%);
+	      padding: 4px 8px;
+	      border-radius: 999px;
+	      background: rgba(17,19,24,0.58);
+	      border: 1px solid rgba(255,255,255,0.14);
+	      color: rgba(255,255,255,0.92);
+	      font: 700 11px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+	      letter-spacing: 0.2px;
+	      backdrop-filter: blur(8px);
+	      box-shadow: 0 10px 24px rgba(0,0,0,0.16);
+	      opacity: 0;
+	      animation: stingAgentScrollChip 520ms ease-out forwards;
+	      will-change: transform, opacity;
+	    }
+
+	    @keyframes stingAgentScan {
+	      from { background-position: 0 0; }
+	      to { background-position: 0 80px; }
+	    }
+	    @keyframes stingAgentBorderPulse {
+	      0%, 100% { opacity: 0.45; }
+	      50% { opacity: 0.9; }
+	    }
+	    @keyframes stingAgentDot {
+	      0% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(52,168,83,0.0); }
+	      50% { transform: scale(1); box-shadow: 0 0 0 8px rgba(52,168,83,0.12); }
+	      100% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(52,168,83,0.0); }
+	    }
+	    @keyframes stingAgentRipple {
+	      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.18); }
+	      20% { opacity: 1; }
+	      100% { opacity: 0; transform: translate(-50%, -50%) scale(4.2); }
+	    }
+	    @keyframes stingAgentScrollChip {
+	      0% { opacity: 0; transform: translate(-50%, -50%) translateY(0) scale(0.98); }
+	      18% { opacity: 1; }
+	      100% { opacity: 0; transform: translate(-50%, -50%) translateY(var(--sting-agent-scroll-dy, 0px)) scale(1.02); }
+	    }
+	  `.trim();
+		const AGENT_MAX_STEPS_MIN = 1;
+		const AGENT_MAX_STEPS_MAX = 50;
+		const AGENT_MAX_STEPS_DEFAULT = 10;
 pullModelInput.value = DEFAULT_LOCAL_MODEL;
 pullModelInput.addEventListener("input", () => persistAiAssistantOptions());
 
@@ -4001,11 +4252,23 @@ voiceModelSelect?.addEventListener("change", () => {
   persistAiAssistantOptions();
 });
 
+function normalizeGeminiApiKeyInput(apiKey) {
+  let key = String(apiKey ?? "");
+  key = key.replace(/[\u200B-\u200D\u2060\uFEFF]/g, ""); // zero-width/invisible
+  key = key.trim();
+  key = key.replace(/^["'`]+/, "").replace(/["'`]+$/, "");
+  key = key.replace(/\s+/g, "");
+  key = key.replace(/[\u2010-\u2015\u2212\uFE63\uFF0D]/g, "-"); // dashes
+  key = key.replace(/\uFF3F/g, "_"); // fullwidth underscore
+  return key;
+}
+
 function isValidGeminiApiKey(apiKey) {
-  const key = String(apiKey || "").trim();
+  const key = normalizeGeminiApiKeyInput(apiKey);
   if (!key) return false;
   if (key.length < 20) return false;
-  if (!/^[0-9A-Za-z\\-_]+$/.test(key)) return false;
+  if (key.length > 240) return false;
+  if (!/^[0-9A-Za-z_-]+$/.test(key)) return false;
   if (key.startsWith("AIza") && key.length < 32) return false;
   return true;
 }
@@ -4032,7 +4295,7 @@ function setOpenAiKeyError(message) {
 }
 
 function syncGeminiKeySaveState() {
-  const key = geminiApiKeyInput.value.trim();
+  const key = normalizeGeminiApiKeyInput(geminiApiKeyInput.value);
   if (!key) {
     saveGeminiKeyBtn.disabled = true;
     setGeminiKeyError("");
@@ -4053,6 +4316,13 @@ function syncOpenAiKeySaveState() {
   const ok = isValidOpenAiApiKey(key);
   saveOpenAiKeyBtn.disabled = !ok;
   setOpenAiKeyError(ok ? "" : t("aiSettings.openai.keyError.invalid"));
+}
+
+function syncGoogleOauthSaveState() {
+  const clientId = String(googleOauthClientIdInput?.value || "").trim();
+  if (googleOauthSaveClientIdBtn) googleOauthSaveClientIdBtn.disabled = !clientId;
+  const secret = String(googleOauthClientSecretInput?.value || "").trim();
+  if (googleOauthSaveClientSecretBtn) googleOauthSaveClientSecretBtn.disabled = !secret;
 }
 
 async function loadAiSettings() {
@@ -4121,6 +4391,39 @@ async function loadAiSettings() {
   }
 
   syncOpenAiKeySaveState();
+
+  const googleOauth = s.googleOauth && typeof s.googleOauth === "object" ? s.googleOauth : {};
+  const googleClientId = String(googleOauth.clientId || "").trim();
+  const googleHasClientSecret = Boolean(googleOauth.hasClientSecret);
+  const googleHasRefreshToken = Boolean(googleOauth.hasRefreshToken);
+  const googleConnectedAt = Number(googleOauth.connectedAt) || 0;
+  const googleScopes = Array.isArray(googleOauth.scopes) ? googleOauth.scopes.map((x) => String(x || "").trim()).filter(Boolean) : [];
+
+  if (googleOauthClientIdInput) googleOauthClientIdInput.value = googleClientId;
+
+  const effectiveScopes = googleScopes.length ? googleScopes : DEFAULT_GOOGLE_OAUTH_SCOPES;
+  for (const input of googleOauthScopeInputs) {
+    const value = String(input?.value || "").trim();
+    if (!value) continue;
+    input.checked = effectiveScopes.includes(value);
+  }
+
+  if (googleOauthStatus) {
+    const parts = [];
+    parts.push(googleHasRefreshToken ? t("aiSettings.google.status.connected") : t("aiSettings.google.status.disconnected"));
+    if (googleConnectedAt) parts.push(new Date(googleConnectedAt).toLocaleString());
+    if (googleHasClientSecret) parts.push(t("aiSettings.google.status.clientSecretSaved"));
+    if (googleHasRefreshToken) parts.push(t("aiSettings.google.status.refreshTokenSaved"));
+    googleOauthStatus.textContent = parts.join(" · ");
+  }
+  if (googleOauthConnectBtn) {
+    googleOauthConnectBtn.disabled = !(googleClientId && googleHasClientSecret);
+    googleOauthConnectBtn.textContent = googleHasRefreshToken ? t("aiSettings.google.reconnect") : t("aiSettings.google.connect");
+  }
+  if (googleOauthDisconnectBtn) googleOauthDisconnectBtn.disabled = !googleHasRefreshToken;
+  if (googleOauthClearBtn) googleOauthClearBtn.disabled = !(googleClientId || googleHasClientSecret || googleHasRefreshToken);
+
+  syncGoogleOauthSaveState();
   persistAiAssistantOptions();
 }
 
@@ -4142,7 +4445,7 @@ toggleGeminiKeyBtn.addEventListener("click", () => {
 geminiApiKeyInput.addEventListener("input", syncGeminiKeySaveState);
 
 saveGeminiKeyBtn.addEventListener("click", async () => {
-  const key = geminiApiKeyInput.value.trim();
+  const key = normalizeGeminiApiKeyInput(geminiApiKeyInput.value);
   if (!isValidGeminiApiKey(key)) {
     syncGeminiKeySaveState();
     return;
@@ -4236,6 +4539,108 @@ clearOpenAiKeyBtn.addEventListener("click", async () => {
   const res = await window.aiBridge.clearOpenAiApiKey();
   if (!res.ok) {
     window.aiBridge.showError(res.error);
+    return;
+  }
+  await loadAiSettings();
+});
+
+toggleGoogleOauthSecretBtn?.addEventListener("click", () => {
+  if (!googleOauthClientSecretInput) return;
+  googleOauthClientSecretInput.type = googleOauthClientSecretInput.type === "password" ? "text" : "password";
+});
+
+googleOauthClientIdInput?.addEventListener("input", syncGoogleOauthSaveState);
+googleOauthClientSecretInput?.addEventListener("input", syncGoogleOauthSaveState);
+
+googleOauthSaveClientIdBtn?.addEventListener("click", async () => {
+  const clientId = String(googleOauthClientIdInput?.value || "").trim();
+  if (!clientId) {
+    syncGoogleOauthSaveState();
+    return;
+  }
+  googleOauthSaveClientIdBtn.disabled = true;
+  const res = await window.aiBridge.setGoogleOauthClientId(clientId);
+  if (!res.ok) {
+    window.aiBridge.showError(res.error);
+    await loadAiSettings();
+    return;
+  }
+  await loadAiSettings();
+});
+
+googleOauthSaveClientSecretBtn?.addEventListener("click", async () => {
+  const clientSecret = String(googleOauthClientSecretInput?.value || "").trim();
+  if (!clientSecret) {
+    syncGoogleOauthSaveState();
+    return;
+  }
+  googleOauthSaveClientSecretBtn.disabled = true;
+  const res = await window.aiBridge.setGoogleOauthClientSecret(clientSecret);
+  if (!res.ok) {
+    window.aiBridge.showError(res.error);
+    await loadAiSettings();
+    return;
+  }
+  if (googleOauthClientSecretInput) {
+    googleOauthClientSecretInput.value = "";
+    googleOauthClientSecretInput.type = "password";
+  }
+  await loadAiSettings();
+});
+
+for (const input of googleOauthScopeInputs) {
+  input?.addEventListener?.("change", async () => {
+    const scopes = googleOauthScopeInputs
+      .filter((el) => el && el.checked)
+      .map((el) => String(el.value || "").trim())
+      .filter(Boolean)
+      .slice(0, 12);
+    const res = await window.aiBridge.setGoogleOauthScopes(scopes);
+    if (!res.ok) {
+      window.aiBridge.showError(res.error);
+      await loadAiSettings();
+      return;
+    }
+    await loadAiSettings();
+  });
+}
+
+googleOauthConnectBtn?.addEventListener("click", async () => {
+  googleOauthConnectBtn.disabled = true;
+  const prevText = googleOauthConnectBtn.textContent;
+  googleOauthConnectBtn.textContent = t("aiSettings.google.connecting");
+  try {
+    const res = await window.aiBridge.googleOauthConnect({ openExternal: true });
+    if (!res.ok) {
+      window.aiBridge.showError(res.error);
+      return;
+    }
+    await loadAiSettings();
+  } finally {
+    googleOauthConnectBtn.textContent = prevText;
+    await loadAiSettings();
+  }
+});
+
+googleOauthDisconnectBtn?.addEventListener("click", async () => {
+  if (!confirm(t("aiSettings.google.disconnectConfirm"))) return;
+  googleOauthDisconnectBtn.disabled = true;
+  const res = await window.aiBridge.disconnectGoogleOauth();
+  if (!res.ok) {
+    window.aiBridge.showError(res.error);
+    await loadAiSettings();
+    return;
+  }
+  await loadAiSettings();
+});
+
+googleOauthClearBtn?.addEventListener("click", async () => {
+  if (!confirm(t("aiSettings.google.clearConfirm"))) return;
+  googleOauthClearBtn.disabled = true;
+  const res = await window.aiBridge.clearGoogleOauthClient();
+  if (!res.ok) {
+    window.aiBridge.showError(res.error);
+    await loadAiSettings();
     return;
   }
   await loadAiSettings();
@@ -5334,8 +5739,16 @@ function normalizeBrowserAgentToolName(tool) {
   if (["screenshot", "capturescreenshot", "screencap", "screen", "captureimage"].includes(compact)) return "screenshot";
   if (["findelements", "findelement", "find", "query", "search", "locate"].includes(compact)) return "findElements";
   if (["readelement", "getelement", "elementinfo", "elementdetails"].includes(compact)) return "readElement";
+  if (["collectlinks", "getlinks", "extractlinks", "linklist", "listlinks"].includes(compact)) return "collectLinks";
+  if (["extractstructureddata", "structureddata", "extractjsonld", "extractldjson", "jsonld"].includes(compact)) {
+    return "extractStructuredData";
+  }
+  if (["extracttables", "readtables", "tables"].includes(compact)) return "extractTables";
+  if (["readerextract", "readability", "extractarticle", "articleextract", "extractcontent"].includes(compact)) return "readerExtract";
   if (["scrollintoview", "bringintoview", "scrolltoelement"].includes(compact)) return "scrollIntoView";
   if (["click", "tap"].includes(compact)) return "click";
+  if (["clickbytext", "clicktext", "clickontxt", "clicklabel"].includes(compact)) return "clickByText";
+  if (["clickbyselector", "clickselector", "clickcss"].includes(compact)) return "clickBySelector";
   if (["hover", "mouseover", "mousemove", "move"].includes(compact)) return "hover";
   if (["scroll", "wheel", "mousewheel", "scrollby", "scrollto"].includes(compact)) return "scroll";
   if (["filltext", "focusandtype", "clickandtype", "smarttype"].includes(compact)) return "fillText";
@@ -5347,8 +5760,20 @@ function normalizeBrowserAgentToolName(tool) {
   if (["wait", "waitforload", "waitfornavigation", "waituntil"].includes(compact)) return "waitForLoad";
   if (["tablist", "listtabs", "tabs"].includes(compact)) return "tabList";
   if (["tabactivate", "activatetab", "switchtab", "focustab"].includes(compact)) return "tabActivate";
+  if (["tabopen", "opentab", "newtab", "createtab", "addtab"].includes(compact)) return "tabOpen";
+  if (["tabclose", "closetab", "removetab", "deletetab"].includes(compact)) return "tabClose";
+  if (["reportcreate", "createreport", "buildreport", "renderreport", "makereport"].includes(compact)) return "reportCreate";
+  if (["exportfile", "writefile", "savefile", "workspacewrite", "export"].includes(compact)) return "exportFile";
   if (["downloadswait", "downloadwait", "waitdownload", "waitfordownload"].includes(compact)) return "downloadsWait";
   if (["uploadfile", "setinputfiles", "attachfile", "upload"].includes(compact)) return "uploadFile";
+  if (["paginateandcollect", "scrollandcollect", "collectwithscroll", "autoscrollcollect"].includes(compact)) return "paginateAndCollect";
+  if (["multitabresearch", "batchresearch", "researchbatch", "bulkresearch"].includes(compact)) return "multiTabResearch";
+  if (["networkgetresponses", "networkresponses", "capturenetwork", "networklog", "getresponses"].includes(compact)) return "networkGetResponses";
+  if (["cookieexport", "exportcookies", "cookiesexport"].includes(compact)) return "cookieExport";
+  if (["cookieimport", "importcookies", "cookiesimport"].includes(compact)) return "cookieImport";
+  if (["googlesheetsappendrows", "sheetsappendrows", "sheetappendrows", "sheetsappend"].includes(compact)) return "googleSheetsAppendRows";
+  if (["googledocscreateorappend", "docscreateorappend", "docsappend", "docscreate"].includes(compact)) return "googleDocsCreateOrAppend";
+  if (["googleslidescreatedeck", "slidescreatedeck", "slidescreate", "createdeck"].includes(compact)) return "googleSlidesCreateDeck";
   return null;
 }
 
@@ -5366,6 +5791,21 @@ function inferBrowserAgentToolNameFromArgsObject(obj, rawText) {
 
   const hasAny = (keys) => keys.some((key) => get(key) != null);
   const keyCount = Object.keys(obj).length;
+
+  if (hasAny(["markdown", "md"]) || (hasAny(["title"]) && /report|summary|簡報|報告/i.test(String(rawText || "")))) {
+    return "reportCreate";
+  }
+  if (hasAny(["filename", "fileName"]) || (hasAny(["format"]) && hasAny(["content", "text", "data"]))) {
+    return "exportFile";
+  }
+  if (hasAny(["includeJsonLd", "includeTables", "maxTables", "maxJsonLd", "jsonLd", "tables"])) {
+    return "extractStructuredData";
+  }
+  if (hasAny(["sameOrigin", "urlIncludes", "textIncludes"]) && !hasAny(["fields", "paths", "deltaY", "selector"])) {
+    return "collectLinks";
+  }
+  if (hasAny(["maxChars"]) && !hasAny(["fields", "paths", "deltaY", "selector"])) return "readerExtract";
+  if (hasAny(["makeActive", "background"]) && hasAny(["url", "toUrl", "href"])) return "tabOpen";
 
   if (hasAny(["url", "toUrl", "href"])) return "navigate";
   if (hasAny(["state", "waitUntil", "wait_until"])) return "waitForLoad";
@@ -5590,6 +6030,299 @@ function normalizeBrowserAgentArgs(tool, args) {
     }
   }
 
+  if (tool === "tabOpen") {
+    if (out.url == null && out.toUrl != null) out.url = out.toUrl;
+    if (out.url == null && out.href != null) out.url = out.href;
+    out.url = String(out.url ?? "").trim();
+    if (out.makeActive == null && out.active != null) out.makeActive = out.active;
+    if (out.makeActive == null && out.openInNewTab != null) out.makeActive = out.openInNewTab;
+    if (out.makeActive == null && out.background != null) out.makeActive = !Boolean(out.background);
+    if (out.makeActive != null) out.makeActive = Boolean(out.makeActive);
+    else delete out.makeActive;
+  }
+
+  if (tool === "tabClose") {
+    if (out.tabId == null && out.tab_id != null) out.tabId = out.tab_id;
+    if (out.tabId == null && out.tabIndex != null) out.tabId = out.tabIndex;
+    const n = out.tabId == null ? NaN : Number(out.tabId);
+    if (Number.isFinite(n) && n > 0) out.tabId = Math.floor(n);
+    else out.tabId = String(out.tabId ?? "").trim();
+    if (!out.tabId) delete out.tabId;
+  }
+
+  if (tool === "collectLinks") {
+    const n = out.limit == null ? NaN : Number(out.limit);
+    const lim = Math.floor(n);
+    if (Number.isFinite(lim) && lim > 0) out.limit = lim;
+    else delete out.limit;
+    if (out.sameOrigin == null && out.same_origin != null) out.sameOrigin = out.same_origin;
+    if (out.sameOrigin != null) out.sameOrigin = Boolean(out.sameOrigin);
+    else delete out.sameOrigin;
+    if (out.urlIncludes == null && out.url_contains != null) out.urlIncludes = out.url_contains;
+    out.urlIncludes = String(out.urlIncludes ?? "").trim();
+    if (!out.urlIncludes) delete out.urlIncludes;
+    if (out.textIncludes == null && out.text_contains != null) out.textIncludes = out.text_contains;
+    out.textIncludes = String(out.textIncludes ?? "").trim();
+    if (!out.textIncludes) delete out.textIncludes;
+    out.selector = String(out.selector ?? out.css ?? "").trim();
+    if (!out.selector) delete out.selector;
+  }
+
+  if (tool === "extractStructuredData") {
+    if (out.includeJsonLd == null && out.include_jsonld != null) out.includeJsonLd = out.include_jsonld;
+    if (out.includeJsonLd != null) out.includeJsonLd = Boolean(out.includeJsonLd);
+    else delete out.includeJsonLd;
+    if (out.includeTables == null && out.include_tables != null) out.includeTables = out.include_tables;
+    if (out.includeTables != null) out.includeTables = Boolean(out.includeTables);
+    else delete out.includeTables;
+
+    const mj = out.maxJsonLd == null ? NaN : Number(out.maxJsonLd);
+    const maxJsonLd = Math.floor(mj);
+    if (Number.isFinite(maxJsonLd) && maxJsonLd >= 0) out.maxJsonLd = maxJsonLd;
+    else delete out.maxJsonLd;
+    const mjc = out.maxJsonLdChars == null ? NaN : Number(out.maxJsonLdChars);
+    const maxJsonLdChars = Math.floor(mjc);
+    if (Number.isFinite(maxJsonLdChars) && maxJsonLdChars > 0) out.maxJsonLdChars = maxJsonLdChars;
+    else delete out.maxJsonLdChars;
+
+    const mt = out.maxTables == null ? NaN : Number(out.maxTables);
+    const maxTables = Math.floor(mt);
+    if (Number.isFinite(maxTables) && maxTables >= 0) out.maxTables = maxTables;
+    else delete out.maxTables;
+    const mr = out.maxRows == null ? NaN : Number(out.maxRows);
+    const maxRows = Math.floor(mr);
+    if (Number.isFinite(maxRows) && maxRows > 0) out.maxRows = maxRows;
+    else delete out.maxRows;
+    const mc = out.maxCols == null ? NaN : Number(out.maxCols);
+    const maxCols = Math.floor(mc);
+    if (Number.isFinite(maxCols) && maxCols > 0) out.maxCols = maxCols;
+    else delete out.maxCols;
+  }
+
+  if (tool === "readerExtract") {
+    const n = out.maxChars == null ? NaN : Number(out.maxChars);
+    const maxChars = Math.floor(n);
+    if (Number.isFinite(maxChars) && maxChars > 0) out.maxChars = maxChars;
+    else delete out.maxChars;
+  }
+
+  if (tool === "reportCreate") {
+    if (out.title == null && out.name != null) out.title = out.name;
+    out.title = String(out.title ?? "").trim();
+    if (out.markdown == null && out.md != null) out.markdown = out.md;
+    if (out.markdown == null && out.content != null) out.markdown = out.content;
+    if (out.markdown == null && out.text != null) out.markdown = out.text;
+    out.markdown = String(out.markdown ?? "");
+    if (out.makeActive == null && out.active != null) out.makeActive = out.active;
+    if (out.makeActive == null && out.openInNewTab != null) out.makeActive = out.openInNewTab;
+    if (out.makeActive != null) out.makeActive = Boolean(out.makeActive);
+    else delete out.makeActive;
+  }
+
+  if (tool === "exportFile") {
+    if (out.filename == null && out.fileName != null) out.filename = out.fileName;
+    if (out.filename == null && out.name != null) out.filename = out.name;
+    out.filename = String(out.filename ?? "").trim();
+    if (!out.filename) delete out.filename;
+    out.format = String(out.format ?? "").trim();
+    if (!out.format) delete out.format;
+    if (out.content == null && out.text != null) out.content = out.text;
+    if (out.content == null && out.markdown != null) out.content = out.markdown;
+    if (out.content != null) out.content = String(out.content ?? "");
+    else delete out.content;
+    if (out.data != null && typeof out.data !== "object") delete out.data;
+  }
+
+  if (tool === "clickByText") {
+    if (out.text == null && out.query != null) out.text = out.query;
+    if (out.text == null && out.q != null) out.text = out.q;
+    out.text = String(out.text ?? "").trim();
+    out.selector = String(out.selector ?? out.css ?? "").trim();
+    out.role = String(out.role ?? "").trim();
+    out.tag = String(out.tag ?? "").trim();
+    const n = out.limit == null ? NaN : Number(out.limit);
+    const lim = Math.floor(n);
+    if (Number.isFinite(lim) && lim > 0) out.limit = lim;
+    else delete out.limit;
+    if (out.count == null && out.clickCount != null) out.count = out.clickCount;
+    const c = out.count == null ? NaN : Number(out.count);
+    const clickCount = Math.floor(c);
+    if (Number.isFinite(clickCount) && clickCount >= 1 && clickCount <= 3) out.count = clickCount;
+    else delete out.count;
+  }
+
+  if (tool === "clickBySelector") {
+    out.selector = String(out.selector ?? out.css ?? "").trim();
+    if (out.count == null && out.clickCount != null) out.count = out.clickCount;
+    const c = out.count == null ? NaN : Number(out.count);
+    const clickCount = Math.floor(c);
+    if (Number.isFinite(clickCount) && clickCount >= 1 && clickCount <= 3) out.count = clickCount;
+    else delete out.count;
+    const n = out.timeoutMs == null ? NaN : Number(out.timeoutMs);
+    const ms = Math.floor(n);
+    if (Number.isFinite(ms) && ms > 0) out.timeoutMs = ms;
+    else delete out.timeoutMs;
+  }
+
+  if (tool === "extractTables") {
+    const mt = out.maxTables == null ? NaN : Number(out.maxTables);
+    const maxTables = Math.floor(mt);
+    if (Number.isFinite(maxTables) && maxTables >= 0) out.maxTables = maxTables;
+    else delete out.maxTables;
+    const mr = out.maxRows == null ? NaN : Number(out.maxRows);
+    const maxRows = Math.floor(mr);
+    if (Number.isFinite(maxRows) && maxRows > 0) out.maxRows = maxRows;
+    else delete out.maxRows;
+    const mc = out.maxCols == null ? NaN : Number(out.maxCols);
+    const maxCols = Math.floor(mc);
+    if (Number.isFinite(maxCols) && maxCols > 0) out.maxCols = maxCols;
+    else delete out.maxCols;
+  }
+
+  if (tool === "paginateAndCollect") {
+    const n = out.limit == null ? NaN : Number(out.limit);
+    const lim = Math.floor(n);
+    if (Number.isFinite(lim) && lim > 0) out.limit = lim;
+    else delete out.limit;
+    const s = out.scrolls == null ? NaN : Number(out.scrolls ?? out.pages ?? out.steps);
+    const scrolls = Math.floor(s);
+    if (Number.isFinite(scrolls) && scrolls > 0) out.scrolls = scrolls;
+    else delete out.scrolls;
+    const dy = out.deltaY == null ? NaN : Number(out.deltaY ?? out.dy);
+    const deltaY = Math.floor(dy);
+    if (Number.isFinite(deltaY) && deltaY !== 0) out.deltaY = deltaY;
+    else delete out.deltaY;
+    if (out.sameOrigin == null && out.same_origin != null) out.sameOrigin = out.same_origin;
+    if (out.sameOrigin != null) out.sameOrigin = Boolean(out.sameOrigin);
+    else delete out.sameOrigin;
+    if (out.urlIncludes == null && out.url_contains != null) out.urlIncludes = out.url_contains;
+    out.urlIncludes = String(out.urlIncludes ?? "").trim();
+    if (!out.urlIncludes) delete out.urlIncludes;
+    if (out.textIncludes == null && out.text_contains != null) out.textIncludes = out.text_contains;
+    out.textIncludes = String(out.textIncludes ?? "").trim();
+    if (!out.textIncludes) delete out.textIncludes;
+    out.selector = String(out.selector ?? out.css ?? "").trim();
+    if (!out.selector) delete out.selector;
+    const wait = out.waitMs == null ? NaN : Number(out.waitMs);
+    const waitMs = Math.floor(wait);
+    if (Number.isFinite(waitMs) && waitMs >= 0) out.waitMs = waitMs;
+    else delete out.waitMs;
+  }
+
+  if (tool === "multiTabResearch") {
+    if (out.urls == null && out.url != null) out.urls = [out.url];
+    if (out.urls == null && out.links != null) out.urls = out.links;
+    if (typeof out.urls === "string") out.urls = [out.urls];
+    if (Array.isArray(out.urls)) {
+      out.urls = out.urls.map((u) => String(u || "").trim()).filter(Boolean).slice(0, 12);
+    } else {
+      delete out.urls;
+    }
+    const m = out.maxPages == null ? NaN : Number(out.maxPages);
+    const maxPages = Math.floor(m);
+    if (Number.isFinite(maxPages) && maxPages > 0) out.maxPages = maxPages;
+    else delete out.maxPages;
+    const pc = out.perPageMaxChars == null ? NaN : Number(out.perPageMaxChars);
+    const perPageMaxChars = Math.floor(pc);
+    if (Number.isFinite(perPageMaxChars) && perPageMaxChars > 0) out.perPageMaxChars = perPageMaxChars;
+    else delete out.perPageMaxChars;
+    if (out.includeLinks != null) out.includeLinks = Boolean(out.includeLinks);
+    else delete out.includeLinks;
+    if (out.includeStructuredData != null) out.includeStructuredData = Boolean(out.includeStructuredData);
+    else delete out.includeStructuredData;
+    if (out.keepTabs != null) out.keepTabs = Boolean(out.keepTabs);
+    else delete out.keepTabs;
+  }
+
+  if (tool === "networkGetResponses") {
+    if (out.urlIncludes == null && out.url_contains != null) out.urlIncludes = out.url_contains;
+    out.urlIncludes = String(out.urlIncludes ?? "").trim();
+    if (!out.urlIncludes) delete out.urlIncludes;
+    out.method = String(out.method ?? "").trim();
+    if (!out.method) delete out.method;
+    const n = out.limit == null ? NaN : Number(out.limit);
+    const lim = Math.floor(n);
+    if (Number.isFinite(lim) && lim > 0) out.limit = lim;
+    else delete out.limit;
+    const mb = out.maxBodyChars == null ? NaN : Number(out.maxBodyChars);
+    const maxBodyChars = Math.floor(mb);
+    if (Number.isFinite(maxBodyChars) && maxBodyChars > 0) out.maxBodyChars = maxBodyChars;
+    else delete out.maxBodyChars;
+  }
+
+  if (tool === "cookieExport") {
+    if (out.urls == null && out.url != null) out.urls = [out.url];
+    if (typeof out.urls === "string") out.urls = [out.urls];
+    if (Array.isArray(out.urls)) {
+      out.urls = out.urls.map((u) => String(u || "").trim()).filter(Boolean).slice(0, 40);
+    } else {
+      delete out.urls;
+    }
+    const n = out.limit == null ? NaN : Number(out.limit);
+    const lim = Math.floor(n);
+    if (Number.isFinite(lim) && lim > 0) out.limit = lim;
+    else delete out.limit;
+  }
+
+  if (tool === "cookieImport") {
+    out.cookieJarId = String(out.cookieJarId ?? out.jarId ?? out.cookie_jar_id ?? "").trim();
+    if (!out.cookieJarId) delete out.cookieJarId;
+    if (out.cookies == null && out.cookie != null) out.cookies = out.cookie;
+    if (out.cookies == null && out.data != null) out.cookies = out.data;
+    if (Array.isArray(out.cookies)) {
+      out.cookies = out.cookies.slice(0, 1200);
+    } else {
+      delete out.cookies;
+    }
+  }
+
+  if (tool === "googleSheetsAppendRows") {
+    if (out.spreadsheetId == null && out.sheetId != null) out.spreadsheetId = out.sheetId;
+    if (out.spreadsheetId == null && out.id != null) out.spreadsheetId = out.id;
+    out.spreadsheetId = String(out.spreadsheetId ?? "").trim();
+    if (!out.spreadsheetId) delete out.spreadsheetId;
+    out.sheetName = String(out.sheetName ?? out.sheet ?? "").trim();
+    if (!out.sheetName) delete out.sheetName;
+    out.range = String(out.range ?? "").trim();
+    if (!out.range) delete out.range;
+    if (out.values == null && out.rows != null) out.values = out.rows;
+    if (Array.isArray(out.values)) {
+      out.values = out.values.filter((r) => Array.isArray(r)).slice(0, 200).map((r) => r.slice(0, 60));
+    } else {
+      delete out.values;
+    }
+  }
+
+  if (tool === "googleDocsCreateOrAppend") {
+    if (out.documentId == null && out.docId != null) out.documentId = out.docId;
+    if (out.documentId == null && out.id != null) out.documentId = out.id;
+    out.documentId = String(out.documentId ?? "").trim();
+    if (!out.documentId) delete out.documentId;
+    out.title = String(out.title ?? out.name ?? "").trim();
+    if (!out.title) delete out.title;
+    if (out.text == null && out.content != null) out.text = out.content;
+    if (out.text == null && out.markdown != null) out.text = out.markdown;
+    out.text = String(out.text ?? "");
+  }
+
+  if (tool === "googleSlidesCreateDeck") {
+    out.title = String(out.title ?? out.name ?? "").trim();
+    if (!out.title) delete out.title;
+    if (out.slides == null && out.pages != null) out.slides = out.pages;
+    if (Array.isArray(out.slides)) {
+      out.slides = out.slides
+        .filter((s) => s && typeof s === "object" && !Array.isArray(s))
+        .slice(0, 30)
+        .map((s) => ({
+          title: String(s.title ?? s.name ?? "").trim(),
+          body: String(s.body ?? s.text ?? "").trim(),
+          bullets: Array.isArray(s.bullets) ? s.bullets.slice(0, 20).map((b) => String(b ?? "").trim()).filter(Boolean) : undefined
+        }));
+    } else {
+      delete out.slides;
+    }
+  }
+
   return out;
 }
 
@@ -5652,16 +6385,16 @@ function normalizeBrowserAgentAction(parsed, rawText) {
   }
 
   const tool = normalizeBrowserAgentToolName(toolName);
-  if (!tool) {
-    const printable = truncateText(typeof rawText === "string" ? rawText : JSON.stringify(obj), 900);
-    return {
-      ok: false,
-      error:
-        `Unknown tool: ${String(toolName || "").trim() || "(missing)"}.\n` +
-        `Expected one of: snapshot, screenshot, findElements, readElement, scrollIntoView, click, hover, scroll, type, fillText, hotkey, press, navigate, waitFor, waitForLoad, tabList, tabActivate, downloadsWait, uploadFile.\n\n` +
-        `Raw response:\n${printable}`
-    };
-  }
+	  if (!tool) {
+	    const printable = truncateText(typeof rawText === "string" ? rawText : JSON.stringify(obj), 900);
+	    return {
+	      ok: false,
+	      error:
+	        `Unknown tool: ${String(toolName || "").trim() || "(missing)"}.\n` +
+	        `Expected one of: snapshot, screenshot, findElements, readElement, collectLinks, extractStructuredData, extractTables, readerExtract, scrollIntoView, click, clickByText, clickBySelector, hover, scroll, type, fillText, hotkey, press, navigate, waitFor, waitForLoad, tabList, tabActivate, tabOpen, tabClose, paginateAndCollect, multiTabResearch, networkGetResponses, cookieExport, cookieImport, googleSheetsAppendRows, googleDocsCreateOrAppend, googleSlidesCreateDeck, reportCreate, downloadsWait, uploadFile, exportFile.\n\n` +
+	        `Raw response:\n${printable}`
+	    };
+	  }
 
   let args = null;
   if (typeof argsRaw === "string") {
@@ -5687,15 +6420,23 @@ function normalizeBrowserAgentAction(parsed, rawText) {
   if (tool === "scrollIntoView") {
     if (!normalizedArgs.id) return { ok: false, error: "Missing element id for tool: scrollIntoView." };
   }
-  if (tool === "click" || tool === "hover") {
-    const hasId = Boolean(normalizedArgs.id);
-    const hasXY = Number.isFinite(normalizedArgs.x) && Number.isFinite(normalizedArgs.y);
-    if (!hasId && !hasXY) return { ok: false, error: `Missing element id (or x/y) for tool: ${tool}.` };
-  }
-  if (tool === "scroll") {
-    const dx = Number(normalizedArgs.deltaX);
-    const dy = Number(normalizedArgs.deltaY);
-    const hasDx = Number.isFinite(dx) && dx !== 0;
+	  if (tool === "click" || tool === "hover") {
+	    const hasId = Boolean(normalizedArgs.id);
+	    const hasXY = Number.isFinite(normalizedArgs.x) && Number.isFinite(normalizedArgs.y);
+	    if (!hasId && !hasXY) return { ok: false, error: `Missing element id (or x/y) for tool: ${tool}.` };
+	  }
+	  if (tool === "clickByText") {
+	    if (!normalizedArgs.text && !normalizedArgs.selector && !normalizedArgs.role && !normalizedArgs.tag) {
+	      return { ok: false, error: "Missing text/selector/role/tag for tool: clickByText." };
+	    }
+	  }
+	  if (tool === "clickBySelector") {
+	    if (!normalizedArgs.selector) return { ok: false, error: "Missing selector for tool: clickBySelector." };
+	  }
+	  if (tool === "scroll") {
+	    const dx = Number(normalizedArgs.deltaX);
+	    const dy = Number(normalizedArgs.deltaY);
+	    const hasDx = Number.isFinite(dx) && dx !== 0;
     const hasDy = Number.isFinite(dy) && dy !== 0;
     if (!hasDx && !hasDy) return { ok: false, error: "Missing deltaX/deltaY for tool: scroll." };
   }
@@ -5712,13 +6453,44 @@ function normalizeBrowserAgentAction(parsed, rawText) {
       return { ok: false, error: "Missing url for tool: navigate." };
     }
   }
-  if (tool === "waitFor") {
-    if (!normalizedArgs.selector && !normalizedArgs.text && !normalizedArgs.urlIncludes) {
-      return { ok: false, error: "Missing selector/text/urlIncludes for tool: waitFor." };
-    }
+	  if (tool === "waitFor") {
+	    if (!normalizedArgs.selector && !normalizedArgs.text && !normalizedArgs.urlIncludes) {
+	      return { ok: false, error: "Missing selector/text/urlIncludes for tool: waitFor." };
+	    }
+	  }
+	  if (tool === "multiTabResearch") {
+	    if (!Array.isArray(normalizedArgs.urls) || !normalizedArgs.urls.length) {
+	      return { ok: false, error: "Missing urls for tool: multiTabResearch." };
+	    }
+	  }
+		  if (tool === "cookieImport") {
+		    const hasJar = Boolean(String(normalizedArgs.cookieJarId || "").trim());
+		    const hasCookies = Array.isArray(normalizedArgs.cookies) && normalizedArgs.cookies.length;
+		    if (!hasJar && !hasCookies) return { ok: false, error: "Missing cookieJarId/cookies for tool: cookieImport." };
+		  }
+	  if (tool === "googleSheetsAppendRows") {
+	    if (!normalizedArgs.spreadsheetId) return { ok: false, error: "Missing spreadsheetId for tool: googleSheetsAppendRows." };
+	    if (!Array.isArray(normalizedArgs.values) || !normalizedArgs.values.length) {
+	      return { ok: false, error: "Missing values for tool: googleSheetsAppendRows." };
+	    }
+	  }
+	  if (tool === "googleDocsCreateOrAppend") {
+	    if (!String(normalizedArgs.text || "").trim()) return { ok: false, error: "Missing text for tool: googleDocsCreateOrAppend." };
+	  }
+	  if (tool === "tabActivate") {
+	    const raw = normalizedArgs.tabId;
+	    const ok =
+	      (typeof raw === "string" && Boolean(String(raw).trim())) ||
+      (typeof raw === "number" && Number.isFinite(raw) && raw > 0);
+    if (!ok) return { ok: false, error: "Missing tabId for tool: tabActivate." };
   }
-  if (tool === "tabActivate") {
-    if (!normalizedArgs.tabId) return { ok: false, error: "Missing tabId for tool: tabActivate." };
+  if (tool === "tabOpen") {
+    if (!normalizedArgs.url) return { ok: false, error: "Missing url for tool: tabOpen." };
+  }
+  if (tool === "reportCreate") {
+    if (!String(normalizedArgs.markdown || "").trim()) {
+      return { ok: false, error: "Missing markdown for tool: reportCreate." };
+    }
   }
   if (tool === "uploadFile") {
     if (!normalizedArgs.id) return { ok: false, error: "Missing element id for tool: uploadFile." };
@@ -5731,6 +6503,13 @@ function normalizeBrowserAgentAction(parsed, rawText) {
     const hasXY = Number.isFinite(normalizedArgs.x) && Number.isFinite(normalizedArgs.y);
     if (!hasId && !hasXY) return { ok: false, error: "Missing element id (or x/y) for tool: fillText." };
     if (!String(normalizedArgs.text || "")) return { ok: false, error: "Missing text for tool: fillText." };
+  }
+  if (tool === "exportFile") {
+    const hasData = normalizedArgs.data && typeof normalizedArgs.data === "object";
+    const hasContent = Boolean(String(normalizedArgs.content || "").trim());
+    if (!hasData && !hasContent) {
+      return { ok: false, error: "Missing content (or data) for tool: exportFile." };
+    }
   }
 
   const reason = String(obj.reason || "").trim();
@@ -5752,6 +6531,28 @@ function buildBrowserAgentSystemPrompt() {
     "Element ids (data-sting-agent-id) persist for this agent run, so you can reuse ids across steps (but still verify with snapshot when the page changes).",
     "On Google Docs/Slides (docs.google.com), entering edit mode can require a precise click; if typing doesn't apply, prefer fillText (macro) or try click with count=2 (double-click) or click then press Enter before typing.",
     "After performing an action, verify via the next snapshot that it actually worked before moving on (especially after type: confirm the intended text appears in snapshot.visibleText or snapshot.axText or in element text/value/aria-label).",
+    "",
+    "CRITICAL REASONING AND PLANNING:",
+    "- BEFORE each step, perform self-reflection: assess what you've learned, evaluate progress, and decide if you should continue or conclude.",
+    "- Actively count and track what you've collected (e.g., 'I've analyzed 3 articles, gathered 15 key points, collected data from 4 pages').",
+    "- Ask yourself: 'Do I have enough information to provide a meaningful answer to the user's task?'",
+    "- If you notice repetitive patterns (e.g., clicking similar links, extracting similar content), it's time to synthesize and conclude.",
+    "- When you have collected sufficient data (typically 3-5 examples or when patterns emerge), STOP collecting and START organizing.",
+    "- Use reportCreate tool to create structured reports with findings, conclusions, and recommendations.",
+    "- Use exportFile to save organized summaries in markdown format.",
+    "- Provide final answers that include: key findings, patterns observed, actionable insights, and clear conclusions.",
+    "- If the task is exploratory, conclude when you can provide a comprehensive overview rather than continuing indefinitely.",
+    "- Move decisively toward completion - do not keep exploring unless specifically needed for the task.",
+    "",
+    "SOURCE CITATION REQUIREMENTS:",
+    "- Track all URLs where you collect data, extract content, or read information.",
+    "- In final answers, ALWAYS include clickable source links for each piece of summarized information.",
+    "- Use Markdown link format: [Source Title or Description](URL)",
+    "- When summarizing web content, indicate the source URL for each major point or section.",
+    "- Group sources at the end of relevant sections or provide a 'Sources' section at the end of your response.",
+    "- If you extract content from multiple pages, clearly attribute each piece of information to its source.",
+    "- Example: 'According to the article [Backing up Spotify](https://news.ycombinator.com/item?id=46338339), ...'",
+    "",
     "Only return a final answer after verifying the task is complete in the latest snapshot; if something is missing, keep using tools to fix it.",
     `For the final answer, respond in ${lang}.`
   ].join("\n");
@@ -5799,79 +6600,120 @@ function buildBrowserAgentUserPrompt({ task, snapshot, steps, maxSteps }) {
     "PREVIOUS_STEPS (JSON):",
     JSON.stringify(history, null, 2),
     "",
-    "TOOLS:",
-    '- snapshot: {}',
-    '- screenshot: {}',
-    '- screenshot: {"id":"<elementId>"}',
-    '- screenshot: {"fullPage":true}',
-    '- findElements: {"text":"...","limit":10}',
-    '- findElements: {"selector":"button[type=submit]"}',
-    '- readElement: {"id":"<elementId>","fields":["value","text","ariaLabel","rect","checked","disabled"]}',
-    '- scrollIntoView: {"id":"<elementId>"}',
-    '- click: {"id":"<elementId>"}',
-    '- click: {"x":123,"y":456}',
-    '- click: {"x":123,"y":456,"count":2}',
-    '- hover: {"id":"<elementId>"}',
-    '- hover: {"x":123,"y":456}',
-    '- scroll: {"deltaY":600}',
-    '- scroll: {"deltaY":600,"x":123,"y":456}',
-    '- fillText: {"id":"<elementId>","text":"..."}',
-    '- fillText: {"x":123,"y":456,"text":"..."}',
-    '- fillText: {"id":"<elementId>","text":"...","count":2,"enter":true,"retries":2}',
-    '- type: {"text":"..."}',
-    '- type: {"id":"<elementId>","text":"..."}',
-    '- hotkey: {"keys":"Ctrl+L"}',
-    '- press: {"key":"Enter|Tab|Escape|Backspace|Delete|PageUp|PageDown|Home|End|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|Space"}',
-    '- navigate: {"url":"https://..."}',
-    '- waitFor: {"selector":"...","timeoutMs":15000}',
-    '- waitFor: {"text":"...","timeoutMs":15000}',
-    '- waitFor: {"urlIncludes":"...","timeoutMs":15000}',
-    '- waitForLoad: {"state":"domcontentloaded|load|networkidle"}',
-    '- tabList: {}',
-    '- tabActivate: {"tabId":123}',
-    '- downloadsWait: {"since":1730000000000,"timeoutMs":30000}',
-    '- uploadFile: {"id":"<elementId>","paths":["/absolute/path/to/file"]}',
+    "PROGRESS REFLECTION:",
+    `- You have completed ${history.length} steps so far.`,
+    `- Review what you've accomplished and ask: "Do I have enough data to provide a meaningful answer?"`,
+    `- If you've been doing similar actions repeatedly, consider synthesizing your findings.`,
+    `- Remember: Quality over quantity - 3-5 well-analyzed examples are often sufficient.`,
+    `- Track your data sources: Remember which URLs you visited and what content you extracted from each.`,
+    `- When concluding, ensure you can attribute information to specific sources.`,
+    "",
+	    "TOOLS:",
+	    '- snapshot: {}',
+	    '- screenshot: {}',
+	    '- screenshot: {"id":"<elementId>"}',
+	    '- screenshot: {"fullPage":true}',
+	    '- findElements: {"text":"...","limit":10}',
+	    '- findElements: {"selector":"button[type=submit]"}',
+	    '- readElement: {"id":"<elementId>","fields":["value","text","ariaLabel","rect","checked","disabled"]}',
+	    '- collectLinks: {"limit":30,"sameOrigin":true,"textIncludes":"pricing"}',
+	    '- extractStructuredData: {"includeJsonLd":true,"includeTables":true}',
+	    '- extractTables: {"maxTables":8,"maxRows":25,"maxCols":16}',
+	    '- readerExtract: {"maxChars":12000}',
+	    '- scrollIntoView: {"id":"<elementId>"}',
+	    '- click: {"id":"<elementId>"}',
+	    '- click: {"x":123,"y":456}',
+	    '- click: {"x":123,"y":456,"count":2}',
+	    '- clickByText: {"text":"Log in","limit":3}',
+	    '- clickBySelector: {"selector":"button[type=submit]","timeoutMs":15000}',
+	    '- hover: {"id":"<elementId>"}',
+	    '- hover: {"x":123,"y":456}',
+	    '- scroll: {"deltaY":600}',
+	    '- scroll: {"deltaY":600,"x":123,"y":456}',
+	    '- paginateAndCollect: {"limit":120,"scrolls":8,"deltaY":900,"sameOrigin":true}',
+	    '- fillText: {"id":"<elementId>","text":"..."}',
+	    '- fillText: {"x":123,"y":456,"text":"..."}',
+	    '- fillText: {"id":"<elementId>","text":"...","count":2,"enter":true,"retries":2}',
+	    '- type: {"text":"..."}',
+	    '- type: {"id":"<elementId>","text":"..."}',
+	    '- hotkey: {"keys":"Ctrl+L"}',
+	    '- press: {"key":"Enter|Tab|Escape|Backspace|Delete|PageUp|PageDown|Home|End|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|Space"}',
+	    '- navigate: {"url":"https://..."}',
+	    '- waitFor: {"selector":"...","timeoutMs":15000}',
+	    '- waitFor: {"text":"...","timeoutMs":15000}',
+	    '- waitFor: {"urlIncludes":"...","timeoutMs":15000}',
+	    '- waitForLoad: {"state":"domcontentloaded|load|networkidle"}',
+	    '- tabList: {}',
+	    '- tabActivate: {"tabId":123}',
+	    '- tabOpen: {"url":"https://example.com","makeActive":true}',
+	    '- tabClose: {"tabId":"<tabId>"}',
+	    '- multiTabResearch: {"urls":["https://...","https://..."],"perPageMaxChars":8000,"includeLinks":true,"keepTabs":false}',
+	    '- networkGetResponses: {"urlIncludes":"/api/","limit":10,"maxBodyChars":4000}',
+	    '- cookieExport: {"urls":["https://example.com"],"limit":200}',
+	    '- cookieImport: {"cookieJarId":"<cookieJarId>"}',
+	    '- cookieImport: {"cookies":[{"name":"sid","value":"...","domain":".example.com","path":"/"}]}',
+	    '- googleSheetsAppendRows: {"spreadsheetId":"...","sheetName":"Sheet1","values":[["a","b"],["c","d"]]}',
+	    '- googleDocsCreateOrAppend: {"documentId":"...","title":"Notes","text":"..."}',
+	    '- googleSlidesCreateDeck: {"title":"Deck","slides":[{"title":"Slide 1","bullets":["a","b"]}]}',
+	    '- reportCreate: {"title":"Research Report","markdown":"# ...","makeActive":true}',
+	    '- downloadsWait: {"since":1730000000000,"timeoutMs":30000}',
+	    '- uploadFile: {"id":"<elementId>","paths":["/absolute/path/to/file"]}',
+	    '- exportFile: {"filename":"report.md","format":"md","content":"..."}',
     "",
     "RESPONSE_SCHEMA (choose one):",
     '{"type":"tool","tool":"snapshot","args":{},"reason":"..."}',
     '{"type":"tool","tool":"findElements","args":{"text":"login"},"reason":"..."}',
     '{"type":"tool","tool":"readElement","args":{"id":"12","fields":["value"]},"reason":"..."}',
-    '{"type":"tool","tool":"scrollIntoView","args":{"id":"12"},"reason":"..."}',
-    '{"type":"tool","tool":"click","args":{"id":"12"},"reason":"..."}',
-    '{"type":"tool","tool":"click","args":{"x":123,"y":456},"reason":"..."}',
-    '{"type":"tool","tool":"click","args":{"x":123,"y":456,"count":2},"reason":"..."}',
-    '{"type":"tool","tool":"hover","args":{"id":"12"},"reason":"..."}',
-    '{"type":"tool","tool":"hover","args":{"x":123,"y":456},"reason":"..."}',
-    '{"type":"tool","tool":"scroll","args":{"deltaY":600},"reason":"..."}',
-    '{"type":"tool","tool":"fillText","args":{"id":"5","text":"hello"},"reason":"..."}',
-    '{"type":"tool","tool":"fillText","args":{"x":123,"y":456,"text":"hello","count":2},"reason":"..."}',
-    '{"type":"tool","tool":"type","args":{"text":"hello"},"reason":"..."}',
-    '{"type":"tool","tool":"type","args":{"id":"5","text":"hello"},"reason":"..."}',
+    '{"type":"tool","tool":"collectLinks","args":{"limit":20,"sameOrigin":true},"reason":"..."}',
+    '{"type":"tool","tool":"readerExtract","args":{"maxChars":12000},"reason":"..."}',
+	    '{"type":"tool","tool":"scrollIntoView","args":{"id":"12"},"reason":"..."}',
+	    '{"type":"tool","tool":"click","args":{"id":"12"},"reason":"..."}',
+	    '{"type":"tool","tool":"click","args":{"x":123,"y":456},"reason":"..."}',
+	    '{"type":"tool","tool":"click","args":{"x":123,"y":456,"count":2},"reason":"..."}',
+	    '{"type":"tool","tool":"clickByText","args":{"text":"login"},"reason":"..."}',
+	    '{"type":"tool","tool":"clickBySelector","args":{"selector":"button[type=submit]"},"reason":"..."}',
+	    '{"type":"tool","tool":"hover","args":{"id":"12"},"reason":"..."}',
+	    '{"type":"tool","tool":"hover","args":{"x":123,"y":456},"reason":"..."}',
+	    '{"type":"tool","tool":"scroll","args":{"deltaY":600},"reason":"..."}',
+	    '{"type":"tool","tool":"paginateAndCollect","args":{"limit":60,"scrolls":6},"reason":"..."}',
+	    '{"type":"tool","tool":"fillText","args":{"id":"5","text":"hello"},"reason":"..."}',
+	    '{"type":"tool","tool":"fillText","args":{"x":123,"y":456,"text":"hello","count":2},"reason":"..."}',
+	    '{"type":"tool","tool":"type","args":{"text":"hello"},"reason":"..."}',
+	    '{"type":"tool","tool":"type","args":{"id":"5","text":"hello"},"reason":"..."}',
     '{"type":"tool","tool":"hotkey","args":{"keys":"Ctrl+L"},"reason":"..."}',
     '{"type":"tool","tool":"press","args":{"key":"Enter"},"reason":"..."}',
     '{"type":"tool","tool":"navigate","args":{"url":"https://example.com"},"reason":"..."}',
-    '{"type":"tool","tool":"waitFor","args":{"selector":"button[type=submit]","timeoutMs":15000},"reason":"..."}',
-    '{"type":"tool","tool":"waitForLoad","args":{"state":"networkidle"},"reason":"..."}',
-    '{"type":"final","final":"..."}',
+	    '{"type":"tool","tool":"waitFor","args":{"selector":"button[type=submit]","timeoutMs":15000},"reason":"..."}',
+	    '{"type":"tool","tool":"waitForLoad","args":{"state":"networkidle"},"reason":"..."}',
+	    '{"type":"tool","tool":"multiTabResearch","args":{"urls":["https://example.com","https://news.ycombinator.com/"]},"reason":"..."}',
+	    '{"type":"tool","tool":"networkGetResponses","args":{"urlIncludes":"/api/","limit":5},"reason":"..."}',
+	    '{"type":"tool","tool":"googleDocsCreateOrAppend","args":{"title":"Notes","text":"Hello"},"reason":"..."}',
+	    '{"type":"tool","tool":"reportCreate","args":{"title":"Report","markdown":"# Title\\n..."},"reason":"..."}',
+	    '{"type":"tool","tool":"exportFile","args":{"filename":"report.md","format":"md","content":"..."},"reason":"..."}',
+    '{"type":"final","final":"## Analysis Summary\\n\\nKey findings from Hacker News:\\n- Popular discussion about data backup solutions\\n- Users sharing Spotify backup experiences\\n\\n**Sources:**\\n- [Hacker News Main Page](https://news.ycombinator.com/)\\n- [Backing up Spotify Discussion](https://news.ycombinator.com/item?id=46338339)"}',
     "",
-    `RULES:\n- Output valid JSON only (a single object).\n- For tool steps, always output {"type":"tool","tool":"...","args":{...},"reason":"..."} (do NOT output only args like {"id":"23"}).\n- tool must be one of: snapshot | screenshot | findElements | readElement | scrollIntoView | click | hover | scroll | fillText | type | hotkey | press | navigate | waitFor | waitForLoad | tabList | tabActivate | downloadsWait | uploadFile.\n- Use at most ${maxSteps} tool steps.\n- Prefer snapshot before interacting.\n- click/hover can use elementId OR viewport coordinates (x,y). click supports optional count (2 = double-click).\n- scroll uses deltaY (positive = down, negative = up); optional x/y sets the wheel point.\n- fillText is a macro: click (optional double-click/Enter/retries) + type; prefer it for finicky editors like Google Docs/Slides.\n- type can omit id to type into the currently focused element.\n- waitFor is for dynamic SPA waits (selector/text/urlIncludes).\n- When verifying typed text, check snapshot.visibleText first; if it's missing (common on Google Slides), also check snapshot.axText and element ariaLabel/value.\n- On Google Docs/Slides (docs.google.com), prefer clicking the exact editable area (textbox/contenteditable or canvas coordinates) before typing; Tab/Enter focus may not work.\n- Avoid destructive actions unless clearly required by TASK.`
-  ].join("\n");
-}
+    `RULES:\n- Output valid JSON only (a single object).\n- For tool steps, always output {"type":"tool","tool":"...","args":{...},"reason":"..."} (do NOT output only args like {"id":"23"}).\n- tool must be one of: snapshot | screenshot | findElements | readElement | collectLinks | extractStructuredData | extractTables | readerExtract | scrollIntoView | click | clickByText | clickBySelector | hover | scroll | paginateAndCollect | type | fillText | hotkey | press | navigate | waitFor | waitForLoad | tabList | tabActivate | tabOpen | tabClose | multiTabResearch | networkGetResponses | cookieExport | cookieImport | googleSheetsAppendRows | googleDocsCreateOrAppend | googleSlidesCreateDeck | reportCreate | downloadsWait | uploadFile | exportFile.\n- Use at most ${maxSteps} tool steps.\n- Prefer snapshot before interacting.\n- click/hover can use elementId OR viewport coordinates (x,y). click supports optional count (2 = double-click).\n- scroll uses deltaY (positive = down, negative = up); optional x/y sets the wheel point.\n- fillText is a macro: click (optional double-click/Enter/retries) + type; prefer it for finicky editors like Google Docs/Slides.\n- type can omit id to type into the currently focused element.\n- waitFor is for dynamic SPA waits (selector/text/urlIncludes).\n- When verifying typed text, check snapshot.visibleText first; if it's missing (common on Google Slides), also check snapshot.axText and element ariaLabel/value.\n- On Google Docs/Slides (docs.google.com), prefer clicking the exact editable area (textbox/contenteditable or canvas coordinates) before typing; Tab/Enter focus may not work.\n- Avoid destructive actions unless clearly required by TASK.\n- PROGRESS TRACKING: Count your steps and collected data. After 3-5 similar actions, evaluate if you should conclude.\n- CONCLUDE PROACTIVELY: When you have meaningful data, use reportCreate to organize findings or return final answer with comprehensive summary.\n- AVOID ENDLESS LOOPS: If you're repeating similar patterns, synthesize what you've learned and provide conclusions.\n- SOURCE CITATION: In final answers, ALWAYS include clickable Markdown links [text](url) for all sources you used.`
+	  ].join("\n");
+	}
 
 async function ensureWebviewHasAgentMarker(webview, marker) {
   const wv = webview || getActiveWebview();
   if (!wv) throw new Error(t("error.noActiveTab"));
   const m = String(marker || "").trim();
-  if (!m) return;
+  if (!m) return null;
   try {
-    await wv.executeJavaScript(
+    const res = await wv.executeJavaScript(
       `(() => {
         const marker = ${JSON.stringify(m)};
+        const makePageId = () => String(Date.now()) + "_" + Math.random().toString(16).slice(2);
+        let didReset = false;
         try { window.__stingAgentMarker = marker; } catch {}
         try {
           if (window.__stingAgentIdSession !== marker) {
+            didReset = true;
             window.__stingAgentIdSession = marker;
             window.__stingAgentNextId = 1;
+            try { window.__stingAgentPageId = makePageId(); } catch {}
             try {
               document
                 .querySelectorAll("[data-sting-agent-id]")
@@ -5879,10 +6721,191 @@ async function ensureWebviewHasAgentMarker(webview, marker) {
             } catch {}
           }
         } catch {}
-        return true;
+        try {
+          if (!window.__stingAgentPageId) window.__stingAgentPageId = makePageId();
+        } catch {}
+        return { ok: true, pageId: String(window.__stingAgentPageId || ""), didReset };
       })()`
     );
+    if (res && typeof res === "object") return res;
   } catch {
+  }
+  return null;
+}
+
+function buildWebviewAgentControlUiExpression({ marker, enabled, event } = {}) {
+  const payload = {
+    marker: String(marker || ""),
+    enabled: enabled !== false,
+    event: event && typeof event === "object" ? event : null
+  };
+  return `(() => {
+    const payload = ${JSON.stringify(payload)};
+    const marker = String(payload.marker || "");
+    const enabled = payload.enabled !== false;
+    const event = payload.event && typeof payload.event === "object" ? payload.event : null;
+
+    const STYLE_ID = ${JSON.stringify(AGENT_CONTROL_UI_STYLE_ID)};
+    const ROOT_ID = ${JSON.stringify(AGENT_CONTROL_UI_ROOT_ID)};
+    const cssText = ${JSON.stringify(AGENT_CONTROL_UI_CSS)};
+    const cursorSvg = ${JSON.stringify(AGENT_CONTROL_UI_CURSOR_SVG)};
+
+    const getMount = () => document.body || document.documentElement || document;
+
+    const install = () => {
+      try {
+        let styleEl = document.getElementById(STYLE_ID);
+        if (!styleEl) {
+          styleEl = document.createElement("style");
+          styleEl.id = STYLE_ID;
+          styleEl.textContent = cssText;
+          (document.head || getMount()).appendChild(styleEl);
+        }
+
+        let root = document.getElementById(ROOT_ID);
+        if (!root) {
+          root = document.createElement("div");
+          root.id = ROOT_ID;
+          root.setAttribute("aria-hidden", "true");
+          root.dataset.enabled = "false";
+          root.dataset.hasCursor = "false";
+          root.innerHTML =
+            '<div class="stingAgentFlicker"></div>' +
+            '<div class="stingAgentBorder"></div>' +
+            '<div class="stingAgentBadge"><span class="stingAgentBadgeDot"></span><span>AI 控制中</span></div>' +
+            '<div class="stingAgentCursor">' + cursorSvg + "</div>";
+          getMount().appendChild(root);
+        }
+
+        const ui = {
+          __installed: true,
+          root,
+          enabled: false,
+          marker: "",
+          flickerTimer: null,
+          setEnabled(nextEnabled, nextMarker) {
+            const want = Boolean(nextEnabled);
+            const mk = String(nextMarker || "");
+            if (!want) {
+              if (mk && this.marker && mk !== this.marker) return { ok: true, enabled: this.enabled, marker: this.marker, ignored: true };
+              this.enabled = false;
+              root.dataset.enabled = "false";
+              try { root.dataset.hasCursor = "false"; } catch {}
+              try {
+                if (this.flickerTimer) {
+                  clearTimeout(this.flickerTimer);
+                  this.flickerTimer = null;
+                }
+              } catch {}
+              return { ok: true, enabled: this.enabled, marker: this.marker };
+            }
+
+            this.enabled = true;
+            if (mk) this.marker = mk;
+            root.dataset.enabled = "true";
+
+            const tick = () => {
+              try {
+                if (!this.enabled) return;
+                const burst = Math.random() < 0.16;
+                const alpha = burst ? 0.14 + Math.random() * 0.18 : 0.04 + Math.random() * 0.06;
+                const jx = (Math.random() - 0.5) * 3.2;
+                const jy = (Math.random() - 0.5) * 3.2;
+                root.style.setProperty("--sting-agent-flicker-alpha", alpha.toFixed(3));
+                root.style.setProperty("--sting-agent-jitter-x", jx.toFixed(2) + "px");
+                root.style.setProperty("--sting-agent-jitter-y", jy.toFixed(2) + "px");
+              } catch {}
+              const delay = 120 + Math.random() * 260;
+              const next = delay * (Math.random() < 0.12 ? 0.55 : 1);
+              try { this.flickerTimer = setTimeout(tick, next); } catch {}
+            };
+            if (!this.flickerTimer) tick();
+            return { ok: true, enabled: this.enabled, marker: this.marker };
+          },
+          setCursor(x, y) {
+            try {
+              const vw = Number(window.innerWidth) || 0;
+              const vh = Number(window.innerHeight) || 0;
+              const px = Number.isFinite(Number(x)) ? Number(x) : Math.floor((vw || 1) / 2);
+              const py = Number.isFinite(Number(y)) ? Number(y) : Math.floor((vh || 1) / 2);
+              root.style.setProperty("--sting-agent-cursor-x", px + "px");
+              root.style.setProperty("--sting-agent-cursor-y", py + "px");
+              root.dataset.hasCursor = "true";
+              return { x: px, y: py };
+            } catch {
+              return { x: 0, y: 0 };
+            }
+          },
+          event(evt) {
+            try {
+              if (!this.enabled) return { ok: false, error: "disabled" };
+              const e = evt && typeof evt === "object" ? evt : {};
+              const type = String(e.type || "").trim();
+              const pos = this.setCursor(e.x, e.y);
+
+              if (type === "click") {
+                const ripple = document.createElement("div");
+                ripple.className = "stingAgentRipple";
+                ripple.style.left = pos.x + "px";
+                ripple.style.top = pos.y + "px";
+                root.appendChild(ripple);
+                setTimeout(() => {
+                  try { ripple.remove(); } catch {}
+                }, 480);
+              } else if (type === "scroll") {
+                const dy = Number(e.deltaY) || 0;
+                const chip = document.createElement("div");
+                chip.className = "stingAgentScrollChip";
+                chip.style.left = pos.x + "px";
+                chip.style.top = pos.y + "px";
+                chip.style.setProperty("--sting-agent-scroll-dy", (dy < 0 ? "-12px" : "12px"));
+                chip.textContent = dy < 0 ? "▲ scroll" : "▼ scroll";
+                root.appendChild(chip);
+                setTimeout(() => {
+                  try { chip.remove(); } catch {}
+                }, 620);
+              }
+              return { ok: true, type, x: pos.x, y: pos.y };
+            } catch (err) {
+              return { ok: false, error: String(err && err.message ? err.message : err) };
+            }
+          }
+        };
+
+        try {
+          window.__stingAgentControlUi = ui;
+        } catch {}
+        return ui;
+      } catch (err) {
+        return null;
+      }
+    };
+
+    const existing = (() => {
+      try {
+        const ui = window.__stingAgentControlUi;
+        return ui && typeof ui === "object" && ui.__installed ? ui : null;
+      } catch {
+        return null;
+      }
+    })();
+    const ui = existing || install();
+    if (!ui || typeof ui !== "object") return { ok: false, error: "install failed" };
+    const state = ui.setEnabled(enabled, marker);
+    if (event) ui.event(event);
+    return { ok: true, state };
+  })()`;
+}
+
+async function applyWebviewAgentControlUi(webview, { marker, enabled, event, tabId, touchedTabIds } = {}) {
+  const wv = webview || getActiveWebview();
+  if (!wv) return null;
+  try {
+    const res = await wv.executeJavaScript(buildWebviewAgentControlUiExpression({ marker, enabled, event }), true);
+    if (enabled !== false && touchedTabIds && tabId) touchedTabIds.add(tabId);
+    return res && typeof res === "object" ? res : null;
+  } catch {
+    return null;
   }
 }
 
@@ -5911,6 +6934,54 @@ function compactAgentToolOutput(tool, toolRes) {
       y: Number.isFinite(r.y) ? r.y : undefined,
       clickCount: Number.isFinite(r.clickCount) ? r.clickCount : undefined,
       usedTrustedInput: typeof r.usedTrustedInput === "boolean" ? r.usedTrustedInput : undefined
+    };
+  }
+  if (tool === "clickByText") {
+    const match = res.match && typeof res.match === "object" ? res.match : null;
+    const click = res.click && typeof res.click === "object" ? res.click : null;
+    return {
+      clickedId: String(res.clickedId || ""),
+      totalMatches: Number.isFinite(res.totalMatches) ? res.totalMatches : undefined,
+      match: match
+        ? {
+          id: String(match.id || ""),
+          tag: String(match.tag || ""),
+          role: String(match.role || ""),
+          text: safeText(match.text || "", 180),
+          ariaLabel: safeText(match.ariaLabel || "", 180),
+          rect: pickRect(match.rect)
+        }
+        : null,
+      click: click
+        ? {
+          x: Number.isFinite(click.x) ? click.x : undefined,
+          y: Number.isFinite(click.y) ? click.y : undefined,
+          clickCount: Number.isFinite(click.clickCount) ? click.clickCount : undefined,
+          usedTrustedInput: typeof click.usedTrustedInput === "boolean" ? click.usedTrustedInput : undefined
+        }
+        : null
+    };
+  }
+  if (tool === "clickBySelector") {
+    const wait = res.wait && typeof res.wait === "object" ? res.wait : null;
+    const click = res.click && typeof res.click === "object" ? res.click : null;
+    return {
+      selector: safeText(res.selector || "", 220),
+      clickedId: String(res.clickedId || ""),
+      wait: wait
+        ? {
+          waitedMs: Number.isFinite(wait.waitedMs) ? wait.waitedMs : undefined,
+          url: safeText(wait.url || "", 420)
+        }
+        : null,
+      click: click
+        ? {
+          x: Number.isFinite(click.x) ? click.x : undefined,
+          y: Number.isFinite(click.y) ? click.y : undefined,
+          clickCount: Number.isFinite(click.clickCount) ? click.clickCount : undefined,
+          usedTrustedInput: typeof click.usedTrustedInput === "boolean" ? click.usedTrustedInput : undefined
+        }
+        : null
     };
   }
   if (tool === "hover") {
@@ -5955,6 +7026,159 @@ function compactAgentToolOutput(tool, toolRes) {
       disabled: typeof el.disabled === "boolean" ? el.disabled : undefined,
       isContentEditable: typeof el.isContentEditable === "boolean" ? el.isContentEditable : undefined,
       rect: pickRect(el.rect)
+    };
+  }
+  if (tool === "collectLinks") {
+    const links = Array.isArray(res.links) ? res.links : [];
+    return {
+      count: links.length,
+      links: links.slice(0, 10).map((l) => ({
+        id: String(l?.id || ""),
+        text: safeText(l?.text || "", 140),
+        href: safeText(l?.href || "", 360),
+        rect: pickRect(l?.rect)
+      }))
+    };
+  }
+  if (tool === "paginateAndCollect") {
+    const links = Array.isArray(res.links) ? res.links : [];
+    return {
+      count: Number.isFinite(res.count) ? res.count : links.length,
+      scrollsDone: Number.isFinite(res.scrollsDone) ? res.scrollsDone : undefined,
+      links: links.slice(0, 12).map((l) => ({
+        id: String(l?.id || ""),
+        text: safeText(l?.text || "", 140),
+        href: safeText(l?.href || "", 360),
+        rect: pickRect(l?.rect)
+      }))
+    };
+  }
+  if (tool === "extractStructuredData") {
+    const meta = res.meta && typeof res.meta === "object" ? res.meta : {};
+    const jsonLd = Array.isArray(res.jsonLd) ? res.jsonLd : [];
+    const tables = Array.isArray(res.tables) ? res.tables : [];
+    return {
+      meta: {
+        title: safeText(meta.title || "", 140),
+        description: safeText(meta.description || "", 220),
+        canonical: safeText(meta.canonical || "", 280),
+        author: safeText(meta.author || "", 120),
+        publishedTime: safeText(meta.publishedTime || "", 120)
+      },
+      jsonLdCount: jsonLd.length,
+      tablesCount: tables.length
+    };
+  }
+  if (tool === "extractTables") {
+    const tables = Array.isArray(res.tables) ? res.tables : [];
+    return {
+      tablesCount: tables.length,
+      tables: tables.slice(0, 6).map((t) => {
+        const table = t && typeof t === "object" ? t : {};
+        const headers = Array.isArray(table.headers) ? table.headers.map((h) => safeText(h, 80)).slice(0, 20) : [];
+        const rows = Array.isArray(table.rows)
+          ? table.rows
+            .filter((r) => Array.isArray(r))
+            .slice(0, 18)
+            .map((r) => r.map((c) => safeText(c, 120)).slice(0, 20))
+          : [];
+        return { caption: safeText(table.caption || "", 160), headers, rows };
+      })
+    };
+  }
+  if (tool === "readerExtract") {
+    const a = res.article && typeof res.article === "object" ? res.article : null;
+    if (!a) return null;
+    const text = String(a.text ?? "");
+    return {
+      title: safeText(a.title || "", 140),
+      author: safeText(a.author || "", 120),
+      siteName: safeText(a.siteName || "", 120),
+      publishedTime: safeText(a.publishedTime || "", 120),
+      excerpt: safeText(a.excerpt || "", 280),
+      chars: text.length
+    };
+  }
+  if (tool === "multiTabResearch") {
+    const pages = Array.isArray(res.pages) ? res.pages : [];
+    return {
+      keepTabs: typeof res.keepTabs === "boolean" ? res.keepTabs : undefined,
+      pages: pages.slice(0, 12).map((p) => {
+        const page = p && typeof p === "object" ? p : {};
+        const article = page.article && typeof page.article === "object" ? page.article : null;
+        const text = String(article?.text ?? "");
+        const excerpt = String(article?.excerpt ?? "");
+        const links = Array.isArray(page.links) ? page.links : [];
+        return {
+          requestedUrl: safeText(page.requestedUrl || "", 420),
+          url: safeText(page.url || "", 420),
+          title: safeText(page.title || "", 160),
+          ok: typeof page.ok === "boolean" ? page.ok : undefined,
+          error: safeText(page.error || "", 220),
+          excerpt: safeText(excerpt, 320),
+          textSample: safeText(text, 1400),
+          chars: text.length,
+          linksCount: links.length,
+          structuredData: page.structuredData ? true : false
+        };
+      })
+    };
+  }
+  if (tool === "networkGetResponses") {
+    const entries = Array.isArray(res.entries) ? res.entries : [];
+    const redact = (input) => {
+      let out = String(input ?? "");
+      if (!out) return out;
+      out = out.replace(/\b(eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,})\b/g, "REDACTED_JWT");
+      out = out.replace(/(Bearer\s+)[a-zA-Z0-9._~+/=-]+/gi, "$1REDACTED");
+      out = out.replace(/(\"(?:access_token|id_token|refresh_token|token|authorization)\"\\s*:\\s*\")([^\"]+)(\")/gi, "$1REDACTED$3");
+      out = out.replace(/(\b(?:access_token|id_token|refresh_token|token)\b\s*=\s*)([^&\s]+)/gi, "$1REDACTED");
+      return out;
+    };
+    return {
+      installed: typeof res.installed === "boolean" ? res.installed : undefined,
+      count: entries.length,
+      entries: entries.slice(0, 8).map((e) => {
+        const entry = e && typeof e === "object" ? e : {};
+        const bodyText = redact(entry.bodyText || "");
+        return {
+          kind: safeText(entry.kind || "", 30),
+          method: safeText(entry.method || "", 14),
+          status: Number(entry.status) || 0,
+          ok: typeof entry.ok === "boolean" ? entry.ok : undefined,
+          url: safeText(entry.url || "", 360),
+          contentType: safeText(entry.contentType || "", 120),
+          durMs: Number(entry.durMs) || 0,
+          bodySnippet: safeText(bodyText, 900),
+          error: safeText(entry.error || "", 180)
+        };
+      })
+    };
+  }
+  if (tool === "cookieExport") {
+    return { cookieJarId: String(res.cookieJarId || ""), count: Number(res.count) || 0 };
+  }
+  if (tool === "cookieImport") {
+    return { count: Number(res.count) || 0 };
+  }
+  if (tool === "googleSheetsAppendRows") {
+    return {
+      spreadsheetId: safeText(res.spreadsheetId || "", 120),
+      url: safeText(res.url || "", 360),
+      updatedRange: safeText(res.updatedRange || "", 160),
+      updatedRows: Number(res.updatedRows) || 0,
+      updatedColumns: Number(res.updatedColumns) || 0,
+      updatedCells: Number(res.updatedCells) || 0
+    };
+  }
+  if (tool === "googleDocsCreateOrAppend") {
+    return { documentId: safeText(res.documentId || "", 120), url: safeText(res.url || "", 360) };
+  }
+  if (tool === "googleSlidesCreateDeck") {
+    return {
+      presentationId: safeText(res.presentationId || "", 120),
+      url: safeText(res.url || "", 360),
+      slidesCount: Number(res.slidesCount) || 0
     };
   }
   if (tool === "scrollIntoView") {
@@ -6015,6 +7239,25 @@ function compactAgentToolOutput(tool, toolRes) {
   }
   if (tool === "tabActivate") {
     return { tabId: String(res.tabId || "") };
+  }
+  if (tool === "tabOpen") {
+    return { tabId: String(res.tabId || "") };
+  }
+  if (tool === "tabClose") {
+    return { tabId: String(res.tabId || "") };
+  }
+  if (tool === "reportCreate") {
+    return { tabId: String(res.tabId || ""), title: safeText(res.title || "", 140) };
+  }
+  if (tool === "exportFile") {
+    const f = res.file && typeof res.file === "object" ? res.file : null;
+    if (!f) return null;
+    return {
+      path: String(f.path || ""),
+      bytes: Number(f.bytes) || 0,
+      format: String(f.format || ""),
+      mimeType: String(f.mimeType || "")
+    };
   }
   return null;
 }
@@ -6077,6 +7320,8 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
 
   let stepsGroup = null;
   let stepErrors = 0;
+  let marker = "";
+  const agentUiTouchedTabIds = new Set();
 
   const updateStepsGroupMeta = (attemptedSteps, maxSteps) => {
     if (!stepsGroup?.metaCountEl) return;
@@ -6184,17 +7429,51 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
     const userMessageForHistory = userMessage || shown;
     if (userMessageForHistory) userRecord.content = userMessageForHistory;
 
-		    const marker = `agent_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-		    const steps = [];
-        const knownElementIds = new Set();
-		    const maxSteps = clampAgentMaxSteps(agentMaxStepsInput?.value);
-		    let targetUrl = String(ctx.pageUrl || "").trim();
-		    let targetTitle = String(ctx.pageTitle || "").trim();
+				    marker = `agent_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+				    const steps = [];
+            const cookieJars = new Map();
+		        const knownElementIds = new Set();
+            const knownElementRects = new Map();
+		        let currentPageId = "";
+				    const maxSteps = clampAgentMaxSteps(agentMaxStepsInput?.value);
+				    let targetUrl = String(ctx.pageUrl || "").trim();
+				    let targetTitle = String(ctx.pageTitle || "").trim();
 
-		    stepsGroup = createAiAgentStepsGroup({
-		      meta: `${t("ai.meta.assistant")} · Agent`,
-		      title: t("ai.agent.steps.title")
-		    });
+            await ensureWebviewHasAgentMarker(null, marker);
+            await applyWebviewAgentControlUi(null, {
+              marker,
+              enabled: true,
+              tabId: String(getActiveTab()?.id || ""),
+              touchedTabIds: agentUiTouchedTabIds
+            });
+
+            const getApproxPointForElementId = (id) => {
+              const key = String(id || "").trim();
+              if (!key) return null;
+              const r = knownElementRects.get(key);
+              if (!r) return null;
+              const x = Number(r.x) + Number(r.w) / 2;
+              const y = Number(r.y) + Number(r.h) / 2;
+              if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+              return { x, y };
+            };
+            const emitAgentUiEvent = async (event) => {
+              try {
+                await applyWebviewAgentControlUi(null, {
+                  marker,
+                  enabled: true,
+                  event,
+                  tabId: String(getActiveTab()?.id || ""),
+                  touchedTabIds: agentUiTouchedTabIds
+                });
+              } catch {
+              }
+            };
+
+			    stepsGroup = createAiAgentStepsGroup({
+			      meta: `${t("ai.meta.assistant")} · Agent`,
+			      title: t("ai.agent.steps.title")
+			    });
 		    run.stepsGroup = stepsGroup;
 		    updateStepsGroupMeta(0, maxSteps);
 
@@ -6208,9 +7487,21 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
 	        return;
 	      }
 
-			      await ensureWebviewHasAgentMarker(null, marker);
-			      const snapRes = await window.aiBridge.agentSnapshot({ url: targetUrl, title: targetTitle, marker });
-	      if (!snapRes?.ok) throw new Error(snapRes?.error || "Failed to snapshot page");
+					      const markerInfo = await ensureWebviewHasAgentMarker(null, marker);
+                await applyWebviewAgentControlUi(null, {
+                  marker,
+                  enabled: true,
+                  tabId: String(getActiveTab()?.id || ""),
+                  touchedTabIds: agentUiTouchedTabIds
+                });
+					      const pageId = String(markerInfo?.pageId || "").trim();
+					      if ((pageId && pageId !== currentPageId) || markerInfo?.didReset) {
+					        currentPageId = pageId || currentPageId;
+					        knownElementIds.clear();
+                  knownElementRects.clear();
+					      }
+				      const snapRes = await window.aiBridge.agentSnapshot({ url: targetUrl, title: targetTitle, marker });
+		      if (!snapRes?.ok) throw new Error(snapRes?.error || "Failed to snapshot page");
       const snapshot = snapRes.snapshot || {};
       agentDebugLog(`snapshot ${step}`, {
         url: String(snapshot.url || ""),
@@ -6218,16 +7509,36 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
         scroll: snapshot.scroll || null,
         elements: Array.isArray(snapshot.elements) ? snapshot.elements.length : 0
       });
-      targetUrl = String(snapshot.url || targetUrl);
-      targetTitle = String(snapshot.title || targetTitle);
-      const snapshotElementIds = new Set(
-        (Array.isArray(snapshot.elements) ? snapshot.elements : [])
-          .map((e) => String(e?.id || "").trim())
-          .filter(Boolean)
-      );
-      for (const id of snapshotElementIds) knownElementIds.add(id);
-      const activeId = String(snapshot?.active?.id || "").trim();
-      if (activeId) knownElementIds.add(activeId);
+	      targetUrl = String(snapshot.url || targetUrl);
+	      targetTitle = String(snapshot.title || targetTitle);
+	      const snapshotElements = Array.isArray(snapshot.elements) ? snapshot.elements : [];
+	      const snapshotElementIds = new Set(snapshotElements.map((e) => String(e?.id || "").trim()).filter(Boolean));
+	      for (const id of snapshotElementIds) knownElementIds.add(id);
+        for (const e of snapshotElements) {
+          const id = String(e?.id || "").trim();
+          if (!id) continue;
+          const r = e?.rect && typeof e.rect === "object" ? e.rect : null;
+          if (!r) continue;
+          const x = Number(r.x);
+          const y = Number(r.y);
+          const w = Number(r.w ?? r.width);
+          const h = Number(r.h ?? r.height);
+          if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(w) || !Number.isFinite(h)) continue;
+          if (w < 2 || h < 2) continue;
+          knownElementRects.set(id, { x, y, w, h });
+        }
+	      const activeId = String(snapshot?.active?.id || "").trim();
+	      if (activeId) knownElementIds.add(activeId);
+        const activeRect = snapshot?.active?.rect && typeof snapshot.active.rect === "object" ? snapshot.active.rect : null;
+        if (activeId && activeRect) {
+          const x = Number(activeRect.x);
+          const y = Number(activeRect.y);
+          const w = Number(activeRect.w ?? activeRect.width);
+          const h = Number(activeRect.h ?? activeRect.height);
+          if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(w) && Number.isFinite(h) && w >= 2 && h >= 2) {
+            knownElementRects.set(activeId, { x, y, w, h });
+          }
+        }
 
       const system = buildBrowserAgentSystemPrompt();
       const prompt = buildBrowserAgentUserPrompt({ task: agentTask, snapshot, steps, maxSteps });
@@ -6444,10 +7755,96 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
 		        continue;
 		      }
 
-      let toolRes = { ok: true };
-      await ensureWebviewHasAgentMarker(null, marker);
+	      let toolRes = { ok: true };
+	      const markerInfo2 = await ensureWebviewHasAgentMarker(null, marker);
+	      const pageId2 = String(markerInfo2?.pageId || "").trim();
+	      if ((pageId2 && pageId2 !== currentPageId) || markerInfo2?.didReset) {
+	        currentPageId = pageId2 || currentPageId;
+	        knownElementIds.clear();
+	      }
 
-      if (tool === "tabList") {
+	      if (tool === "tabOpen") {
+        const rawUrl = String(args.url || "").trim();
+        if (!rawUrl) {
+          toolRes = { ok: false, error: "Missing url for tool: tabOpen." };
+        } else {
+          const makeActive = args.makeActive == null ? true : Boolean(args.makeActive);
+          const url = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(rawUrl) ? rawUrl : getNavigationUrl(rawUrl) || rawUrl;
+          const tab = createTab(url, { makeActive });
+          if (makeActive) {
+            targetUrl = String(tab?.url || url);
+            targetTitle = String(tab?.title || "");
+            await ensureWebviewHasAgentMarker(null, marker);
+          }
+          toolRes = { ok: true, tabId: String(tab?.id || "") };
+        }
+      } else if (tool === "tabClose") {
+        const raw = args.tabId;
+        const tabIdFromIndex = Number.isFinite(raw) ? (() => {
+          const idx = Math.floor(raw) - 1;
+          if (idx < 0 || idx >= tabs.length) return "";
+          return String(tabs[idx]?.id || "");
+        })() : "";
+        const want = tabIdFromIndex || String(raw || "").trim() || String(activeTabId || "").trim();
+        const exists = want ? tabs.some((t) => String(t?.id || "") === want) : false;
+        if (!want || !exists) {
+          toolRes = { ok: false, error: `Invalid tabId: ${want || "(missing)"}` };
+        } else {
+          const wasActive = want === activeTabId;
+          closeTab(want);
+          if (wasActive) {
+            targetUrl = String(getActiveTab()?.url || safeCall(() => getActiveWebview()?.getURL?.(), "") || "");
+            targetTitle = String(getActiveTab()?.title || "");
+          }
+          await ensureWebviewHasAgentMarker(null, marker);
+          toolRes = { ok: true, tabId: want };
+        }
+      } else if (tool === "reportCreate") {
+        const title = String(args.title || "").trim() || "Report";
+        const markdown = String(args.markdown ?? args.md ?? args.content ?? "").trim();
+        if (!markdown) {
+          toolRes = { ok: false, error: "Missing markdown for tool: reportCreate." };
+        } else {
+          const makeActive = args.makeActive == null ? true : Boolean(args.makeActive);
+          const bodyHtml = renderAiMarkdownToSanitizedHtml(markdown);
+          const html = `<!doctype html><html><head><meta charset="utf-8" />` +
+            `<meta name="viewport" content="width=device-width,initial-scale=1" />` +
+            `<title>${escapeHtml(title)}</title>` +
+            `<style>
+              :root{color-scheme:light dark;}
+              body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";line-height:1.55}
+              header{padding:22px 22px 0;max-width:920px;margin:0 auto}
+              main{padding:8px 22px 40px;max-width:920px;margin:0 auto}
+              h1,h2,h3{line-height:1.25}
+              pre{overflow:auto;padding:12px;border-radius:10px}
+              code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+              a{word-break:break-word}
+              @media (prefers-color-scheme: light){
+                body{background:#fff;color:#111}
+                pre{background:#f6f7f9}
+                a{color:#0b57d0}
+              }
+              @media (prefers-color-scheme: dark){
+                body{background:#0f1115;color:#e8eaed}
+                pre{background:#171a21}
+                a{color:#8ab4f8}
+              }
+            </style></head><body>` +
+            `<header><h1>${escapeHtml(title)}</h1></header>` +
+            `<main>${bodyHtml}</main>` +
+            `</body></html>`;
+          const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
+          const tab = createTab(dataUrl, { makeActive });
+          tab.title = title;
+          updateTabElement(tab.id);
+          if (makeActive) {
+            targetUrl = String(tab?.url || dataUrl);
+            targetTitle = String(tab?.title || title);
+            await ensureWebviewHasAgentMarker(null, marker);
+          }
+          toolRes = { ok: true, tabId: String(tab?.id || ""), url: dataUrl, title };
+        }
+      } else if (tool === "tabList") {
         const list = tabs
           .slice(0, 20)
           .map((t) => ({
@@ -6459,12 +7856,20 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
           .filter((t) => t.tabId);
         toolRes = { ok: true, tabs: list };
       } else if (tool === "tabActivate") {
-        const want = String(args.tabId || "").trim();
+        const raw = args.tabId;
+        const tabIdFromIndex = Number.isFinite(raw) ? (() => {
+          const idx = Math.floor(raw) - 1;
+          if (idx < 0 || idx >= tabs.length) return "";
+          return String(tabs[idx]?.id || "");
+        })() : "";
+        const want = tabIdFromIndex || String(raw || "").trim();
         const exists = want ? tabs.some((t) => String(t?.id || "") === want) : false;
         if (!want || !exists) {
           toolRes = { ok: false, error: `Invalid tabId: ${want || "(missing)"}` };
         } else {
           setActiveTab(want);
+          targetUrl = String(getActiveTab()?.url || safeCall(() => getActiveWebview()?.getURL?.(), "") || targetUrl);
+          targetTitle = String(getActiveTab()?.title || targetTitle);
           await ensureWebviewHasAgentMarker(null, marker);
           toolRes = { ok: true, tabId: want };
         }
@@ -6474,6 +7879,305 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
           since: Number.isFinite(args.since) ? args.since : undefined,
           state: String(args.state || "").trim() || undefined,
           timeoutMs: Number.isFinite(args.timeoutMs) ? args.timeoutMs : undefined
+        });
+      } else if (tool === "collectLinks") {
+        toolRes = await window.aiBridge.agentCollectLinks({
+          url: targetUrl,
+          title: targetTitle,
+          marker,
+          limit: Number.isFinite(args.limit) ? args.limit : undefined,
+          sameOrigin: typeof args.sameOrigin === "boolean" ? args.sameOrigin : undefined,
+          urlIncludes: args.urlIncludes,
+          textIncludes: args.textIncludes,
+          selector: args.selector
+        });
+      } else if (tool === "paginateAndCollect") {
+        const limitRaw = Number.isFinite(args.limit) ? args.limit : 120;
+        const limit = Math.max(1, Math.min(400, Math.floor(limitRaw)));
+        const scrollsRaw = Number.isFinite(args.scrolls) ? args.scrolls : 8;
+        const scrolls = Math.max(1, Math.min(30, Math.floor(scrollsRaw)));
+        const deltaYRaw = Number.isFinite(args.deltaY) ? args.deltaY : 900;
+        const deltaY = Math.max(50, Math.min(4000, Math.floor(deltaYRaw)));
+        const waitMsRaw = Number.isFinite(args.waitMs) ? args.waitMs : 0;
+        const waitMs = Math.max(0, Math.min(15_000, Math.floor(waitMsRaw)));
+
+        const seen = new Set();
+        const collected = [];
+        let scrollsDone = 0;
+
+        for (let i = 0; i < scrolls && collected.length < limit; i++) {
+          const remaining = limit - collected.length;
+          const collectRes = await window.aiBridge.agentCollectLinks({
+            url: targetUrl,
+            title: targetTitle,
+            marker,
+            limit: Math.min(80, remaining),
+            sameOrigin: typeof args.sameOrigin === "boolean" ? args.sameOrigin : undefined,
+            urlIncludes: args.urlIncludes,
+            textIncludes: args.textIncludes,
+            selector: args.selector
+          });
+          if (!collectRes?.ok) {
+            toolRes = { ok: false, error: String(collectRes?.error || "collectLinks failed") };
+            break;
+          }
+          const links = Array.isArray(collectRes.links) ? collectRes.links : [];
+          for (const l of links) {
+            const href = String(l?.href || "").trim();
+            const key = href || String(l?.id || "").trim();
+            if (!key || seen.has(key)) continue;
+            seen.add(key);
+            collected.push(l);
+            const id = String(l?.id || "").trim();
+            if (id) knownElementIds.add(id);
+            if (collected.length >= limit) break;
+          }
+          if (collected.length >= limit) break;
+          if (i < scrolls - 1) {
+            const scrollRes = await window.aiBridge.agentScroll({
+              url: targetUrl,
+              title: targetTitle,
+              marker,
+              deltaY
+            });
+            if (!scrollRes?.ok) {
+              toolRes = { ok: false, error: String(scrollRes?.error || "scroll failed") };
+              break;
+            }
+            scrollsDone++;
+            if (waitMs) {
+              await new Promise((resolve) => setTimeout(resolve, waitMs));
+            }
+          }
+        }
+
+        if (toolRes?.ok === false) {
+          // preserve failure
+        } else {
+          toolRes = { ok: true, count: collected.length, scrollsDone, links: collected.slice(0, limit) };
+        }
+      } else if (tool === "extractStructuredData") {
+        toolRes = await window.aiBridge.agentExtractStructuredData({
+          url: targetUrl,
+          title: targetTitle,
+          marker,
+          includeJsonLd: typeof args.includeJsonLd === "boolean" ? args.includeJsonLd : undefined,
+          includeTables: typeof args.includeTables === "boolean" ? args.includeTables : undefined,
+          maxJsonLd: Number.isFinite(args.maxJsonLd) ? args.maxJsonLd : undefined,
+          maxJsonLdChars: Number.isFinite(args.maxJsonLdChars) ? args.maxJsonLdChars : undefined,
+          maxTables: Number.isFinite(args.maxTables) ? args.maxTables : undefined,
+          maxRows: Number.isFinite(args.maxRows) ? args.maxRows : undefined,
+          maxCols: Number.isFinite(args.maxCols) ? args.maxCols : undefined
+        });
+      } else if (tool === "extractTables") {
+        toolRes = await window.aiBridge.agentExtractStructuredData({
+          url: targetUrl,
+          title: targetTitle,
+          marker,
+          includeJsonLd: false,
+          includeTables: true,
+          maxTables: Number.isFinite(args.maxTables) ? args.maxTables : undefined,
+          maxRows: Number.isFinite(args.maxRows) ? args.maxRows : undefined,
+          maxCols: Number.isFinite(args.maxCols) ? args.maxCols : undefined
+        });
+      } else if (tool === "readerExtract") {
+        toolRes = await window.aiBridge.agentReaderExtract({
+          url: targetUrl,
+          title: targetTitle,
+          marker,
+          maxChars: Number.isFinite(args.maxChars) ? args.maxChars : undefined
+        });
+      } else if (tool === "multiTabResearch") {
+        const urls = Array.isArray(args.urls) ? args.urls.map((u) => String(u || "").trim()).filter(Boolean) : [];
+        if (!urls.length) {
+          toolRes = { ok: false, error: "Missing urls for tool: multiTabResearch." };
+        } else {
+          const maxPagesRaw = Number.isFinite(args.maxPages) ? args.maxPages : urls.length;
+          const maxPages = Math.max(1, Math.min(12, Math.floor(maxPagesRaw)));
+          const perPageMaxCharsRaw = Number.isFinite(args.perPageMaxChars) ? args.perPageMaxChars : 6000;
+          const perPageMaxChars = Math.max(600, Math.min(50_000, Math.floor(perPageMaxCharsRaw)));
+          const includeLinks = args.includeLinks === true;
+          const includeStructuredData = args.includeStructuredData === true;
+          const keepTabs = args.keepTabs === true;
+
+          const pages = [];
+          const openedTabIds = [];
+
+          const waitForWebview = async (webview, timeoutMs = 25_000) => {
+            const wv = webview;
+            if (!wv) return false;
+            return await new Promise((resolve) => {
+              let done = false;
+              const finish = (ok) => {
+                if (done) return;
+                done = true;
+                try { wv.removeEventListener("dom-ready", onReady); } catch {}
+                try { wv.removeEventListener("did-finish-load", onReady); } catch {}
+                try { wv.removeEventListener("did-fail-load", onReady); } catch {}
+                resolve(Boolean(ok));
+              };
+              const onReady = () => finish(true);
+              try { wv.addEventListener("dom-ready", onReady); } catch {}
+              try { wv.addEventListener("did-finish-load", onReady); } catch {}
+              try { wv.addEventListener("did-fail-load", onReady); } catch {}
+              setTimeout(() => finish(false), timeoutMs);
+            });
+          };
+
+          for (let i = 0; i < Math.min(urls.length, maxPages); i++) {
+            const rawUrl = urls[i];
+            const normalizedUrl = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(rawUrl) ? rawUrl : getNavigationUrl(rawUrl) || rawUrl;
+            const tabMarker = `${marker}_mt_${i + 1}_${Math.random().toString(16).slice(2)}`;
+            const page = { requestedUrl: rawUrl, url: "", title: "", ok: false };
+
+            try {
+              const tab = createTab(normalizedUrl, { makeActive: false });
+              openedTabIds.push(String(tab?.id || ""));
+              page.tabId = String(tab?.id || "");
+
+              await waitForWebview(tab?.webview, 28_000);
+              await ensureWebviewHasAgentMarker(tab?.webview, tabMarker);
+
+              try {
+                await window.aiBridge.agentWaitForLoad({ url: "", title: "", marker: tabMarker, state: "networkidle" });
+              } catch {
+              }
+
+              const snapRes = await window.aiBridge.agentSnapshot({ url: "", title: "", marker: tabMarker });
+              if (snapRes?.ok) {
+                page.url = String(snapRes?.snapshot?.url || "");
+                page.title = String(snapRes?.snapshot?.title || "");
+              }
+
+              const readerRes = await window.aiBridge.agentReaderExtract({
+                url: page.url,
+                title: page.title,
+                marker: tabMarker,
+                maxChars: perPageMaxChars
+              });
+              if (readerRes?.ok) {
+                const article = readerRes.article && typeof readerRes.article === "object" ? readerRes.article : null;
+                if (article) {
+                  page.article = {
+                    title: String(article.title || ""),
+                    byline: String(article.byline || ""),
+                    siteName: String(article.siteName || ""),
+                    excerpt: String(article.excerpt || ""),
+                    text: String(article.text || "")
+                  };
+                }
+              }
+
+              if (includeLinks) {
+                const linksRes = await window.aiBridge.agentCollectLinks({
+                  url: page.url,
+                  title: page.title,
+                  marker: tabMarker,
+                  limit: 60,
+                  sameOrigin: true
+                });
+                if (linksRes?.ok) {
+                  page.links = Array.isArray(linksRes.links) ? linksRes.links.slice(0, 60) : [];
+                }
+              }
+
+              if (includeStructuredData) {
+                const dataRes = await window.aiBridge.agentExtractStructuredData({
+                  url: page.url,
+                  title: page.title,
+                  marker: tabMarker,
+                  includeJsonLd: true,
+                  includeTables: false,
+                  maxJsonLd: 8,
+                  maxJsonLdChars: 12_000
+                });
+                if (dataRes?.ok) {
+                  page.structuredData = {
+                    meta: dataRes.meta || null,
+                    jsonLd: Array.isArray(dataRes.jsonLd) ? dataRes.jsonLd.slice(0, 8) : []
+                  };
+                }
+              }
+
+              page.ok = true;
+            } catch (err) {
+              page.error = String(err?.message || err);
+            } finally {
+              pages.push(page);
+              if (!keepTabs) {
+                const tabId = String(page.tabId || "");
+                if (tabId) {
+                  try {
+                    closeTab(tabId);
+                  } catch {
+                  }
+                }
+              }
+            }
+          }
+
+          toolRes = { ok: true, keepTabs, pages, openedTabs: openedTabIds.filter(Boolean) };
+        }
+      } else if (tool === "networkGetResponses") {
+        toolRes = await window.aiBridge.agentNetworkGetResponses({
+          url: targetUrl,
+          title: targetTitle,
+          marker,
+          urlIncludes: args.urlIncludes,
+          method: args.method,
+          limit: Number.isFinite(args.limit) ? args.limit : undefined,
+          maxBodyChars: Number.isFinite(args.maxBodyChars) ? args.maxBodyChars : undefined
+        });
+      } else if (tool === "cookieExport") {
+        const exportRes = await window.aiBridge.agentCookieExport({
+          url: targetUrl,
+          title: targetTitle,
+          marker,
+          urls: Array.isArray(args.urls) ? args.urls : undefined,
+          limit: Number.isFinite(args.limit) ? args.limit : undefined
+        });
+        if (!exportRes?.ok) {
+          toolRes = exportRes;
+        } else {
+          const jarId = `cookiejar_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+          const cookies = Array.isArray(exportRes.cookies) ? exportRes.cookies : [];
+          cookieJars.set(jarId, cookies);
+          toolRes = { ok: true, cookieJarId: jarId, count: cookies.length };
+        }
+      } else if (tool === "cookieImport") {
+        const jarId = String(args.cookieJarId || "").trim();
+        const fromJar = jarId ? cookieJars.get(jarId) : null;
+        const cookies = Array.isArray(fromJar) ? fromJar : Array.isArray(args.cookies) ? args.cookies : [];
+        toolRes = await window.aiBridge.agentCookieImport({
+          url: targetUrl,
+          title: targetTitle,
+          marker,
+          cookies
+        });
+      } else if (tool === "googleSheetsAppendRows") {
+        toolRes = await window.aiBridge.agentGoogleSheetsAppendRows({
+          spreadsheetId: args.spreadsheetId,
+          sheetName: args.sheetName,
+          range: args.range,
+          values: args.values
+        });
+      } else if (tool === "googleDocsCreateOrAppend") {
+        toolRes = await window.aiBridge.agentGoogleDocsCreateOrAppend({
+          documentId: args.documentId,
+          title: args.title,
+          text: args.text
+        });
+      } else if (tool === "googleSlidesCreateDeck") {
+        toolRes = await window.aiBridge.agentGoogleSlidesCreateDeck({
+          title: args.title,
+          slides: args.slides
+        });
+      } else if (tool === "exportFile") {
+        toolRes = await window.aiBridge.agentExportFile({
+          filename: args.filename,
+          format: args.format,
+          content: args.content,
+          data: args.data
         });
       } else if (tool === "findElements") {
         toolRes = await window.aiBridge.agentFindElements({
@@ -6487,32 +8191,32 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
           limit: Number.isFinite(args.limit) ? args.limit : undefined
         });
       } else if (tool === "readElement") {
-        const id = String(args.id || "").trim();
-        if (id && knownElementIds.size && !knownElementIds.has(id)) {
-          toolRes = { ok: false, error: `Invalid element id: ${id} (not seen in this agent run).` };
-        } else {
-          toolRes = await window.aiBridge.agentReadElement({
-            url: targetUrl,
+	        const id = String(args.id || "").trim();
+	        if (id && knownElementIds.size && !knownElementIds.has(id)) {
+	          toolRes = { ok: false, error: `Invalid element id: ${id} (unknown for this page; run snapshot/findElements again).` };
+	        } else {
+	          toolRes = await window.aiBridge.agentReadElement({
+	            url: targetUrl,
             title: targetTitle,
             marker,
             elementId: id,
             fields: Array.isArray(args.fields) ? args.fields : undefined
           });
         }
-      } else if (tool === "scrollIntoView") {
-        const id = String(args.id || "").trim();
-        if (id && knownElementIds.size && !knownElementIds.has(id)) {
-          toolRes = { ok: false, error: `Invalid element id: ${id} (not seen in this agent run).` };
-        } else {
-          toolRes = await window.aiBridge.agentScrollIntoView({ url: targetUrl, title: targetTitle, marker, elementId: id });
-        }
-      } else if (tool === "screenshot") {
-        const id = String(args.id || "").trim();
-        if (id && knownElementIds.size && !knownElementIds.has(id)) {
-          toolRes = { ok: false, error: `Invalid element id: ${id} (not seen in this agent run).` };
-        } else {
-          toolRes = await window.aiBridge.agentScreenshot({
-            url: targetUrl,
+	      } else if (tool === "scrollIntoView") {
+	        const id = String(args.id || "").trim();
+	        if (id && knownElementIds.size && !knownElementIds.has(id)) {
+	          toolRes = { ok: false, error: `Invalid element id: ${id} (unknown for this page; run snapshot/findElements again).` };
+	        } else {
+	          toolRes = await window.aiBridge.agentScrollIntoView({ url: targetUrl, title: targetTitle, marker, elementId: id });
+	        }
+	      } else if (tool === "screenshot") {
+	        const id = String(args.id || "").trim();
+	        if (id && knownElementIds.size && !knownElementIds.has(id)) {
+	          toolRes = { ok: false, error: `Invalid element id: ${id} (unknown for this page; run snapshot/findElements again).` };
+	        } else {
+	          toolRes = await window.aiBridge.agentScreenshot({
+	            url: targetUrl,
             title: targetTitle,
             marker,
             elementId: id,
@@ -6520,13 +8224,13 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
             format: args.format
           });
         }
-      } else if (tool === "uploadFile") {
-        const id = String(args.id || "").trim();
-        if (id && knownElementIds.size && !knownElementIds.has(id)) {
-          toolRes = { ok: false, error: `Invalid element id: ${id} (not seen in this agent run).` };
-        } else {
-          toolRes = await window.aiBridge.agentUploadFile({
-            url: targetUrl,
+	      } else if (tool === "uploadFile") {
+	        const id = String(args.id || "").trim();
+	        if (id && knownElementIds.size && !knownElementIds.has(id)) {
+	          toolRes = { ok: false, error: `Invalid element id: ${id} (unknown for this page; run snapshot/findElements again).` };
+	        } else {
+	          toolRes = await window.aiBridge.agentUploadFile({
+	            url: targetUrl,
             title: targetTitle,
             marker,
             elementId: id,
@@ -6550,42 +8254,175 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
           urlIncludes: args.urlIncludes,
           timeoutMs: Number.isFinite(args.timeoutMs) ? args.timeoutMs : undefined
         });
-      } else if (tool === "click") {
-        const id = String(args.id || "").trim();
-        const x = Number.isFinite(args.x) ? args.x : null;
-        const y = Number.isFinite(args.y) ? args.y : null;
-        const hasXY = Number.isFinite(x) && Number.isFinite(y);
-        const count = Number.isFinite(args.count) ? args.count : undefined;
-        if (id && knownElementIds.size && !knownElementIds.has(id)) {
-          toolRes = { ok: false, error: `Invalid element id: ${id} (not seen in this agent run).` };
+      } else if (tool === "clickBySelector") {
+        const selector = String(args.selector || "").trim();
+        if (!selector) {
+          toolRes = { ok: false, error: "Missing selector for tool: clickBySelector." };
         } else {
-          toolRes = await window.aiBridge.agentClick({
+          const timeoutMs = Number.isFinite(args.timeoutMs) ? args.timeoutMs : undefined;
+          const waitRes = await window.aiBridge.agentWaitFor({
             url: targetUrl,
             title: targetTitle,
             marker,
-            elementId: id,
-            clickCount: count,
-            x: hasXY ? x : undefined,
-            y: hasXY ? y : undefined
+            selector,
+            timeoutMs
           });
-        }
-      } else if (tool === "hover") {
-        const id = String(args.id || "").trim();
-        const x = Number.isFinite(args.x) ? args.x : null;
-        const y = Number.isFinite(args.y) ? args.y : null;
-        const hasXY = Number.isFinite(x) && Number.isFinite(y);
-        if (id && knownElementIds.size && !knownElementIds.has(id)) {
-          toolRes = { ok: false, error: `Invalid element id: ${id} (not seen in this agent run).` };
+          if (!waitRes?.ok) {
+            toolRes = waitRes;
+          } else {
+            const element = waitRes?.result?.element && typeof waitRes.result.element === "object" ? waitRes.result.element : null;
+            const id = String(element?.id || "").trim();
+            if (id) knownElementIds.add(id);
+            if (id) {
+              try {
+                await window.aiBridge.agentScrollIntoView({ url: targetUrl, title: targetTitle, marker, elementId: id });
+              } catch {
+              }
+            }
+	            const rect = element?.rect && typeof element.rect === "object" ? element.rect : null;
+	            const x = rect && Number.isFinite(rect.x) && Number.isFinite(rect.w) ? rect.x + rect.w / 2 : null;
+	            const y = rect && Number.isFinite(rect.y) && Number.isFinite(rect.h) ? rect.y + rect.h / 2 : null;
+              if (Number.isFinite(x) && Number.isFinite(y)) {
+                await emitAgentUiEvent({ type: "move", x, y });
+              }
+	            const clickRes = await window.aiBridge.agentClick({
+	              url: targetUrl,
+	              title: targetTitle,
+	              marker,
+              elementId: id || undefined,
+              x: Number.isFinite(x) && Number.isFinite(y) ? x : undefined,
+	              y: Number.isFinite(x) && Number.isFinite(y) ? y : undefined
+	            });
+	            if (!clickRes?.ok) toolRes = clickRes;
+	            else {
+                const cr = clickRes?.result && typeof clickRes.result === "object" ? clickRes.result : null;
+                const cx = Number(cr?.x);
+                const cy = Number(cr?.y);
+                if (Number.isFinite(cx) && Number.isFinite(cy)) {
+                  await emitAgentUiEvent({ type: "click", x: cx, y: cy, count: Number(cr?.clickCount) || 1 });
+                }
+                toolRes = { ok: true, selector, clickedId: id, wait: waitRes.result || null, click: clickRes.result || null };
+              }
+	          }
+	        }
+	      } else if (tool === "clickByText") {
+        const maxAttempts = Number.isFinite(args.limit) ? Math.max(1, Math.min(8, Math.floor(args.limit))) : 3;
+        const findRes = await window.aiBridge.agentFindElements({
+          url: targetUrl,
+          title: targetTitle,
+          marker,
+          text: args.text,
+          selector: args.selector,
+          role: args.role,
+          tag: args.tag,
+          limit: maxAttempts
+        });
+        if (!findRes?.ok) {
+          toolRes = findRes;
         } else {
-          toolRes = await window.aiBridge.agentHover({
-            url: targetUrl,
-            title: targetTitle,
-            marker,
-            elementId: id,
-            x: hasXY ? x : undefined,
-            y: hasXY ? y : undefined
-          });
+          const matches = Array.isArray(findRes.matches) ? findRes.matches : [];
+          if (!matches.length) {
+            toolRes = { ok: false, error: "No matching elements found." };
+          } else {
+            for (const m of matches) {
+              const id = String(m?.id || "").trim();
+              if (id) knownElementIds.add(id);
+            }
+            const attempts = [];
+            let clicked = null;
+	            for (const m of matches.slice(0, maxAttempts)) {
+	              const id = String(m?.id || "").trim();
+	              if (!id) continue;
+	              try {
+	                await window.aiBridge.agentScrollIntoView({ url: targetUrl, title: targetTitle, marker, elementId: id });
+	              } catch {
+	              }
+                try {
+                  const rect = m?.rect && typeof m.rect === "object" ? m.rect : null;
+                  const x = rect && Number.isFinite(rect.x) && Number.isFinite(rect.w) ? rect.x + rect.w / 2 : null;
+                  const y = rect && Number.isFinite(rect.y) && Number.isFinite(rect.h) ? rect.y + rect.h / 2 : null;
+                  if (Number.isFinite(x) && Number.isFinite(y)) await emitAgentUiEvent({ type: "move", x, y });
+                } catch {
+                }
+	              const clickRes = await window.aiBridge.agentClick({
+	                url: targetUrl,
+	                title: targetTitle,
+	                marker,
+	                elementId: id
+	              });
+	              if (clickRes?.ok) {
+	                const cr = clickRes?.result && typeof clickRes.result === "object" ? clickRes.result : null;
+                  const cx = Number(cr?.x);
+                  const cy = Number(cr?.y);
+                  if (Number.isFinite(cx) && Number.isFinite(cy)) {
+                    await emitAgentUiEvent({ type: "click", x: cx, y: cy, count: Number(cr?.clickCount) || 1 });
+                  }
+	                clicked = { id, match: m, click: clickRes.result || null };
+	                break;
+	              }
+	              attempts.push({ id, error: String(clickRes?.error || "click failed") });
+	            }
+            toolRes = clicked
+              ? { ok: true, clickedId: clicked.id, match: clicked.match || null, click: clicked.click || null, totalMatches: matches.length }
+              : { ok: false, error: `Click failed (${attempts.length} attempts).`, attempts, totalMatches: matches.length };
+          }
         }
+		      } else if (tool === "click") {
+		        const id = String(args.id || "").trim();
+		        const x = Number.isFinite(args.x) ? args.x : null;
+	        const y = Number.isFinite(args.y) ? args.y : null;
+		        const hasXY = Number.isFinite(x) && Number.isFinite(y);
+		        const count = Number.isFinite(args.count) ? args.count : undefined;
+		        if (id && knownElementIds.size && !knownElementIds.has(id)) {
+		          toolRes = { ok: false, error: `Invalid element id: ${id} (unknown for this page; run snapshot/findElements again).` };
+		        } else {
+              const preview = hasXY ? { x, y } : getApproxPointForElementId(id);
+              if (preview && Number.isFinite(preview.x) && Number.isFinite(preview.y)) {
+                await emitAgentUiEvent({ type: "move", x: preview.x, y: preview.y });
+              }
+		          toolRes = await window.aiBridge.agentClick({
+		            url: targetUrl,
+	            title: targetTitle,
+	            marker,
+	            elementId: id,
+		            clickCount: count,
+		            x: hasXY ? x : undefined,
+		            y: hasXY ? y : undefined
+		          });
+              const r = toolRes?.result && typeof toolRes.result === "object" ? toolRes.result : null;
+              const rx = Number(r?.x);
+              const ry = Number(r?.y);
+              if (toolRes?.ok && Number.isFinite(rx) && Number.isFinite(ry)) {
+                await emitAgentUiEvent({ type: "click", x: rx, y: ry, count: Number(r?.clickCount) || 1 });
+              }
+	        }
+		      } else if (tool === "hover") {
+		        const id = String(args.id || "").trim();
+		        const x = Number.isFinite(args.x) ? args.x : null;
+		        const y = Number.isFinite(args.y) ? args.y : null;
+		        const hasXY = Number.isFinite(x) && Number.isFinite(y);
+		        if (id && knownElementIds.size && !knownElementIds.has(id)) {
+		          toolRes = { ok: false, error: `Invalid element id: ${id} (unknown for this page; run snapshot/findElements again).` };
+		        } else {
+              const preview = hasXY ? { x, y } : getApproxPointForElementId(id);
+              if (preview && Number.isFinite(preview.x) && Number.isFinite(preview.y)) {
+                await emitAgentUiEvent({ type: "move", x: preview.x, y: preview.y });
+              }
+		          toolRes = await window.aiBridge.agentHover({
+		            url: targetUrl,
+	            title: targetTitle,
+	            marker,
+	            elementId: id,
+		            x: hasXY ? x : undefined,
+		            y: hasXY ? y : undefined
+		          });
+              const r = toolRes?.result && typeof toolRes.result === "object" ? toolRes.result : null;
+              const rx = Number(r?.x);
+              const ry = Number(r?.y);
+              if (toolRes?.ok && Number.isFinite(rx) && Number.isFinite(ry)) {
+                await emitAgentUiEvent({ type: "move", x: rx, y: ry });
+              }
+	        }
       } else if (tool === "scroll") {
         const deltaX = Number.isFinite(args.deltaX) && args.deltaX !== 0 ? args.deltaX : undefined;
         const deltaY = Number.isFinite(args.deltaY) && args.deltaY !== 0 ? args.deltaY : undefined;
@@ -6601,6 +8438,11 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
           x: hasXY ? x : undefined,
           y: hasXY ? y : undefined
         });
+        if (toolRes?.ok) {
+          const dx = Number.isFinite(args.deltaX) ? args.deltaX : 0;
+          const dy = Number.isFinite(args.deltaY) ? args.deltaY : 0;
+          await emitAgentUiEvent({ type: "scroll", x: hasXY ? x : undefined, y: hasXY ? y : undefined, deltaX: dx, deltaY: dy });
+        }
       } else if (tool === "fillText") {
         const id = String(args.id || "").trim();
         const x = Number.isFinite(args.x) ? args.x : null;
@@ -6609,13 +8451,13 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
         const count = Number.isFinite(args.count) ? args.count : undefined;
         const enter = typeof args.enter === "boolean" ? args.enter : undefined;
         const retries = Number.isFinite(args.retries) ? args.retries : undefined;
-        if (!String(args.text || "")) {
-          toolRes = { ok: false, error: "Missing text for tool: fillText." };
-        } else if (id && knownElementIds.size && !knownElementIds.has(id)) {
-          toolRes = { ok: false, error: `Invalid element id: ${id} (not seen in this agent run).` };
-        } else {
-          toolRes = await window.aiBridge.agentFillText({
-            url: targetUrl,
+	        if (!String(args.text || "")) {
+	          toolRes = { ok: false, error: "Missing text for tool: fillText." };
+	        } else if (id && knownElementIds.size && !knownElementIds.has(id)) {
+	          toolRes = { ok: false, error: `Invalid element id: ${id} (unknown for this page; run snapshot/findElements again).` };
+	        } else {
+	          toolRes = await window.aiBridge.agentFillText({
+	            url: targetUrl,
             title: targetTitle,
             marker,
             elementId: id,
@@ -6627,13 +8469,13 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
             retries
           });
         }
-      } else if (tool === "type") {
-        const id = String(args.id || "").trim();
-        if (id && knownElementIds.size && !knownElementIds.has(id)) {
-          toolRes = { ok: false, error: `Invalid element id: ${id} (not seen in this agent run).` };
-        } else {
-          toolRes = await window.aiBridge.agentType({
-            url: targetUrl,
+	      } else if (tool === "type") {
+	        const id = String(args.id || "").trim();
+	        if (id && knownElementIds.size && !knownElementIds.has(id)) {
+	          toolRes = { ok: false, error: `Invalid element id: ${id} (unknown for this page; run snapshot/findElements again).` };
+	        } else {
+	          toolRes = await window.aiBridge.agentType({
+	            url: targetUrl,
             title: targetTitle,
             marker,
             elementId: id,
@@ -6673,18 +8515,63 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
           const output = compactAgentToolOutput(tool, toolRes);
           if (output != null) stepRecord.output = output;
 
-          if (tool === "findElements" && Array.isArray(toolRes.matches)) {
-            for (const m of toolRes.matches) {
-              const id = String(m?.id || "").trim();
-              if (id) knownElementIds.add(id);
-            }
-          } else if (tool === "readElement") {
-            const id = String(toolRes?.element?.id || "").trim();
-            if (id) knownElementIds.add(id);
-          } else if (tool === "waitFor") {
-            const id = String(toolRes?.result?.element?.id || "").trim();
-            if (id) knownElementIds.add(id);
-          }
+	          if (tool === "findElements" && Array.isArray(toolRes.matches)) {
+	            for (const m of toolRes.matches) {
+	              const id = String(m?.id || "").trim();
+	              if (id) knownElementIds.add(id);
+	              const r = m?.rect && typeof m.rect === "object" ? m.rect : null;
+	              if (id && r) {
+	                const x = Number(r.x);
+	                const y = Number(r.y);
+	                const w = Number(r.w ?? r.width);
+	                const h = Number(r.h ?? r.height);
+	                if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(w) && Number.isFinite(h) && w >= 2 && h >= 2) {
+	                  knownElementRects.set(id, { x, y, w, h });
+	                }
+	              }
+	            }
+	          } else if (tool === "collectLinks" && Array.isArray(toolRes.links)) {
+	            for (const l of toolRes.links) {
+	              const id = String(l?.id || "").trim();
+	              if (id) knownElementIds.add(id);
+	              const r = l?.rect && typeof l.rect === "object" ? l.rect : null;
+	              if (id && r) {
+	                const x = Number(r.x);
+	                const y = Number(r.y);
+	                const w = Number(r.w ?? r.width);
+	                const h = Number(r.h ?? r.height);
+	                if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(w) && Number.isFinite(h) && w >= 2 && h >= 2) {
+	                  knownElementRects.set(id, { x, y, w, h });
+	                }
+	              }
+	            }
+	          } else if (tool === "readElement") {
+	            const id = String(toolRes?.element?.id || "").trim();
+	            if (id) knownElementIds.add(id);
+	            const r = toolRes?.element?.rect && typeof toolRes.element.rect === "object" ? toolRes.element.rect : null;
+	            if (id && r) {
+	              const x = Number(r.x);
+	              const y = Number(r.y);
+	              const w = Number(r.w ?? r.width);
+	              const h = Number(r.h ?? r.height);
+	              if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(w) && Number.isFinite(h) && w >= 2 && h >= 2) {
+	                knownElementRects.set(id, { x, y, w, h });
+	              }
+	            }
+	          } else if (tool === "waitFor") {
+	            const id = String(toolRes?.result?.element?.id || "").trim();
+	            if (id) knownElementIds.add(id);
+	            const r = toolRes?.result?.element?.rect && typeof toolRes.result.element.rect === "object" ? toolRes.result.element.rect : null;
+	            if (id && r) {
+	              const x = Number(r.x);
+	              const y = Number(r.y);
+	              const w = Number(r.w ?? r.width);
+	              const h = Number(r.h ?? r.height);
+	              if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(w) && Number.isFinite(h) && w >= 2 && h >= 2) {
+	                knownElementRects.set(id, { x, y, w, h });
+	              }
+	            }
+	          }
 		      if (seq !== agentRunSeq || !isAgentRunning) {
 		        markStopped();
 	        return;
@@ -6758,13 +8645,29 @@ async function runBrowserAgentRequest({ displayText, buildUserMessage }) {
 		      renderAiConversationMessages(conv?.messages || []);
 		    }
 	    window.aiBridge.showError(message);
-	  } finally {
-	    if (activeAgentRun?.seq === seq) activeAgentRun = null;
-	    if (seq === agentRunSeq) setAgentRunning(false);
-	    if (seq === agentRunSeq) setChatSending(false);
-	    scrollAiChatToBottom({ behavior: "smooth" });
-	  }
-	}
+		  } finally {
+        try {
+          if (marker) {
+            const ids = Array.from(agentUiTouchedTabIds);
+            if (!ids.length) {
+              await applyWebviewAgentControlUi(null, { marker, enabled: false });
+            } else {
+              for (const id of ids) {
+                const tab = getTab(id);
+                const wv = tab?.webview;
+                if (!wv) continue;
+                await applyWebviewAgentControlUi(wv, { marker, enabled: false });
+              }
+            }
+          }
+        } catch {
+        }
+		    if (activeAgentRun?.seq === seq) activeAgentRun = null;
+		    if (seq === agentRunSeq) setAgentRunning(false);
+		    if (seq === agentRunSeq) setChatSending(false);
+		    scrollAiChatToBottom({ behavior: "smooth" });
+		  }
+		}
 
 async function dispatchAiRequest({ displayText, buildUserMessage }) {
   if (isBrowserAgentMode()) return runBrowserAgentRequest({ displayText, buildUserMessage });

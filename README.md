@@ -34,7 +34,7 @@ GitHub: https://github.com/stingtao/ai-browser
   - Safe Markdown rendering (sanitized HTML)
   - AI settings modal (provider/model/context mode)
   - Support for local Ollama models, Gemini API, and OpenAI-compatible APIs
-  - Experimental Browser Agent mode (Playwright): operates the active tab via tools like `snapshot`, `findElements`, `click`/`hover`/`scroll`, `type`/`fillText`, `hotkey`/`press`, `navigate`, `waitFor`/`waitForLoad`, `screenshot`, `tabList`/`tabActivate`, `downloadsWait`, `uploadFile` (reuses your login session)
+  - Experimental Browser Agent mode (Playwright): operates the active tab via tools like `snapshot`, `findElements`/`readElement`, `collectLinks`, `paginateAndCollect`, `extractStructuredData`/`extractTables`, `readerExtract`, `click`/`clickByText`/`clickBySelector`, `hover`/`scroll`, `type`/`fillText`, `hotkey`/`press`, `navigate`, `waitFor`/`waitForLoad`, `screenshot`, `tabList`/`tabActivate`/`tabOpen`/`tabClose`, `networkGetResponses`, `cookieExport`/`cookieImport`, `downloadsWait`, `uploadFile`, `reportCreate`, `exportFile`, and Google Docs/Sheets/Slides tools (reuses your login session)
   - Agent step trace UI (auto-collapses on completion; toggle to expand)
   - Agent max steps limit (configurable in AI settings)
   - Gemini API key manager with encryption support (save/update/clear) with validation
@@ -131,6 +131,16 @@ Use this if you have an OpenAI-compatible endpoint (for example: local servers, 
 export OPENAI_API_KEY="YOUR_KEY"
 ```
 
+## Google Workspace (OAuth)
+
+Use this if you want the Browser Agent to write results into Google Docs / Sheets / Slides.
+
+- Open AI settings (`⚙`) → Integrations → Google OAuth
+- Create an OAuth client ID in Google Cloud Console (**Desktop app**), then paste:
+  - Client ID
+  - Client Secret
+- Choose scopes, then click Connect (it opens your default browser for consent)
+
 ## Browser Agent (Playwright)
 
 In AI settings → Agent → Mode, switch to `Browser agent (Playwright)`.
@@ -141,10 +151,13 @@ In AI settings → Agent → Mode, switch to `Browser agent (Playwright)`.
 - Uses trusted CDP mouse/key input (better compatibility with apps like Google Docs/Slides than `element.click()`)
 - Tools:
   - Observe/search: `snapshot`, `screenshot`, `findElements`, `readElement`
+  - Extract/research: `collectLinks`, `paginateAndCollect`, `extractStructuredData`, `extractTables`, `readerExtract`, `multiTabResearch`, `networkGetResponses`
   - Targeting/helpers: `scrollIntoView`, `waitFor`, `waitForLoad`
-  - Input/actions: `click`, `hover`, `scroll`, `type`, `fillText`, `press`, `hotkey`
-  - Navigation/tabs: `navigate`, `tabList`, `tabActivate`
-  - Files/downloads: `uploadFile`, `downloadsWait`
+  - Input/actions: `click`, `clickByText`, `clickBySelector`, `hover`, `scroll`, `type`, `fillText`, `press`, `hotkey`
+  - Navigation/tabs: `navigate`, `tabList`, `tabActivate`, `tabOpen`, `tabClose`
+  - Session: `cookieExport`, `cookieImport`
+  - Google Workspace: `googleSheetsAppendRows`, `googleDocsCreateOrAppend`, `googleSlidesCreateDeck`
+  - Files/exports: `uploadFile`, `downloadsWait`, `reportCreate`, `exportFile`
 - Element ids (`data-sting-agent-id`) persist for the duration of a single agent run (so the agent can reuse ids across steps).
 - `type` supports both element targeting and typing into the currently focused element (useful for canvas-style editors); on `docs.google.com` it uses trusted key events + post-typing verification (click the editable canvas area first; sometimes double-click or press Enter)
 - `fillText` is a high-level macro for finicky editors (especially Google Docs/Slides): focuses via click/double-click (optional `enter` + `retries`) and then types with verification
@@ -180,6 +193,7 @@ Security note: CDP grants powerful control of the browser; keep it bound to loca
 - Browser settings are stored in Electron `userData` as JSON.
 - Gemini API key is stored using Electron `safeStorage` encryption when available; otherwise it falls back to plaintext storage on the device.
 - OpenAI-compatible API key is stored using Electron `safeStorage` encryption when available; otherwise it falls back to plaintext storage on the device.
+- Google OAuth client secret + refresh token are stored using Electron `safeStorage` encryption when available; otherwise it falls back to plaintext storage on the device.
 - AI Assistant options, prompts, chat history, and page zoom are stored in renderer `localStorage`.
 
 ## 🏗️ Architecture & Technologies

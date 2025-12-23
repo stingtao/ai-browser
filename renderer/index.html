@@ -557,6 +557,126 @@
 		            </div>
 		          </div>
 
+	          <div class="panelSection">
+	            <div class="panelSectionTitle" data-i18n="aiSettings.section.integrations">Integrations</div>
+	            <div class="panelSubSection" id="googleOauthRow">
+	              <div class="row">
+	                <label data-i18n="aiSettings.google.status.label">Status</label>
+	                <small id="googleOauthStatus" class="formHint" data-i18n="aiSettings.google.status.disconnected">
+	                  Not connected
+	                </small>
+	              </div>
+
+	              <div class="row">
+	                <label data-i18n="aiSettings.google.clientId">Client ID</label>
+	                <input
+	                  id="googleOauthClientIdInput"
+	                  spellcheck="false"
+	                  autocomplete="off"
+	                  placeholder="...apps.googleusercontent.com"
+	                />
+	                <button id="googleOauthSaveClientIdBtn" type="button" data-i18n="aiSettings.google.saveClientId">
+	                  Save
+	                </button>
+	              </div>
+
+	              <div class="row">
+	                <label data-i18n="aiSettings.google.clientSecret">Client Secret</label>
+	                <input
+	                  id="googleOauthClientSecretInput"
+	                  type="password"
+	                  autocomplete="off"
+	                  spellcheck="false"
+	                  placeholder="GOCSPX-…"
+	                />
+	                <button
+	                  id="toggleGoogleOauthSecretBtn"
+	                  class="iconBtn iconBtnSm"
+	                  type="button"
+	                  aria-label="Toggle client secret visibility"
+	                  title="Show/Hide"
+	                  data-i18n-attrs="aria-label:aiSettings.google.toggleSecretAria,title:aiSettings.google.toggleSecret"
+	                >
+	                  👁
+	                </button>
+	                <button
+	                  id="googleOauthSaveClientSecretBtn"
+	                  type="button"
+	                  data-i18n="aiSettings.google.saveClientSecret"
+	                >
+	                  Save
+	                </button>
+	              </div>
+
+	              <div class="row rowTop">
+	                <label data-i18n="aiSettings.google.scopes">Scopes</label>
+	                <div class="checkboxGroup" role="group" aria-label="Google OAuth scopes">
+	                  <label class="checkboxRow">
+	                    <input
+	                      type="checkbox"
+	                      id="googleOauthScopeSheets"
+	                      name="googleOauthScope"
+	                      value="https://www.googleapis.com/auth/spreadsheets"
+	                    />
+	                    <span data-i18n="aiSettings.google.scope.sheets">Google Sheets</span>
+	                  </label>
+	                  <label class="checkboxRow">
+	                    <input
+	                      type="checkbox"
+	                      id="googleOauthScopeDocs"
+	                      name="googleOauthScope"
+	                      value="https://www.googleapis.com/auth/documents"
+	                    />
+	                    <span data-i18n="aiSettings.google.scope.docs">Google Docs</span>
+	                  </label>
+	                  <label class="checkboxRow">
+	                    <input
+	                      type="checkbox"
+	                      id="googleOauthScopeSlides"
+	                      name="googleOauthScope"
+	                      value="https://www.googleapis.com/auth/presentations"
+	                    />
+	                    <span data-i18n="aiSettings.google.scope.slides">Google Slides</span>
+	                  </label>
+	                  <label class="checkboxRow">
+	                    <input
+	                      type="checkbox"
+	                      id="googleOauthScopeDriveFile"
+	                      name="googleOauthScope"
+	                      value="https://www.googleapis.com/auth/drive.file"
+	                    />
+	                    <span data-i18n="aiSettings.google.scope.driveFile">Drive (files you create/open)</span>
+	                  </label>
+	                </div>
+	              </div>
+
+	              <div class="row">
+	                <label></label>
+	                <button id="googleOauthConnectBtn" type="button" data-i18n="aiSettings.google.connect">Connect</button>
+	                <button
+	                  id="googleOauthDisconnectBtn"
+	                  type="button"
+	                  class="secondary"
+	                  data-i18n="aiSettings.google.disconnect"
+	                >
+	                  Disconnect
+	                </button>
+	                <button
+	                  id="googleOauthClearBtn"
+	                  type="button"
+	                  class="secondary"
+	                  data-i18n="aiSettings.google.clear"
+	                >
+	                  Clear
+	                </button>
+	              </div>
+
+	              <small class="formHint" data-i18n="aiSettings.google.hint">
+	                Create an OAuth client (Web) in Google Cloud Console. Redirect URI will be a temporary localhost URL.
+	              </small>
+	            </div>
+	          </div>
+
 			          <div class="panelSection">
 			            <div class="panelSectionTitle" data-i18n="aiSettings.section.agent">Agent</div>
 			            <div class="row">

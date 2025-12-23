@@ -1,6 +1,8 @@
 const { app, BrowserWindow, ipcMain, dialog, safeStorage, shell, Menu, nativeTheme, nativeImage } = require("electron");
 const os = require("os");
 const path = require("path");
+const http = require("http");
+const crypto = require("crypto");
 const fs = require("fs/promises");
 const { existsSync } = require("fs");
 const { spawn, spawnSync } = require("child_process");
@@ -49,6 +51,9 @@ const downloadsById = new Map();
 const downloadItemsById = new Map();
 const reservedDownloadPaths = new Set();
 const sessionsWithDownloadHandler = new WeakSet();
+const permissionDecisionsByKey = new Map();
+const permissionPromptsInFlightByKey = new Map();
+const PROMPTABLE_PERMISSIONS = new Set(["notifications"]);
 
 function getOsLocale() {
   try {
@@ -67,6 +72,16 @@ function resolveUiLanguage(input) {
   if (lower === "zh-tw" || lower.startsWith("zh-tw-")) return "zh-TW";
   if (lower.startsWith("zh-") || lower === "zh") return "zh-TW";
   return "en";
+}
+
+function normalizeRequestingOrigin(details, webContents) {
+  const raw = String(details?.requestingUrl || details?.requestingOrigin || webContents?.getURL?.() || "").trim();
+  if (!raw) return "";
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return "";
+  }
 }
 
 function createWindow({ initialUrl } = {}) {
@@ -151,26 +166,62 @@ function createWindow({ initialUrl } = {}) {
     if (ses && typeof ses.setPermissionRequestHandler === "function") {
       ses.setPermissionRequestHandler((webContents, permission, callback, details) => {
         try {
-          if (permission !== "media") return callback(false);
-          const isMainUi = webContents === mainWindow.webContents;
-          const mediaTypes = Array.isArray(details?.mediaTypes) ? details.mediaTypes : [];
-          const wantsAudio = mediaTypes.includes("audio");
-          callback(Boolean(isMainUi && wantsAudio));
+          const perm = String(permission || "").trim().toLowerCase();
+          if (!perm) return callback(false);
+
+          if (perm === "media") {
+            const isMainUi = webContents === mainWindow.webContents;
+            const mediaTypes = Array.isArray(details?.mediaTypes) ? details.mediaTypes : [];
+            const wantsAudio = mediaTypes.includes("audio");
+            callback(Boolean(isMainUi && wantsAudio));
+            return;
+          }
+
+          if (!PROMPTABLE_PERMISSIONS.has(perm)) return callback(false);
+          const origin = normalizeRequestingOrigin(details, webContents);
+          if (!origin) return callback(false);
+
+          const key = `${perm}|${origin}`;
+          if (permissionDecisionsByKey.has(key)) {
+            callback(permissionDecisionsByKey.get(key));
+            return;
+          }
+
+          const pending = permissionPromptsInFlightByKey.get(key);
+          if (pending) {
+            pending.then((allowed) => callback(Boolean(allowed))).catch(() => callback(false));
+            return;
+          }
+
+          const hostWin = BrowserWindow.fromWebContents(webContents) || getActiveWindow() || mainWindow;
+          const promptPromise = (async () => {
+            const options = {
+              type: "question",
+              title: tApp("permissionRequestTitle"),
+              message: tApp("permissionRequestMessage", { origin, permission: perm }),
+              detail: tApp("permissionRequestDetail"),
+              buttons: [tApp("permissionRequestAllow"), tApp("permissionRequestBlock")],
+              defaultId: 1,
+              cancelId: 1,
+              noLink: true,
+              checkboxLabel: tApp("permissionRequestRememberSession"),
+              checkboxChecked: false
+            };
+            const { response, checkboxChecked } = hostWin
+              ? await dialog.showMessageBox(hostWin, options)
+              : await dialog.showMessageBox(options);
+            const allowed = response === 0;
+            if (checkboxChecked) permissionDecisionsByKey.set(key, allowed);
+            return allowed;
+          })();
+
+          permissionPromptsInFlightByKey.set(key, promptPromise);
+          promptPromise
+            .then((allowed) => callback(Boolean(allowed)))
+            .catch(() => callback(false))
+            .finally(() => permissionPromptsInFlightByKey.delete(key));
         } catch {
           callback(false);
-        }
-      });
-    }
-    if (ses && typeof ses.setPermissionCheckHandler === "function") {
-      ses.setPermissionCheckHandler((webContents, permission, _origin, details) => {
-        try {
-          if (permission !== "media") return false;
-          const isMainUi = webContents?.getType?.() === "window";
-          const mediaTypes = Array.isArray(details?.mediaTypes) ? details.mediaTypes : [];
-          const wantsAudio = mediaTypes.includes("audio");
-          return Boolean(isMainUi && wantsAudio);
-        } catch {
-          return false;
         }
       });
     }
@@ -279,6 +330,55 @@ function pickUniqueDownloadPath(dir, filename) {
     if (!existsSync(candidate) && !reservedDownloadPaths.has(candidate)) return candidate;
   }
   return path.join(cleanDir, `${base}-${Date.now()}${ext}`);
+}
+
+function normalizeAgentExportFormat(format) {
+  const raw = String(format || "md").trim().toLowerCase();
+  if (raw === "md" || raw === "markdown") return { format: "md", ext: ".md", mimeType: "text/markdown" };
+  if (raw === "json") return { format: "json", ext: ".json", mimeType: "application/json" };
+  if (raw === "html" || raw === "htm") return { format: "html", ext: ".html", mimeType: "text/html" };
+  if (raw === "csv") return { format: "csv", ext: ".csv", mimeType: "text/csv" };
+  return { format: "txt", ext: ".txt", mimeType: "text/plain" };
+}
+
+function sanitizeExportFileName(input, { defaultBase = "export", ext = "" } = {}) {
+  const fallbackBase = String(defaultBase || "export").trim() || "export";
+  const safeExt = String(ext || "").trim().startsWith(".") ? String(ext || "").trim() : ext ? `.${String(ext).trim()}` : "";
+  const raw = String(input || "").trim();
+  const baseName = path.basename(raw || "") || fallbackBase;
+  const cleaned = baseName
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/[\\/:"*?<>|]+/g, "_")
+    .replace(/\s+/g, " ")
+    .trim();
+  const short = cleaned.length > 120 ? cleaned.slice(0, 120).trim() : cleaned;
+  const parsed = path.parse(short || fallbackBase);
+  const name = parsed.name || fallbackBase;
+  const finalExt = parsed.ext ? parsed.ext : safeExt;
+  return `${name}${finalExt}`;
+}
+
+async function agentExportFile({ filename, content, text, data, format } = {}) {
+  const spec = normalizeAgentExportFormat(format);
+  const rawText =
+    data && typeof data === "object"
+      ? JSON.stringify(data, null, 2) + "\n"
+      : String((content ?? text) ?? "");
+  const value = rawText.replace(/\r\n?/g, "\n");
+  if (!value.trim()) throw new Error("Missing content");
+
+  const bytes = Buffer.byteLength(value, "utf8");
+  if (bytes > 5_000_000) throw new Error("Export content too large (max 5MB).");
+
+  const dir = path.join(app.getPath("downloads"), "sting_ai_exports");
+  await fs.mkdir(dir, { recursive: true });
+
+  const defaultBase = `sting_export_${new Date().toISOString().replace(/[:.]/g, "-")}`;
+  const safeName = sanitizeExportFileName(filename, { defaultBase, ext: spec.ext });
+  const filePath = pickUniqueDownloadPath(dir, safeName);
+  await fs.writeFile(filePath, value, "utf8");
+
+  return { ok: true, path: filePath, bytes, format: spec.format, mimeType: spec.mimeType };
 }
 
 function sendDownloadEvent(win, payload) {
@@ -466,18 +566,39 @@ const APP_I18N = {
     errorOccurred: "An error occurred",
     chromePrefsNotFound:
       "Could not find Chrome Preferences file (please make sure Chrome or Chromium is installed).",
-    chromePrefsReadFailed: ({ reason } = {}) => `Could not read Chrome Preferences: ${String(reason || "")}`
+    chromePrefsReadFailed: ({ reason } = {}) => `Could not read Chrome Preferences: ${String(reason || "")}`,
+    permissionRequestTitle: "Permission request",
+    permissionRequestMessage: ({ origin, permission } = {}) =>
+      `${String(origin || "This site")} wants to use: ${String(permission || "a permission")}`,
+    permissionRequestDetail: "Allow this?",
+    permissionRequestAllow: "Allow",
+    permissionRequestBlock: "Block",
+    permissionRequestRememberSession: "Remember for this session"
   },
   "zh-TW": {
     errorOccurred: "發生錯誤",
     chromePrefsNotFound: "找不到 Chrome Preferences 檔案（請確認已安裝 Chrome 或 Chromium）。",
-    chromePrefsReadFailed: ({ reason } = {}) => `無法讀取 Chrome Preferences：${String(reason || "")}`
+    chromePrefsReadFailed: ({ reason } = {}) => `無法讀取 Chrome Preferences：${String(reason || "")}`,
+    permissionRequestTitle: "權限要求",
+    permissionRequestMessage: ({ origin, permission } = {}) =>
+      `${String(origin || "此網站")} 想要使用：${String(permission || "某項權限")}`,
+    permissionRequestDetail: "要允許嗎？",
+    permissionRequestAllow: "允許",
+    permissionRequestBlock: "封鎖",
+    permissionRequestRememberSession: "本次啟動記住此決定"
   },
   es: {
     errorOccurred: "Se produjo un error",
     chromePrefsNotFound:
       "No se pudo encontrar el archivo de preferencias de Chrome (asegúrate de que Chrome o Chromium esté instalado).",
-    chromePrefsReadFailed: ({ reason } = {}) => `No se pudieron leer las preferencias de Chrome: ${String(reason || "")}`
+    chromePrefsReadFailed: ({ reason } = {}) => `No se pudieron leer las preferencias de Chrome: ${String(reason || "")}`,
+    permissionRequestTitle: "Solicitud de permiso",
+    permissionRequestMessage: ({ origin, permission } = {}) =>
+      `${String(origin || "Este sitio")} quiere usar: ${String(permission || "un permiso")}`,
+    permissionRequestDetail: "¿Permitirlo?",
+    permissionRequestAllow: "Permitir",
+    permissionRequestBlock: "Bloquear",
+    permissionRequestRememberSession: "Recordar durante esta sesión"
   }
 };
 
@@ -889,6 +1010,15 @@ const DEFAULT_GEMINI_VOICE_MODEL = "gemini-2.5-flash-lite";
 const DEFAULT_GEMINI_LIVE_VOICE_MODEL = "gemini-2.5-flash-native-audio-preview-12-2025";
 const DEFAULT_OPENAI_COMPAT_BASE_URL = "http://127.0.0.1:11434/v1";
 const DEFAULT_OPENAI_COMPAT_MODEL = "";
+const DEFAULT_GOOGLE_OAUTH_SCOPES = [
+  "https://www.googleapis.com/auth/spreadsheets",
+  "https://www.googleapis.com/auth/documents",
+  "https://www.googleapis.com/auth/presentations"
+];
+const GOOGLE_OAUTH_ALLOWED_SCOPES = new Set([
+  ...DEFAULT_GOOGLE_OAUTH_SCOPES,
+  "https://www.googleapis.com/auth/drive.file"
+]);
 const GEMINI_LIVE_VOICE_MODELS = [DEFAULT_GEMINI_LIVE_VOICE_MODEL];
 const GEMINI_LIVE_AUDIO_MIME_TYPE = "audio/pcm;rate=16000";
 const GEMINI_LIVE_WS_ENDPOINT =
@@ -1481,6 +1611,46 @@ async function agentFindElements({ url, title, marker, text, query, selector, ro
         return false;
       }
     };
+
+    // Auto-scroll to load more content before searching
+    const autoScrollToLoadContent = () => {
+      try {
+        const scrollElement = document.scrollingElement || document.documentElement || document.body;
+        const viewportHeight = window.innerHeight || 0;
+        const totalHeight = Math.max(
+          document.body.scrollHeight,
+          document.body.offsetHeight,
+          document.documentElement.clientHeight,
+          document.documentElement.scrollHeight,
+          document.documentElement.offsetHeight
+        );
+
+        // Scroll in chunks to load dynamic content
+        let currentScroll = 0;
+        const scrollStep = viewportHeight * 0.8; // 80% of viewport height
+
+        while (currentScroll < totalHeight - viewportHeight) {
+          scrollElement.scrollTop = currentScroll;
+          // Small delay to allow content to load
+          const startTime = Date.now();
+          while (Date.now() - startTime < 50) {} // Busy wait for 50ms
+
+          currentScroll += scrollStep;
+          if (currentScroll > totalHeight) break;
+        }
+
+        // Scroll back to top
+        scrollElement.scrollTop = 0;
+      } catch (e) {
+        // Ignore scroll errors
+      }
+    };
+
+    // Only auto-scroll if we have a text query (not just selector/role/tag)
+    if (${JSON.stringify(q ? q.trim() : "")}) {
+      autoScrollToLoadContent();
+    }
+
     const queryRaw = ${JSON.stringify(q)};
     const query = clean(queryRaw).toLowerCase();
     const selector = clean(${JSON.stringify(sel)});
@@ -1671,6 +1841,729 @@ async function agentReadElement({ url, title, marker, elementId, fields } = {}) 
     if (!res || res.ok !== true) throw new Error(String(res?.error || "readElement failed"));
     return { ok: true, element: res.element || null };
   });
+}
+
+async function agentCollectLinks({ url, title, marker, limit, sameOrigin, urlIncludes, textIncludes, selector } = {}) {
+  const max = (() => {
+    const n = Number(limit);
+    if (!Number.isFinite(n)) return 30;
+    return Math.max(1, Math.min(300, Math.floor(n)));
+  })();
+  const wantSameOrigin = Boolean(sameOrigin);
+  const urlNeedle = String(urlIncludes || "").trim();
+  const textNeedle = String(textIncludes || "").trim();
+  const sel = String(selector || "a[href]").trim() || "a[href]";
+
+  const expr = `(() => {
+    const clean = (s) => String(s || "").replace(/\\s+/g, " ").trim();
+    const toRect = (el) => {
+      try {
+        const r = el.getBoundingClientRect();
+        return { x: r.x, y: r.y, w: r.width, h: r.height };
+      } catch {
+        return null;
+      }
+    };
+    const isVisible = (el) => {
+      try {
+        const style = window.getComputedStyle(el);
+        if (!style) return false;
+        if (style.visibility === "hidden" || style.display === "none") return false;
+        if (style.pointerEvents === "none") return false;
+        const rect = el.getBoundingClientRect();
+        if (!rect || rect.width < 2 || rect.height < 2) return false;
+        if (rect.bottom < 0 || rect.right < 0) return false;
+        if (rect.top > (window.innerHeight || 0) || rect.left > (window.innerWidth || 0)) return false;
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    const selector = ${JSON.stringify(sel)};
+    const max = Number(${JSON.stringify(max)}) || 30;
+    const wantSameOrigin = Boolean(${JSON.stringify(wantSameOrigin)});
+    const urlNeedle = clean(${JSON.stringify(urlNeedle)});
+    const textNeedle = clean(${JSON.stringify(textNeedle)});
+    const origin = String(location && location.origin ? location.origin : "");
+
+    let nextId = 1;
+    try {
+      const n = Number(window.__stingAgentNextId);
+      if (Number.isFinite(n) && n > 0) nextId = Math.floor(n);
+    } catch {}
+
+    const seen = new Set();
+    const out = [];
+    let nodes = [];
+    try { nodes = Array.from(document.querySelectorAll(selector)); } catch { nodes = []; }
+
+    for (const el of nodes) {
+      if (out.length >= max) break;
+      if (!el || el.nodeType !== 1) continue;
+      if (!isVisible(el)) continue;
+      const tag = String(el.tagName || "").toLowerCase();
+      if (tag !== "a" && tag !== "area") continue;
+
+      let href = "";
+      try { href = String(el.href || el.getAttribute && el.getAttribute("href") || "").trim(); } catch { href = ""; }
+      if (!href) continue;
+      if (/^javascript:/i.test(href)) continue;
+
+      if (wantSameOrigin) {
+        try {
+          if (origin && new URL(href, origin).origin !== origin) continue;
+        } catch {
+          continue;
+        }
+      }
+
+      if (urlNeedle && !href.includes(urlNeedle)) continue;
+
+      const text = clean(el.innerText || el.textContent);
+      const ariaLabel = clean(el.getAttribute && el.getAttribute("aria-label"));
+      if (textNeedle) {
+        const hay = clean((text || "") + " " + (ariaLabel || "")).toLowerCase();
+        if (!hay.includes(textNeedle.toLowerCase())) continue;
+      }
+
+      const key = href;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      let id = "";
+      try { id = String(el.getAttribute && el.getAttribute("data-sting-agent-id") ? el.getAttribute("data-sting-agent-id") : "").trim(); } catch { id = ""; }
+      if (!id) {
+        id = String(nextId++);
+        try { el.setAttribute("data-sting-agent-id", id); } catch { id = ""; }
+      }
+
+      out.push({
+        id: String(id || ""),
+        href: href.slice(0, 900),
+        text: String(text || "").slice(0, 180),
+        ariaLabel: String(ariaLabel || "").slice(0, 180),
+        rect: toRect(el)
+      });
+    }
+
+    try { window.__stingAgentNextId = nextId; } catch {}
+    return { ok: true, links: out };
+  })()`;
+
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    const res = await cdpEvalValue(sendToTarget, sessionId, expr, { timeoutMs: 15_000 });
+    if (!res || res.ok !== true) throw new Error(String(res?.error || "collectLinks failed"));
+    return { ok: true, links: Array.isArray(res.links) ? res.links : [] };
+  });
+}
+
+async function agentExtractStructuredData({
+  url,
+  title,
+  marker,
+  includeJsonLd,
+  includeTables,
+  maxJsonLd,
+  maxJsonLdChars,
+  maxTables,
+  maxRows,
+  maxCols
+} = {}) {
+  const wantJsonLd = includeJsonLd == null ? true : Boolean(includeJsonLd);
+  const wantTables = includeTables == null ? true : Boolean(includeTables);
+  const jsonLdLimit = (() => {
+    const n = Number(maxJsonLd);
+    if (!Number.isFinite(n)) return 10;
+    return Math.max(0, Math.min(50, Math.floor(n)));
+  })();
+  const jsonLdChars = (() => {
+    const n = Number(maxJsonLdChars);
+    if (!Number.isFinite(n)) return 50_000;
+    return Math.max(500, Math.min(250_000, Math.floor(n)));
+  })();
+  const tableLimit = (() => {
+    const n = Number(maxTables);
+    if (!Number.isFinite(n)) return 8;
+    return Math.max(0, Math.min(30, Math.floor(n)));
+  })();
+  const rowLimit = (() => {
+    const n = Number(maxRows);
+    if (!Number.isFinite(n)) return 25;
+    return Math.max(1, Math.min(120, Math.floor(n)));
+  })();
+  const colLimit = (() => {
+    const n = Number(maxCols);
+    if (!Number.isFinite(n)) return 16;
+    return Math.max(1, Math.min(40, Math.floor(n)));
+  })();
+
+  const expr = `(() => {
+    const clean = (s) => String(s || "").replace(/\\s+/g, " ").trim();
+    const pickMeta = (key, attr = "name") => {
+      try {
+        const el = document.querySelector('meta[' + attr + '=\"' + key + '\"]');
+        return clean(el && el.getAttribute ? el.getAttribute("content") : "");
+      } catch {
+        return "";
+      }
+    };
+    const pickLink = (rel) => {
+      try {
+        const el = document.querySelector('link[rel=\"' + rel + '\"]');
+        return clean(el && el.getAttribute ? el.getAttribute("href") : "");
+      } catch {
+        return "";
+      }
+    };
+
+    const wantJsonLd = Boolean(${JSON.stringify(wantJsonLd)});
+    const wantTables = Boolean(${JSON.stringify(wantTables)});
+    const jsonLdLimit = Number(${JSON.stringify(jsonLdLimit)}) || 0;
+    const jsonLdChars = Number(${JSON.stringify(jsonLdChars)}) || 50000;
+    const tableLimit = Number(${JSON.stringify(tableLimit)}) || 0;
+    const rowLimit = Number(${JSON.stringify(rowLimit)}) || 25;
+    const colLimit = Number(${JSON.stringify(colLimit)}) || 16;
+
+    const meta = {
+      title: clean(document.title || ""),
+      description: pickMeta("description") || pickMeta("og:description", "property") || pickMeta("twitter:description", "property"),
+      canonical: pickLink("canonical"),
+      ogTitle: pickMeta("og:title", "property"),
+      ogType: pickMeta("og:type", "property"),
+      ogSiteName: pickMeta("og:site_name", "property"),
+      ogUrl: pickMeta("og:url", "property"),
+      author: pickMeta("author"),
+      publishedTime: pickMeta("article:published_time", "property")
+    };
+
+    const jsonLd = [];
+    if (wantJsonLd && jsonLdLimit > 0) {
+      let scripts = [];
+      try { scripts = Array.from(document.querySelectorAll('script[type=\"application/ld+json\"]')); } catch { scripts = []; }
+      for (const s of scripts.slice(0, jsonLdLimit)) {
+        let raw = "";
+        try { raw = String(s && s.textContent ? s.textContent : "").trim(); } catch { raw = ""; }
+        if (!raw) continue;
+        if (raw.length > jsonLdChars) raw = raw.slice(0, jsonLdChars);
+        let parsed = null;
+        try { parsed = JSON.parse(raw); } catch { parsed = null; }
+        jsonLd.push({ parsed, raw });
+      }
+    }
+
+    const tables = [];
+    if (wantTables && tableLimit > 0) {
+      let nodes = [];
+      try { nodes = Array.from(document.querySelectorAll("table")); } catch { nodes = []; }
+      for (const table of nodes.slice(0, tableLimit)) {
+        if (!table) continue;
+        let caption = "";
+        try {
+          const cap = table.querySelector("caption");
+          caption = clean(cap && cap.innerText ? cap.innerText : cap && cap.textContent ? cap.textContent : "");
+        } catch { caption = ""; }
+
+        let headers = [];
+        try {
+          const ths = Array.from(table.querySelectorAll("thead th")).slice(0, colLimit);
+          headers = ths.map((th) => clean(th && (th.innerText || th.textContent) || ""));
+        } catch { headers = []; }
+
+        const rows = [];
+        let trs = [];
+        try {
+          trs = Array.from(table.querySelectorAll("tr"));
+        } catch { trs = []; }
+
+        for (const tr of trs.slice(0, rowLimit)) {
+          const cells = [];
+          let tds = [];
+          try { tds = Array.from(tr.querySelectorAll("th,td")); } catch { tds = []; }
+          for (const td of tds.slice(0, colLimit)) {
+            cells.push(clean(td && (td.innerText || td.textContent) || ""));
+          }
+          if (cells.length) rows.push(cells);
+        }
+
+        if (!headers.length && rows.length) {
+          const headerLike = rows[0];
+          if (Array.isArray(headerLike) && headerLike.length <= colLimit) {
+            headers = headerLike.map((x) => clean(x));
+            rows.shift();
+          }
+        }
+
+        if (!headers.length && !rows.length) continue;
+        tables.push({ caption, headers, rows });
+      }
+    }
+
+    return { ok: true, meta, jsonLd, tables };
+  })()`;
+
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    const res = await cdpEvalValue(sendToTarget, sessionId, expr, { timeoutMs: 18_000 });
+    if (!res || res.ok !== true) throw new Error(String(res?.error || "extractStructuredData failed"));
+    return {
+      ok: true,
+      meta: res.meta && typeof res.meta === "object" ? res.meta : {},
+      jsonLd: Array.isArray(res.jsonLd) ? res.jsonLd : [],
+      tables: Array.isArray(res.tables) ? res.tables : []
+    };
+  });
+}
+
+async function agentReaderExtract({ url, title, marker, maxChars } = {}) {
+  const max = (() => {
+    const n = Number(maxChars);
+    if (!Number.isFinite(n)) return 12_000;
+    return Math.max(800, Math.min(120_000, Math.floor(n)));
+  })();
+
+  const expr = `(() => {
+    const clean = (s) => String(s || "").replace(/\\s+/g, " ").trim();
+    const pickMeta = (key, attr = "name") => {
+      try {
+        const el = document.querySelector('meta[' + attr + '=\"' + key + '\"]');
+        return clean(el && el.getAttribute ? el.getAttribute("content") : "");
+      } catch {
+        return "";
+      }
+    };
+
+    const max = Number(${JSON.stringify(max)}) || 12000;
+    const candidates = [];
+    try {
+      const els = [
+        document.querySelector("article"),
+        document.querySelector("main"),
+        document.querySelector("[role=main]"),
+        document.body
+      ].filter(Boolean);
+      for (const el of els) candidates.push(el);
+    } catch {}
+
+    const scoreEl = (el) => {
+      try {
+        const text = clean(el && (el.innerText || el.textContent) || "");
+        if (!text) return 0;
+        return Math.min(200000, text.length);
+      } catch {
+        return 0;
+      }
+    };
+
+    let best = document.body;
+    let bestScore = 0;
+    for (const el of candidates) {
+      const s = scoreEl(el);
+      if (s > bestScore) {
+        bestScore = s;
+        best = el;
+      }
+    }
+
+    let text = "";
+    try { text = clean(best && (best.innerText || best.textContent) || ""); } catch { text = ""; }
+    if (text.length > max) text = text.slice(0, max);
+
+    const title = clean(document.title || "");
+    const author = pickMeta("author") || pickMeta("article:author", "property");
+    const siteName = pickMeta("og:site_name", "property") || pickMeta("twitter:site", "property");
+    const description = pickMeta("description") || pickMeta("og:description", "property");
+    const publishedTime = pickMeta("article:published_time", "property");
+    const excerpt = text.slice(0, 520);
+
+    return { ok: true, title, author, siteName, description, publishedTime, excerpt, text };
+  })()`;
+
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    const res = await cdpEvalValue(sendToTarget, sessionId, expr, { timeoutMs: 18_000 });
+    if (!res || res.ok !== true) throw new Error(String(res?.error || "readerExtract failed"));
+    return {
+      ok: true,
+      title: String(res.title || ""),
+      author: String(res.author || ""),
+      siteName: String(res.siteName || ""),
+      description: String(res.description || ""),
+      publishedTime: String(res.publishedTime || ""),
+      excerpt: String(res.excerpt || ""),
+      text: String(res.text || "")
+    };
+  });
+}
+
+async function agentNetworkGetResponses({ url, title, marker, urlIncludes, method, limit, maxBodyChars } = {}) {
+  const needle = String(urlIncludes || "").trim();
+  const wantMethod = String(method || "").trim().toUpperCase();
+  const max = (() => {
+    const n = Number(limit);
+    if (!Number.isFinite(n)) return 20;
+    return Math.max(1, Math.min(80, Math.floor(n)));
+  })();
+  const maxChars = (() => {
+    const n = Number(maxBodyChars);
+    if (!Number.isFinite(n)) return 8_000;
+    return Math.max(200, Math.min(120_000, Math.floor(n)));
+  })();
+
+  const expr = `(async () => {
+    const needle = ${JSON.stringify(needle)};
+    const wantMethod = ${JSON.stringify(wantMethod)};
+    const limit = Number(${JSON.stringify(max)}) || 20;
+    const maxChars = Number(${JSON.stringify(maxChars)}) || 8000;
+
+    const push = (entry) => {
+      try {
+        const maxKeep = 260;
+        if (!Array.isArray(window.__stingAgentNetworkLog)) window.__stingAgentNetworkLog = [];
+        window.__stingAgentNetworkLog.push(entry);
+        if (window.__stingAgentNetworkLog.length > maxKeep) {
+          window.__stingAgentNetworkLog.splice(0, window.__stingAgentNetworkLog.length - maxKeep);
+        }
+      } catch {}
+    };
+
+    const ensureInstalled = () => {
+      try {
+        if (window.__stingAgentNetworkInstalled) return;
+        window.__stingAgentNetworkInstalled = true;
+
+        const origFetch = window.fetch;
+        if (typeof origFetch === "function") {
+          window.fetch = async function(...args) {
+            const started = Date.now();
+            let reqUrl = "";
+            let reqMethod = "GET";
+            try {
+              const input = args[0];
+              const init = args[1] || null;
+              if (input && typeof input === "object" && typeof input.url === "string") {
+                reqUrl = String(input.url || "");
+                reqMethod = String(input.method || (init && init.method) || "GET").toUpperCase();
+              } else {
+                reqUrl = String(input || "");
+                reqMethod = String((init && init.method) || "GET").toUpperCase();
+              }
+            } catch {}
+            try {
+              const res = await origFetch.apply(this, args);
+              let bodyText = "";
+              let contentType = "";
+              try { contentType = String(res.headers && res.headers.get ? (res.headers.get("content-type") || "") : ""); } catch {}
+              try {
+                const cloned = res.clone();
+                bodyText = await cloned.text();
+              } catch {
+                bodyText = "";
+              }
+              if (bodyText && bodyText.length > maxChars) bodyText = bodyText.slice(0, maxChars) + "…";
+              push({
+                ts: Date.now(),
+                kind: "fetch",
+                url: reqUrl,
+                method: reqMethod,
+                status: Number(res && res.status) || 0,
+                ok: Boolean(res && res.ok),
+                contentType,
+                durMs: Date.now() - started,
+                bodyText
+              });
+              return res;
+            } catch (err) {
+              push({
+                ts: Date.now(),
+                kind: "fetch",
+                url: reqUrl,
+                method: reqMethod,
+                status: 0,
+                ok: false,
+                contentType: "",
+                durMs: Date.now() - started,
+                error: String(err && err.message ? err.message : err)
+              });
+              throw err;
+            }
+          };
+        }
+
+        try {
+          const origOpen = XMLHttpRequest.prototype.open;
+          const origSend = XMLHttpRequest.prototype.send;
+          XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+            try { this.__stingAgentMethod = String(method || "GET").toUpperCase(); } catch {}
+            try { this.__stingAgentUrl = String(url || ""); } catch {}
+            return origOpen.call(this, method, url, ...rest);
+          };
+          XMLHttpRequest.prototype.send = function(body) {
+            const started = Date.now();
+            const onDone = () => {
+              try { this.removeEventListener("loadend", onDone); } catch {}
+              let text = "";
+              let contentType = "";
+              try { contentType = String(this.getResponseHeader && this.getResponseHeader("content-type") || ""); } catch {}
+              try { text = String(this.responseText || ""); } catch { text = ""; }
+              if (text && text.length > maxChars) text = text.slice(0, maxChars) + "…";
+              push({
+                ts: Date.now(),
+                kind: "xhr",
+                url: String(this.__stingAgentUrl || ""),
+                method: String(this.__stingAgentMethod || "GET"),
+                status: Number(this.status) || 0,
+                ok: Number(this.status) >= 200 && Number(this.status) < 400,
+                contentType,
+                durMs: Date.now() - started,
+                bodyText: text
+              });
+            };
+            try { this.addEventListener("loadend", onDone); } catch {}
+            return origSend.call(this, body);
+          };
+        } catch {}
+      } catch {}
+    };
+
+    ensureInstalled();
+    const log = Array.isArray(window.__stingAgentNetworkLog) ? window.__stingAgentNetworkLog : [];
+    const out = [];
+    for (let i = log.length - 1; i >= 0 && out.length < limit; i--) {
+      const e = log[i];
+      if (!e || typeof e !== "object") continue;
+      const u = String(e.url || "");
+      const m = String(e.method || "");
+      if (needle && !u.includes(needle)) continue;
+      if (wantMethod && m !== wantMethod) continue;
+      out.push(e);
+    }
+    return { ok: true, installed: Boolean(window.__stingAgentNetworkInstalled), entries: out };
+  })()`;
+
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    const res = await cdpEvalValue(sendToTarget, sessionId, expr, { timeoutMs: 25_000 });
+    if (!res || res.ok !== true) throw new Error(String(res?.error || "networkGetResponses failed"));
+    return { ok: true, installed: Boolean(res.installed), entries: Array.isArray(res.entries) ? res.entries : [] };
+  });
+}
+
+async function agentCookieExport({ url, title, marker, urls, limit } = {}) {
+  const max = (() => {
+    const n = Number(limit);
+    if (!Number.isFinite(n)) return 220;
+    return Math.max(1, Math.min(1200, Math.floor(n)));
+  })();
+  const wantUrls = Array.isArray(urls) ? urls.map((u) => String(u || "").trim()).filter(Boolean).slice(0, 40) : [];
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    try {
+      await sendToTarget(sessionId, "Network.enable", {}, { timeoutMs: 4_000 });
+    } catch {
+    }
+    let res = null;
+    if (wantUrls.length) {
+      res = await sendToTarget(sessionId, "Network.getCookies", { urls: wantUrls }, { timeoutMs: 10_000 });
+    } else {
+      try {
+        res = await sendToTarget(sessionId, "Network.getAllCookies", {}, { timeoutMs: 10_000 });
+      } catch {
+        const fallbackUrls = [String(url || "").trim()].filter(Boolean);
+        res = await sendToTarget(sessionId, "Network.getCookies", { urls: fallbackUrls }, { timeoutMs: 10_000 });
+      }
+    }
+    const cookies = Array.isArray(res?.cookies) ? res.cookies : [];
+    return { ok: true, cookies: cookies.slice(0, max) };
+  });
+}
+
+async function agentCookieImport({ url, title, marker, cookies } = {}) {
+  const list = Array.isArray(cookies) ? cookies : [];
+  if (!list.length) throw new Error("Missing cookies");
+  const sanitized = [];
+  for (const c of list.slice(0, 1200)) {
+    if (!c || typeof c !== "object") continue;
+    const name = String(c.name || "").trim();
+    if (!name) continue;
+    const value = String(c.value ?? "");
+    const out = { name, value };
+
+    const urlText = String(c.url || "").trim();
+    if (urlText) out.url = urlText;
+    else {
+      const domain = String(c.domain || "").trim();
+      const path = String(c.path || "/").trim() || "/";
+      if (domain) out.domain = domain;
+      out.path = path;
+    }
+
+    const expires = Number(c.expires);
+    if (Number.isFinite(expires) && expires > 0) out.expires = expires;
+    if (typeof c.httpOnly === "boolean") out.httpOnly = c.httpOnly;
+    if (typeof c.secure === "boolean") out.secure = c.secure;
+    const sameSite = String(c.sameSite || "").trim();
+    if (sameSite) out.sameSite = sameSite;
+    const priority = String(c.priority || "").trim();
+    if (priority) out.priority = priority;
+
+    sanitized.push(out);
+  }
+  if (!sanitized.length) throw new Error("No valid cookies to import");
+  return withWebviewTargetSession({ url, title, marker }, async ({ sendToTarget, sessionId }) => {
+    try {
+      await sendToTarget(sessionId, "Network.enable", {}, { timeoutMs: 4_000 });
+    } catch {
+    }
+    await sendToTarget(sessionId, "Network.setCookies", { cookies: sanitized }, { timeoutMs: 15_000 });
+    return { ok: true, count: sanitized.length };
+  });
+}
+
+async function agentGoogleSheetsAppendRows({ spreadsheetId, sheetName, range, values } = {}) {
+  const id = String(spreadsheetId || "").trim();
+  if (!id) throw new Error("Missing spreadsheetId");
+  const rows = Array.isArray(values) ? values : [];
+  if (!rows.length) throw new Error("Missing values");
+  const safeRows = rows
+    .filter((r) => Array.isArray(r))
+    .slice(0, 200)
+    .map((r) => r.slice(0, 60).map((cell) => (cell == null ? "" : typeof cell === "string" ? cell : JSON.stringify(cell))));
+  if (!safeRows.length) throw new Error("Missing values");
+
+  const sheet = String(sheetName || "").trim();
+  const rng = String(range || "").trim() || (sheet ? `${sheet}!A1` : "A1");
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}/values/${encodeURIComponent(rng)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+  const body = JSON.stringify({ majorDimension: "ROWS", values: safeRows });
+  const json = await googleApiFetchJson(url, { method: "POST", headers: { "Content-Type": "application/json" }, body });
+  const updates = json?.updates && typeof json.updates === "object" ? json.updates : null;
+  return {
+    ok: true,
+    spreadsheetId: id,
+    url: `https://docs.google.com/spreadsheets/d/${id}/edit`,
+    updatedRange: String(updates?.updatedRange || ""),
+    updatedRows: Number(updates?.updatedRows) || 0,
+    updatedColumns: Number(updates?.updatedColumns) || 0,
+    updatedCells: Number(updates?.updatedCells) || 0
+  };
+}
+
+async function agentGoogleDocsCreateOrAppend({ documentId, title, text, markdown } = {}) {
+  let docId = String(documentId || "").trim();
+  const docTitle = String(title || "").trim() || "Research Notes";
+  const content = String(text ?? markdown ?? "").trimEnd();
+  if (!content) throw new Error("Missing text");
+
+  if (!docId) {
+    const created = await googleApiFetchJson("https://docs.googleapis.com/v1/documents", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: docTitle })
+    });
+    docId = String(created?.documentId || "").trim();
+    if (!docId) throw new Error("Failed to create Google Doc");
+  }
+
+  const insertText = content.endsWith("\n") ? content : `${content}\n`;
+  await googleApiFetchJson(`https://docs.googleapis.com/v1/documents/${encodeURIComponent(docId)}:batchUpdate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      requests: [
+        {
+          insertText: {
+            endOfSegmentLocation: {},
+            text: insertText
+          }
+        }
+      ]
+    })
+  });
+
+  return { ok: true, documentId: docId, url: `https://docs.google.com/document/d/${docId}/edit` };
+}
+
+async function agentGoogleSlidesCreateDeck({ title, slides } = {}) {
+  const deckTitle = String(title || "").trim() || "Research Deck";
+  const items = Array.isArray(slides) ? slides : [];
+
+  const created = await googleApiFetchJson("https://slides.googleapis.com/v1/presentations", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title: deckTitle })
+  });
+  const presentationId = String(created?.presentationId || "").trim();
+  if (!presentationId) throw new Error("Failed to create presentation");
+
+  const requests = [];
+  const maxSlides = Math.max(0, Math.min(30, items.length || 0));
+  const slideCount = maxSlides || 1;
+  for (let i = 0; i < slideCount; i++) {
+    const s = items[i] && typeof items[i] === "object" ? items[i] : {};
+    const slideId = `slide_${Date.now()}_${i}_${Math.random().toString(16).slice(2)}`;
+    const titleBoxId = `title_${i}_${Math.random().toString(16).slice(2)}`;
+    const bodyBoxId = `body_${i}_${Math.random().toString(16).slice(2)}`;
+    const slideTitle = String(s.title || (i === 0 ? deckTitle : "") || "").trim();
+    const bodyText = Array.isArray(s.bullets)
+      ? s.bullets.map((b) => String(b ?? "").trim()).filter(Boolean).join("\n")
+      : String(s.body ?? s.text ?? "").trim();
+
+    requests.push({
+      createSlide: {
+        objectId: slideId,
+        insertionIndex: i,
+        slideLayoutReference: { predefinedLayout: "BLANK" }
+      }
+    });
+
+    requests.push({
+      createShape: {
+        objectId: titleBoxId,
+        shapeType: "TEXT_BOX",
+        elementProperties: {
+          pageObjectId: slideId,
+          size: { width: { magnitude: 720, unit: "PT" }, height: { magnitude: 60, unit: "PT" } },
+          transform: { scaleX: 1, scaleY: 1, translateX: 30, translateY: 30, unit: "PT" }
+        }
+      }
+    });
+    requests.push({ insertText: { objectId: titleBoxId, insertionIndex: 0, text: slideTitle || "" } });
+
+    requests.push({
+      createShape: {
+        objectId: bodyBoxId,
+        shapeType: "TEXT_BOX",
+        elementProperties: {
+          pageObjectId: slideId,
+          size: { width: { magnitude: 720, unit: "PT" }, height: { magnitude: 360, unit: "PT" } },
+          transform: { scaleX: 1, scaleY: 1, translateX: 30, translateY: 120, unit: "PT" }
+        }
+      }
+    });
+    if (bodyText) {
+      requests.push({ insertText: { objectId: bodyBoxId, insertionIndex: 0, text: bodyText } });
+      if (Array.isArray(s.bullets) && s.bullets.length) {
+        requests.push({
+          createParagraphBullets: {
+            objectId: bodyBoxId,
+            textRange: { type: "ALL" },
+            bulletPreset: "BULLET_DISC_CIRCLE_SQUARE"
+          }
+        });
+      }
+    }
+  }
+
+  if (requests.length) {
+    await googleApiFetchJson(`https://slides.googleapis.com/v1/presentations/${encodeURIComponent(presentationId)}:batchUpdate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ requests })
+    });
+  }
+
+  return {
+    ok: true,
+    presentationId,
+    url: `https://docs.google.com/presentation/d/${presentationId}/edit`,
+    slidesCount: slideCount
+  };
 }
 
 async function agentScrollIntoView({ url, title, marker, elementId } = {}) {
@@ -2054,34 +2947,68 @@ async function agentClick({ url, title, marker, elementId, x, y, clickCount } = 
       clickX = Number(x);
       clickY = Number(y);
     }
-    if (!Number.isFinite(clickX) || !Number.isFinite(clickY)) throw new Error("Click failed (invalid coordinates)");
+	    if (!Number.isFinite(clickX) || !Number.isFinite(clickY)) throw new Error("Click failed (invalid coordinates)");
 
-    const readClickLogExpr = "(() => (window.__stingAgentClickLog && typeof window.__stingAgentClickLog === 'object' ? window.__stingAgentClickLog : null))()";
-    const getHostExpr = "(() => String(location && location.hostname ? location.hostname : ''))()";
+	    const readClickLogExpr = "(() => (window.__stingAgentClickLog && typeof window.__stingAgentClickLog === 'object' ? window.__stingAgentClickLog : null))()";
+	    const getHostExpr = "(() => String(location && location.hostname ? location.hostname : ''))()";
+	    const getHrefExpr = "(() => String(location && location.href ? location.href : ''))()";
 
-    const clickProducedEvent = async () => {
-      try {
-        const log = await cdpEvalValue(sendToTarget, sessionId, readClickLogExpr, { timeoutMs: 4_000 });
+	    const clickProducedEvent = async () => {
+	      try {
+	        const log = await cdpEvalValue(sendToTarget, sessionId, readClickLogExpr, { timeoutMs: 4_000 });
         const ts = Number(log?.ts) || 0;
         return { ts, isTrusted: Boolean(log?.isTrusted), type: String(log?.type || "") };
       } catch {
-        return { ts: 0, isTrusted: false, type: "" };
-      }
-    };
+	        return { ts: 0, isTrusted: false, type: "" };
+	      }
+	    };
 
-    const isGoogleDocsHost = async () => {
-      try {
-        const host = String(await cdpEvalValue(sendToTarget, sessionId, getHostExpr, { timeoutMs: 3_000 }) || "");
-        return host.endsWith("docs.google.com");
+	    const readHref = async () => {
+	      try {
+	        return String(await cdpEvalValue(sendToTarget, sessionId, getHrefExpr, { timeoutMs: 3_000 }) || "");
+	      } catch {
+	        return "";
+	      }
+	    };
+
+	    const isGoogleDocsHost = async () => {
+	      try {
+	        const host = String(await cdpEvalValue(sendToTarget, sessionId, getHostExpr, { timeoutMs: 3_000 }) || "");
+	        return host.endsWith("docs.google.com");
       } catch {
-        return false;
-      }
-    };
+	        return false;
+	      }
+	    };
 
-    let usedTrustedInput = true;
-    try {
-      await sendToTarget(
-        sessionId,
+	    const beforeHref = await readHref();
+
+	    const waitForClickOutcome = async ({ timeoutMs = 1_200 } = {}) => {
+	      const start = Date.now();
+	      while (Date.now() - start < timeoutMs) {
+	        const after = await clickProducedEvent();
+	        if (after.ts > beforeClickTs) {
+	          return { ok: true, kind: "event", after, href: await readHref() };
+	        }
+	        const href = await readHref();
+	        if (beforeHref && href && href !== beforeHref) {
+	          return { ok: true, kind: "navigation", after, href };
+	        }
+	        await delay(120);
+	      }
+	      const after = await clickProducedEvent();
+	      const href = await readHref();
+	      if (after.ts > beforeClickTs) return { ok: true, kind: "event", after, href };
+	      if (beforeHref && href && href !== beforeHref) return { ok: true, kind: "navigation", after, href };
+	      return { ok: false, kind: "", after, href };
+	    };
+
+	    let usedTrustedInput = true;
+	    let navigated = false;
+	    let urlAfter = "";
+	    let clickEventObserved = false;
+	    try {
+	      await sendToTarget(
+	        sessionId,
         "Input.dispatchMouseEvent",
         { type: "mouseMoved", x: clickX, y: clickY, button: "none", buttons: 0, clickCount: count, pointerType: "mouse" },
         { timeoutMs: 8_000 }
@@ -2099,39 +3026,80 @@ async function agentClick({ url, title, marker, elementId, x, y, clickCount } = 
           { type: "mouseReleased", x: clickX, y: clickY, button: "left", buttons: 0, clickCount: i, pointerType: "mouse" },
           { timeoutMs: 8_000 }
         );
-        if (i < count) await delay(55);
-      }
-      await delay(80);
-      const after = await clickProducedEvent();
-      if (after.ts <= beforeClickTs) throw new Error("Click event did not fire");
-      if (!after.isTrusted) usedTrustedInput = false;
-    } catch (err) {
-      usedTrustedInput = false;
-      if (id) {
-        const fallbackExpr = `(() => {
-          const id = ${JSON.stringify(id)};
+	        if (i < count) await delay(55);
+	      }
+	      await delay(80);
+	      const outcome = await waitForClickOutcome({ timeoutMs: 1_200 });
+	      if (!outcome.ok) throw new Error("Click event did not fire");
+	      if (outcome.kind === "event") {
+	        clickEventObserved = true;
+	        if (!outcome.after.isTrusted) usedTrustedInput = false;
+	        const href = String(outcome.href || "");
+	        if (beforeHref && href && href !== beforeHref) {
+	          navigated = true;
+	          urlAfter = href;
+	        }
+	      } else if (outcome.kind === "navigation") {
+	        navigated = true;
+	        urlAfter = String(outcome.href || "");
+	      }
+	    } catch (err) {
+	      const outcome = await waitForClickOutcome({ timeoutMs: 900 });
+	      if (outcome.ok && outcome.kind === "navigation") {
+	        navigated = true;
+	        urlAfter = String(outcome.href || "");
+	        return { ok: true, x: clickX, y: clickY, clickCount: count, usedTrustedInput, navigated, urlAfter, clickEventObserved };
+	      }
+	      if (outcome.ok && outcome.kind === "event") {
+	        clickEventObserved = true;
+	        if (!outcome.after.isTrusted) usedTrustedInput = false;
+	        const href = String(outcome.href || "");
+	        if (beforeHref && href && href !== beforeHref) {
+	          navigated = true;
+	          urlAfter = href;
+	        }
+	        if (!usedTrustedInput && (await isGoogleDocsHost())) {
+	          throw new Error("Untrusted click event; Google Docs/Slides often ignores programmatic clicks (CDP input may be blocked).");
+	        }
+	        return { ok: true, x: clickX, y: clickY, clickCount: count, usedTrustedInput, navigated, urlAfter, clickEventObserved };
+	      }
+	      usedTrustedInput = false;
+	      if (id) {
+	        const fallbackExpr = `(() => {
+	          const id = ${JSON.stringify(id)};
           const sel = '[data-sting-agent-id=\"' + id + '\"]';
           const el = document.querySelector(sel);
           if (!el) return { ok: false, error: 'Element not found: ' + id };
           try { el.scrollIntoView({ block: 'center', inline: 'center' }); } catch {}
           try { el.focus && el.focus(); } catch {}
           try { el.click(); return { ok: true }; } catch (e) { return { ok: false, error: String(e && e.message ? e.message : e) }; }
-        })()`;
-        const res = await cdpEvalValue(sendToTarget, sessionId, fallbackExpr, { timeoutMs: 15_000 });
-        if (!res || res.ok !== true) throw new Error(String(res?.error || err?.message || err || "Click failed"));
-        await delay(60);
-        const after = await clickProducedEvent();
-        if (after.ts <= beforeClickTs) throw new Error("Click failed (no click event observed)");
-      } else {
-        throw err;
-      }
-    }
+	        })()`;
+	        const res = await cdpEvalValue(sendToTarget, sessionId, fallbackExpr, { timeoutMs: 15_000 });
+	        if (!res || res.ok !== true) throw new Error(String(res?.error || err?.message || err || "Click failed"));
+	        await delay(60);
+	        const outcome2 = await waitForClickOutcome({ timeoutMs: 1_200 });
+	        if (!outcome2.ok) throw new Error("Click failed (no click event observed)");
+	        if (outcome2.kind === "event") {
+	          clickEventObserved = true;
+	          const href = String(outcome2.href || "");
+	          if (beforeHref && href && href !== beforeHref) {
+	            navigated = true;
+	            urlAfter = href;
+	          }
+	        } else if (outcome2.kind === "navigation") {
+	          navigated = true;
+	          urlAfter = String(outcome2.href || "");
+	        }
+	      } else {
+	        throw err;
+	      }
+	    }
 
-    if (!usedTrustedInput && (await isGoogleDocsHost())) {
-      throw new Error("Untrusted click event; Google Docs/Slides often ignores programmatic clicks (CDP input may be blocked).");
-    }
-    return { ok: true, x: clickX, y: clickY, clickCount: count, usedTrustedInput };
-  });
+	    if (!usedTrustedInput && (await isGoogleDocsHost())) {
+	      throw new Error("Untrusted click event; Google Docs/Slides often ignores programmatic clicks (CDP input may be blocked).");
+	    }
+	    return { ok: true, x: clickX, y: clickY, clickCount: count, usedTrustedInput, navigated, urlAfter, clickEventObserved };
+	  });
 }
 
 async function agentHover({ url, title, marker, elementId, x, y } = {}) {
@@ -3910,7 +4878,7 @@ async function readJson(filePath) {
 function sanitizeSettings(raw) {
   const defaultLanguage = resolveUiLanguage(getOsLocale());
   const next = {
-    version: 1,
+    version: 2,
     hasShownChromeImportModal: false,
     browser: {
       version: 1,
@@ -3928,7 +4896,20 @@ function sanitizeSettings(raw) {
     openAiBaseUrl: DEFAULT_OPENAI_COMPAT_BASE_URL,
     openAiModel: DEFAULT_OPENAI_COMPAT_MODEL,
     openAiApiKeyData: null,
-    openAiApiKeyFormat: null
+    openAiApiKeyFormat: null,
+    google: {
+      version: 1,
+      oauth: {
+        version: 1,
+        clientId: "",
+        clientSecretData: null,
+        clientSecretFormat: null,
+        refreshTokenData: null,
+        refreshTokenFormat: null,
+        scopes: DEFAULT_GOOGLE_OAUTH_SCOPES.slice(),
+        connectedAt: 0
+      }
+    }
   };
 
   if (!raw || typeof raw !== "object") return next;
@@ -3985,6 +4966,37 @@ function sanitizeSettings(raw) {
   }
   if (raw.openAiApiKeyFormat === "safeStorage" || raw.openAiApiKeyFormat === "plain") {
     next.openAiApiKeyFormat = raw.openAiApiKeyFormat;
+  }
+
+  const google = raw.google;
+  if (google && typeof google === "object") {
+    const oauth = google.oauth;
+    if (oauth && typeof oauth === "object") {
+      if (typeof oauth.clientId === "string") {
+        next.google.oauth.clientId = oauth.clientId.trim().slice(0, 220);
+      }
+      if (typeof oauth.clientSecretData === "string" && oauth.clientSecretData.trim()) {
+        next.google.oauth.clientSecretData = oauth.clientSecretData.trim();
+      }
+      if (oauth.clientSecretFormat === "safeStorage" || oauth.clientSecretFormat === "plain") {
+        next.google.oauth.clientSecretFormat = oauth.clientSecretFormat;
+      }
+      if (typeof oauth.refreshTokenData === "string" && oauth.refreshTokenData.trim()) {
+        next.google.oauth.refreshTokenData = oauth.refreshTokenData.trim();
+      }
+      if (oauth.refreshTokenFormat === "safeStorage" || oauth.refreshTokenFormat === "plain") {
+        next.google.oauth.refreshTokenFormat = oauth.refreshTokenFormat;
+      }
+      if (Array.isArray(oauth.scopes)) {
+        const scopes = oauth.scopes
+          .map((s) => String(s || "").trim())
+          .filter((s) => s && GOOGLE_OAUTH_ALLOWED_SCOPES.has(s))
+          .slice(0, 12);
+        if (scopes.length) next.google.oauth.scopes = scopes;
+      }
+      const connectedAt = Number(oauth.connectedAt);
+      if (Number.isFinite(connectedAt) && connectedAt >= 0) next.google.oauth.connectedAt = Math.floor(connectedAt);
+    }
   }
   return next;
 }
@@ -4269,56 +5281,62 @@ function isValidOpenAiApiKey(apiKey) {
   return true;
 }
 
-function encryptGeminiApiKey(apiKey) {
-  const key = String(apiKey || "").trim();
-  if (!key) return { format: null, data: null };
+function encryptSensitiveString(value) {
+  const text = String(value || "").trim();
+  if (!text) return { format: null, data: null };
 
   if (safeStorage.isEncryptionAvailable()) {
-    const encrypted = safeStorage.encryptString(key);
+    const encrypted = safeStorage.encryptString(text);
     return { format: "safeStorage", data: encrypted.toString("base64") };
   }
-  return { format: "plain", data: key };
+  return { format: "plain", data: text };
+}
+
+function decryptSensitiveString({ format, data, label } = {}) {
+  if (!data || typeof data !== "string") return null;
+  if (format === "safeStorage") {
+    if (!safeStorage.isEncryptionAvailable()) return null;
+    try {
+      return safeStorage.decryptString(Buffer.from(data, "base64"));
+    } catch (err) {
+      log(`failed to decrypt ${label || "secret"}:`, err?.message || err);
+      return null;
+    }
+  }
+  if (format === "plain") return data;
+  return null;
+}
+
+function encryptGeminiApiKey(apiKey) {
+  return encryptSensitiveString(apiKey);
 }
 
 function decryptGeminiApiKey({ format, data }) {
-  if (!data || typeof data !== "string") return null;
-  if (format === "safeStorage") {
-    if (!safeStorage.isEncryptionAvailable()) return null;
-    try {
-      return safeStorage.decryptString(Buffer.from(data, "base64"));
-    } catch (err) {
-      log("failed to decrypt gemini api key:", err?.message || err);
-      return null;
-    }
-  }
-  if (format === "plain") return data;
-  return null;
+  return decryptSensitiveString({ format, data, label: "gemini api key" });
 }
 
 function encryptOpenAiApiKey(apiKey) {
-  const key = String(apiKey || "").trim();
-  if (!key) return { format: null, data: null };
-
-  if (safeStorage.isEncryptionAvailable()) {
-    const encrypted = safeStorage.encryptString(key);
-    return { format: "safeStorage", data: encrypted.toString("base64") };
-  }
-  return { format: "plain", data: key };
+  return encryptSensitiveString(apiKey);
 }
 
 function decryptOpenAiApiKey({ format, data }) {
-  if (!data || typeof data !== "string") return null;
-  if (format === "safeStorage") {
-    if (!safeStorage.isEncryptionAvailable()) return null;
-    try {
-      return safeStorage.decryptString(Buffer.from(data, "base64"));
-    } catch (err) {
-      log("failed to decrypt openai api key:", err?.message || err);
-      return null;
-    }
-  }
-  if (format === "plain") return data;
-  return null;
+  return decryptSensitiveString({ format, data, label: "openai api key" });
+}
+
+function encryptGoogleOauthClientSecret(secret) {
+  return encryptSensitiveString(secret);
+}
+
+function decryptGoogleOauthClientSecret({ format, data }) {
+  return decryptSensitiveString({ format, data, label: "google oauth client secret" });
+}
+
+function encryptGoogleOauthRefreshToken(token) {
+  return encryptSensitiveString(token);
+}
+
+function decryptGoogleOauthRefreshToken({ format, data }) {
+  return decryptSensitiveString({ format, data, label: "google oauth refresh token" });
 }
 
 async function getGeminiApiKey() {
@@ -4339,6 +5357,74 @@ async function getOpenAiApiKey() {
   });
   if (stored) return stored;
   return process.env.OPENAI_API_KEY || null;
+}
+
+let googleAccessTokenCache = {
+  accessToken: "",
+  expiresAt: 0,
+  scope: ""
+};
+
+async function getGoogleOauthConfig() {
+  const settings = await loadSettings();
+  const oauth = settings.google && typeof settings.google === "object" ? settings.google.oauth : null;
+  const clientId = String(oauth?.clientId || "").trim();
+  const clientSecret = decryptGoogleOauthClientSecret({ format: oauth?.clientSecretFormat, data: oauth?.clientSecretData });
+  const refreshToken = decryptGoogleOauthRefreshToken({ format: oauth?.refreshTokenFormat, data: oauth?.refreshTokenData });
+  const scopes = Array.isArray(oauth?.scopes) ? oauth.scopes : DEFAULT_GOOGLE_OAUTH_SCOPES.slice();
+  return { clientId, clientSecret, refreshToken, scopes };
+}
+
+async function getGoogleAccessToken() {
+  const now = Date.now();
+  if (googleAccessTokenCache.accessToken && now < googleAccessTokenCache.expiresAt - 30_000) {
+    return googleAccessTokenCache.accessToken;
+  }
+  const { clientId, clientSecret, refreshToken } = await getGoogleOauthConfig();
+  if (!clientId) throw new Error("Google OAuth client id is not set");
+  if (!clientSecret) throw new Error("Google OAuth client secret is not set");
+  if (!refreshToken) throw new Error("Google OAuth is not connected (missing refresh token)");
+
+  const form = new URLSearchParams();
+  form.set("client_id", clientId);
+  form.set("client_secret", clientSecret);
+  form.set("refresh_token", refreshToken);
+  form.set("grant_type", "refresh_token");
+
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: form.toString()
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(`Google OAuth refresh failed: ${String(json?.error_description || json?.error || res.status)}`);
+  }
+  const token = String(json?.access_token || "").trim();
+  const expiresIn = Number(json?.expires_in) || 0;
+  if (!token) throw new Error("Google OAuth refresh failed: missing access_token");
+
+  googleAccessTokenCache.accessToken = token;
+  googleAccessTokenCache.expiresAt = now + Math.max(30_000, expiresIn * 1000);
+  googleAccessTokenCache.scope = String(json?.scope || "").trim();
+  return token;
+}
+
+async function googleApiFetchJson(url, { method = "GET", headers, body } = {}) {
+  const token = await getGoogleAccessToken();
+  const res = await fetch(url, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(headers && typeof headers === "object" ? headers : {})
+    },
+    body
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(`Google API error (${res.status}): ${String(json?.error?.message || json?.error || res.statusText)}`);
+  }
+  return json;
 }
 
 async function loadPrompts() {
@@ -5057,6 +6143,38 @@ ipcMain.handle("agent:readElement", async (_e, payload) => {
   }
 });
 
+ipcMain.handle("agent:collectLinks", async (_e, payload) => {
+  try {
+    const result = await agentCollectLinks(payload || {});
+    return { ok: true, links: Array.isArray(result?.links) ? result.links : [] };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:extractStructuredData", async (_e, payload) => {
+  try {
+    const result = await agentExtractStructuredData(payload || {});
+    return {
+      ok: true,
+      meta: result?.meta && typeof result.meta === "object" ? result.meta : {},
+      jsonLd: Array.isArray(result?.jsonLd) ? result.jsonLd : [],
+      tables: Array.isArray(result?.tables) ? result.tables : []
+    };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:readerExtract", async (_e, payload) => {
+  try {
+    const result = await agentReaderExtract(payload || {});
+    return { ok: true, article: result || null };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
 ipcMain.handle("agent:scrollIntoView", async (_e, payload) => {
   try {
     const result = await agentScrollIntoView(payload || {});
@@ -5183,6 +6301,69 @@ ipcMain.handle("agent:downloadsWait", async (_e, payload) => {
   }
 });
 
+ipcMain.handle("agent:exportFile", async (_e, payload) => {
+  try {
+    const result = await agentExportFile(payload || {});
+    return { ok: true, file: { path: String(result?.path || ""), bytes: Number(result?.bytes) || 0, format: String(result?.format || ""), mimeType: String(result?.mimeType || "") } };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:networkGetResponses", async (_e, payload) => {
+  try {
+    const result = await agentNetworkGetResponses(payload || {});
+    return { ok: true, installed: Boolean(result?.installed), entries: Array.isArray(result?.entries) ? result.entries : [] };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:cookieExport", async (_e, payload) => {
+  try {
+    const result = await agentCookieExport(payload || {});
+    return { ok: true, cookies: Array.isArray(result?.cookies) ? result.cookies : [] };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:cookieImport", async (_e, payload) => {
+  try {
+    const result = await agentCookieImport(payload || {});
+    return { ok: true, count: Number(result?.count) || 0 };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:googleSheetsAppendRows", async (_e, payload) => {
+  try {
+    const result = await agentGoogleSheetsAppendRows(payload || {});
+    return result && typeof result === "object" ? result : { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:googleDocsCreateOrAppend", async (_e, payload) => {
+  try {
+    const result = await agentGoogleDocsCreateOrAppend(payload || {});
+    return result && typeof result === "object" ? result : { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("agent:googleSlidesCreateDeck", async (_e, payload) => {
+  try {
+    const result = await agentGoogleSlidesCreateDeck(payload || {});
+    return result && typeof result === "object" ? result : { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
 ipcMain.handle("prompts:list", async () => {
   try {
     const prompts = await loadPrompts();
@@ -5226,6 +6407,13 @@ ipcMain.handle("settings:get", async () => {
     const openAiHasStoredKey = Boolean(settings.openAiApiKeyData);
     const openAiHasEnvKey = Boolean(process.env.OPENAI_API_KEY);
     const openAiApiKeySource = openAiHasStoredKey ? "stored" : openAiHasEnvKey ? "env" : "none";
+
+    const googleOauth = settings.google && typeof settings.google === "object" ? settings.google.oauth : null;
+    const googleClientId = String(googleOauth?.clientId || "").trim();
+    const googleHasClientSecret = Boolean(googleOauth?.clientSecretData);
+    const googleHasRefreshToken = Boolean(googleOauth?.refreshTokenData);
+    const googleScopes = Array.isArray(googleOauth?.scopes) ? googleOauth.scopes : [];
+    const googleConnectedAt = Number(googleOauth?.connectedAt) || 0;
     return {
       ok: true,
       settings: {
@@ -5236,6 +6424,15 @@ ipcMain.handle("settings:get", async () => {
         openAiModel: settings.openAiModel,
         openAiApiKeySource,
         openAiApiKeyFormat: settings.openAiApiKeyFormat,
+        googleOauth: {
+          clientId: googleClientId,
+          hasClientSecret: googleHasClientSecret,
+          clientSecretFormat: googleOauth?.clientSecretFormat || null,
+          hasRefreshToken: googleHasRefreshToken,
+          refreshTokenFormat: googleOauth?.refreshTokenFormat || null,
+          scopes: googleScopes,
+          connectedAt: googleConnectedAt
+        },
         encryptionAvailable: safeStorage.isEncryptionAvailable()
       }
     };
@@ -5339,6 +6536,280 @@ ipcMain.handle("settings:clearOpenAiApiKey", async () => {
     return { ok: true };
   } catch (err) {
     log("settings:clearOpenAiApiKey error", err?.message || err);
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("settings:setGoogleOauthClientId", async (_e, clientId) => {
+  try {
+    const id = String(clientId || "").trim();
+    if (!id) throw new Error("Missing Google OAuth client id");
+    if (id.length > 240) throw new Error("Google OAuth client id is too long");
+    const settings = await loadSettings();
+    settings.google.oauth.clientId = id;
+    await saveSettings(settings);
+    return { ok: true, clientId: id };
+  } catch (err) {
+    log("settings:setGoogleOauthClientId error", err?.message || err);
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("settings:setGoogleOauthClientSecret", async (_e, clientSecret) => {
+  try {
+    const secret = String(clientSecret || "").trim();
+    if (!secret) throw new Error("Missing Google OAuth client secret");
+    if (secret.length > 800) throw new Error("Google OAuth client secret is too long");
+    const settings = await loadSettings();
+    const stored = encryptGoogleOauthClientSecret(secret);
+    settings.google.oauth.clientSecretFormat = stored.format;
+    settings.google.oauth.clientSecretData = stored.data;
+    await saveSettings(settings);
+    return { ok: true, encryptionAvailable: safeStorage.isEncryptionAvailable() };
+  } catch (err) {
+    log("settings:setGoogleOauthClientSecret error", err?.message || err);
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("settings:setGoogleOauthScopes", async (_e, scopes) => {
+  try {
+    if (!Array.isArray(scopes)) throw new Error("scopes must be an array");
+    const nextScopes = scopes
+      .map((s) => String(s || "").trim())
+      .filter((s) => s && GOOGLE_OAUTH_ALLOWED_SCOPES.has(s))
+      .slice(0, 12);
+    if (!nextScopes.length) throw new Error("Missing Google OAuth scopes");
+    const settings = await loadSettings();
+    settings.google.oauth.scopes = nextScopes;
+    await saveSettings(settings);
+    return { ok: true, scopes: nextScopes };
+  } catch (err) {
+    log("settings:setGoogleOauthScopes error", err?.message || err);
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("settings:disconnectGoogleOauth", async () => {
+  try {
+    const settings = await loadSettings();
+    settings.google.oauth.refreshTokenFormat = null;
+    settings.google.oauth.refreshTokenData = null;
+    settings.google.oauth.connectedAt = 0;
+    await saveSettings(settings);
+    return { ok: true };
+  } catch (err) {
+    log("settings:disconnectGoogleOauth error", err?.message || err);
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("settings:clearGoogleOauthClient", async () => {
+  try {
+    const settings = await loadSettings();
+    settings.google.oauth.clientId = "";
+    settings.google.oauth.clientSecretFormat = null;
+    settings.google.oauth.clientSecretData = null;
+    settings.google.oauth.refreshTokenFormat = null;
+    settings.google.oauth.refreshTokenData = null;
+    settings.google.oauth.connectedAt = 0;
+    settings.google.oauth.scopes = DEFAULT_GOOGLE_OAUTH_SCOPES.slice();
+    await saveSettings(settings);
+    return { ok: true };
+  } catch (err) {
+    log("settings:clearGoogleOauthClient error", err?.message || err);
+    return { ok: false, error: String(err?.message || err) };
+  }
+});
+
+ipcMain.handle("settings:googleOauthConnect", async (_e, options) => {
+  try {
+    const timeoutMs = (() => {
+      const n = Number(options?.timeoutMs);
+      if (!Number.isFinite(n)) return 5 * 60_000;
+      return Math.max(30_000, Math.min(15 * 60_000, Math.floor(n)));
+    })();
+    const openExternal = options?.openExternal == null ? true : Boolean(options?.openExternal);
+
+    const settings = await loadSettings();
+    const oauth = settings.google.oauth;
+    const clientId = String(oauth.clientId || "").trim();
+    const clientSecret = decryptGoogleOauthClientSecret({ format: oauth.clientSecretFormat, data: oauth.clientSecretData });
+    if (!clientId) throw new Error("Google OAuth client id is not set");
+    if (!clientSecret) throw new Error("Google OAuth client secret is not set");
+
+    const scopes = Array.isArray(oauth.scopes) && oauth.scopes.length ? oauth.scopes : DEFAULT_GOOGLE_OAUTH_SCOPES.slice();
+
+    const base64Url = (buf) =>
+      Buffer.from(buf)
+        .toString("base64")
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/g, "");
+    const verifier = base64Url(crypto.randomBytes(32));
+    const challenge = base64Url(crypto.createHash("sha256").update(verifier).digest());
+    const state = crypto.randomBytes(16).toString("hex");
+
+    let codeResolve = null;
+    let codeReject = null;
+    let codeSettled = false;
+    const codePromise = new Promise((resolve, reject) => {
+      codeResolve = resolve;
+      codeReject = reject;
+    });
+
+    const server = http.createServer((req, res) => {
+      try {
+        const reqUrl = new URL(String(req.url || "/"), "http://127.0.0.1");
+        if (reqUrl.pathname !== "/oauth2callback") {
+          res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+          res.end("Not found");
+          return;
+        }
+        const gotState = String(reqUrl.searchParams.get("state") || "");
+        const errParam = String(reqUrl.searchParams.get("error") || "");
+        const codeParam = String(reqUrl.searchParams.get("code") || "");
+        if (errParam) {
+          res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+          res.end("<h1>Authorization failed</h1><p>Please return to the app.</p>");
+          if (!codeSettled) {
+            codeSettled = true;
+            codeReject(new Error(`Google OAuth error: ${errParam}`));
+          }
+          return;
+        }
+        if (!codeParam) {
+          res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+          res.end("<h1>Missing authorization code</h1>");
+          if (!codeSettled) {
+            codeSettled = true;
+            codeReject(new Error("Missing authorization code"));
+          }
+          return;
+        }
+        if (gotState !== state) {
+          res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+          res.end("<h1>State mismatch</h1>");
+          if (!codeSettled) {
+            codeSettled = true;
+            codeReject(new Error("OAuth state mismatch"));
+          }
+          return;
+        }
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+        res.end("<h1>Connected</h1><p>You can close this tab and return to the app.</p>");
+        if (!codeSettled) {
+          codeSettled = true;
+          codeResolve(codeParam);
+        }
+      } catch (err) {
+        try {
+          res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+          res.end("Internal error");
+        } catch {
+        }
+        if (!codeSettled) {
+          codeSettled = true;
+          codeReject(new Error(String(err?.message || err)));
+        }
+      }
+    });
+
+    await new Promise((resolve, reject) => {
+      const onError = (err) => reject(err);
+      server.once("error", onError);
+      server.listen(0, "127.0.0.1", () => {
+        server.removeListener("error", onError);
+        resolve();
+      });
+    });
+
+    const addr = server.address();
+    const port = typeof addr === "object" && addr && typeof addr.port === "number" ? addr.port : 0;
+    if (!port) {
+      try {
+        server.close();
+      } catch {
+      }
+      throw new Error("Failed to start OAuth callback server");
+    }
+
+    const redirectUri = `http://127.0.0.1:${port}/oauth2callback`;
+    const authUrlObj = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    authUrlObj.searchParams.set("client_id", clientId);
+    authUrlObj.searchParams.set("redirect_uri", redirectUri);
+    authUrlObj.searchParams.set("response_type", "code");
+    authUrlObj.searchParams.set("scope", scopes.join(" "));
+    authUrlObj.searchParams.set("access_type", "offline");
+    authUrlObj.searchParams.set("prompt", "consent");
+    authUrlObj.searchParams.set("include_granted_scopes", "true");
+    authUrlObj.searchParams.set("state", state);
+    authUrlObj.searchParams.set("code_challenge", challenge);
+    authUrlObj.searchParams.set("code_challenge_method", "S256");
+    const authUrl = authUrlObj.toString();
+
+    if (openExternal) {
+      try {
+        await shell.openExternal(authUrl);
+      } catch (err) {
+        log("failed to open oauth url:", err?.message || err);
+      }
+    }
+
+    let code = "";
+    try {
+      code = await (async () => {
+        const timeout = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error("Google OAuth timed out")), timeoutMs);
+        });
+        return Promise.race([codePromise, timeout]);
+      })();
+    } finally {
+      try {
+        server.close();
+      } catch {
+      }
+    }
+
+    const form = new URLSearchParams();
+    form.set("code", code);
+    form.set("client_id", clientId);
+    form.set("client_secret", clientSecret);
+    form.set("redirect_uri", redirectUri);
+    form.set("grant_type", "authorization_code");
+    form.set("code_verifier", verifier);
+
+    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: form.toString()
+    });
+    const tokenJson = await tokenRes.json().catch(() => ({}));
+    if (!tokenRes.ok) {
+      throw new Error(`Google OAuth token exchange failed: ${String(tokenJson?.error_description || tokenJson?.error || tokenRes.status)}`);
+    }
+
+    const refreshToken = String(tokenJson?.refresh_token || "").trim();
+    if (refreshToken) {
+      const stored = encryptGoogleOauthRefreshToken(refreshToken);
+      settings.google.oauth.refreshTokenFormat = stored.format;
+      settings.google.oauth.refreshTokenData = stored.data;
+    }
+    const respScope = String(tokenJson?.scope || "").trim();
+    if (respScope) {
+      const nextScopes = respScope
+        .split(/\s+/g)
+        .map((s) => String(s || "").trim())
+        .filter((s) => s && GOOGLE_OAUTH_ALLOWED_SCOPES.has(s))
+        .slice(0, 12);
+      if (nextScopes.length) settings.google.oauth.scopes = nextScopes;
+    }
+    settings.google.oauth.connectedAt = Date.now();
+    await saveSettings(settings);
+
+    return { ok: true, authUrl, connectedAt: settings.google.oauth.connectedAt, scopes: settings.google.oauth.scopes };
+  } catch (err) {
+    log("settings:googleOauthConnect error", err?.message || err);
     return { ok: false, error: String(err?.message || err) };
   }
 });
